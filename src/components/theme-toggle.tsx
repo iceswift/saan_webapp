@@ -100,7 +100,7 @@ export function ThemeToggle({
         title="สลับธีมสว่างหรือมืด"
         onClick={() => choose(resolvedTheme === "dark" ? "light" : "dark")}
         className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-full border border-foreground/20 bg-background text-foreground transition-[transform,background-color] hover:bg-muted active:scale-95",
+          "flex size-10 shrink-0 items-center justify-center rounded-full text-foreground transition-[transform,background-color] hover:bg-muted active:scale-95",
           className,
         )}
       >

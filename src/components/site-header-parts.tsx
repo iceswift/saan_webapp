@@ -1,12 +1,23 @@
 "use client";
 
-import { Suspense, ViewTransition } from "react";
-import Form from "next/form";
+import { Suspense, useCallback, useLayoutEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowLeft, Search, ShieldCheck, Store } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Menu } from "@base-ui/react/menu";
+import {
+  ArrowLeft,
+  BookOpen,
+  ClipboardList,
+  Landmark,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  Store,
+  UserRound,
+} from "lucide-react";
+import { formatPhone } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { logout } from "@/server/actions/auth";
 
 /** ส่วนที่ต้องรู้ที่อยู่ปัจจุบันของ SiteHeader (client) ส่วนข้อมูลผู้ใช้อยู่ใน site-header.tsx */
 
@@ -23,30 +34,87 @@ const NAV_ITEMS: { href: string; label: string; bases: string[] }[] = [
 ];
 
 type NavItem = { href: string; label: string; active: boolean };
+type Rect = { x: number; w: number };
 
-/** ขีดสีชาดใต้เมนูที่เปิดอยู่ เลื่อนไปหาเมนูใหม่ตอนเปลี่ยนหน้า (ใช้ร่วมทุกชุดเมนู) */
+/**
+ * เมนูแนวนอนพร้อม "แคปซูลเลื่อน": แคปซูลสีเบจใต้เมนูที่เปิดอยู่ไหลไปหาเมนูใหม่ตอนเปลี่ยนหน้า
+ * และแคปซูลจาง ๆ ตามเมาส์ตอน hover (วัดตำแหน่งจริงของลิงก์ ใช้ transform จึงไม่กระทบเลย์เอาต์)
+ * ก่อนวัดเสร็จ (SSR) ลิงก์ที่เปิดอยู่ใส่พื้นเบจเองไว้ก่อน จึงไม่กะพริบ ลิงก์ยังเป็น <a aria-current> ปกติ
+ * ตัวอักษรน้ำหนักเท่ากันทุกเมนู ความกว้างจึงไม่เปลี่ยนตอนสลับ (ใช้ร่วมทุกชุดเมนู)
+ */
 function NavLinks({ items, label }: { items: NavItem[]; label: string }) {
+  const nav = useRef<HTMLElement>(null);
+  const [active, setActive] = useState<Rect | null>(null);
+  const [last, setLast] = useState<Rect | null>(null);
+  const [hover, setHover] = useState<Rect | null>(null);
+  const [ready, setReady] = useState(false);
+  const activeHref = items.find((item) => item.active)?.href ?? "";
+
+  const measure = useCallback(() => {
+    const el = nav.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    const rect = el ? { x: el.offsetLeft, w: el.offsetWidth } : null;
+    setActive(rect);
+    if (rect) setLast(rect);
+    setReady(true);
+  }, []);
+
+  // วัดใหม่ทุกครั้งที่เมนูที่เปิดอยู่เปลี่ยน
+  useLayoutEffect(() => {
+    measure();
+  }, [measure, activeHref]);
+
+  // และเมื่อขนาดเมนูเปลี่ยน (โหลดฟอนต์เสร็จ โหมดตัวอักษรใหญ่)
+  useLayoutEffect(() => {
+    const node = nav.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    void document.fonts?.ready.then(measure);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  const shown = active ?? last;
+  const lit = hover ?? shown;
   return (
-    <nav aria-label={label} className="flex h-full items-stretch">
-      {items.map(({ href, label: text, active }) => (
+    <nav
+      ref={nav}
+      aria-label={label}
+      className="relative flex h-10 shrink-0 items-center"
+      onPointerLeave={() => setHover(null)}
+    >
+      {shown ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-muted transition-[transform,width,opacity] duration-(--dur-base) ease-soft"
+          style={{
+            transform: `translateX(${shown.x}px)`,
+            width: shown.w,
+            opacity: active && ready ? 1 : 0,
+          }}
+        />
+      ) : null}
+      {lit ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-foreground/[0.06] transition-[transform,width,opacity] duration-(--dur-fast) ease-soft"
+          style={{ transform: `translateX(${lit.x}px)`, width: lit.w, opacity: hover ? 1 : 0 }}
+        />
+      ) : null}
+      {items.map(({ href, label: text, active: on }) => (
         <Link
           key={href}
           href={href}
-          aria-current={active ? "page" : undefined}
+          aria-current={on ? "page" : undefined}
+          onPointerEnter={(e) =>
+            setHover({ x: e.currentTarget.offsetLeft, w: e.currentTarget.offsetWidth })
+          }
           className={cn(
-            "relative flex items-center px-3 text-base whitespace-nowrap transition-colors xl:px-4",
-            active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+            "relative z-10 flex h-10 items-center rounded-full px-3 text-base whitespace-nowrap transition-colors duration-(--dur-fast) active:scale-[0.97] max-xl:[.text-large_&]:px-2 xl:px-4",
+            on ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            on && !ready && "bg-muted",
           )}
         >
           {text}
-          {active ? (
-            <ViewTransition name="nav-bar-top" share="nav-bar" default="none">
-              <span
-                aria-hidden="true"
-                className="absolute right-3 -bottom-px left-3 h-1 rounded-t-full bg-gold xl:right-4 xl:left-4"
-              />
-            </ViewTransition>
-          ) : null}
         </Link>
       ))}
     </nav>
@@ -91,7 +159,7 @@ function AreaNav({ area }: { area: "provider" | "admin" }) {
 }
 
 /**
- * เมนูหลักแนวนอน หน้าที่เปิดอยู่: ตัวอักษรเข้ม และมีซุ้มโค้งสีชาดเล็ก ๆ บนเส้นล่างของส่วนหัว
+ * เมนูหลักแนวนอน หน้าที่เปิดอยู่: แคปซูลเบจเลื่อนมาอยู่ใต้ชื่อเมนู
  * อยู่ใต้ /provider หรือ /admin เมนูสลับเป็นเมนูของพื้นที่นั้น (ปุ่มกลับหน้าลูกค้าอยู่ที่ HeaderPill)
  */
 export function HeaderNav() {
@@ -119,41 +187,6 @@ export function HeaderNav() {
         active: href === "/" ? pathname === "/" : inSection(pathname, bases),
       }))}
     />
-  );
-}
-
-/** ช่องค้นหาในส่วนหัว ส่งไป /browse?q= (ถ้าอยู่หน้าเลือกดูศาลจะเติมคำค้นเดิมให้) */
-export function HeaderSearch({ className }: { className?: string }) {
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const onBrowse = pathname === "/browse";
-  const current = onBrowse ? (params.get("q") ?? "") : "";
-  // ค้นหาซ้ำในหน้าเลือกดูศาล: คงตัวกรองอื่นไว้
-  const kept = onBrowse
-    ? (["kind", "area", "max", "sort", "near"] as const).flatMap((name) => {
-        const value = params.get(name);
-        return value ? [[name, value] as const] : [];
-      })
-    : [];
-  return (
-    <Form action="/browse" role="search" className={cn("relative min-w-0", className)}>
-      {kept.map(([name, value]) => (
-        <input key={name} type="hidden" name={name} value={value} />
-      ))}
-      <Search
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 left-3.5 size-4.5 -translate-y-1/2 text-muted-foreground"
-      />
-      <Input
-        key={current}
-        name="q"
-        type="search"
-        aria-label="ค้นหาศาลและบริการ"
-        placeholder="ค้นหาศาล"
-        defaultValue={current}
-        className="h-10 pr-4 pl-10"
-      />
-    </Form>
   );
 }
 
@@ -188,10 +221,10 @@ export function HeaderPill({
       aria-label={text}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border text-base font-medium whitespace-nowrap transition-colors max-xl:w-10 xl:px-4",
+        "flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border text-base font-medium whitespace-nowrap transition-[color,background-color,transform] active:scale-95 max-xl:w-10 xl:px-4",
         active
           ? "border-primary bg-primary text-primary-foreground"
-          : "border-foreground/20 text-foreground hover:bg-muted",
+          : "border-border text-foreground hover:bg-muted",
       )}
     >
       <Icon className="size-5" strokeWidth={1.8} aria-hidden="true" />
@@ -200,33 +233,107 @@ export function HeaderPill({
   );
 }
 
-/** ทางเข้าบัญชี: อักษรย่อในวงกลม + ชื่อ (ชื่อซ่อนบนจอแคบ) */
-export function HeaderAccountLink({ name, showName = true }: { name: string; showName?: boolean }) {
+const MENU_LINKS = [
+  { href: "/account", label: "บัญชีของฉัน", icon: UserRound },
+  { href: "/shrines", label: "ศาลของฉัน", icon: Landmark },
+  { href: "/orders", label: "งานของฉัน", icon: ClipboardList },
+  { href: "/vows", label: "สมุดบน", icon: BookOpen },
+  { href: "/settings", label: "ตั้งค่า", icon: Settings },
+] as const;
+
+const itemClass =
+  "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-base text-foreground outline-none transition-colors data-[highlighted]:bg-muted";
+
+/**
+ * ทางเข้าบัญชี: ปุ่มอักษรย่อ (+ ชื่อบนจอกว้าง) เปิดเมนูย่อย ชื่อ/เบอร์ ลิงก์ลัด ร้าน/ผู้ดูแล (ถ้ามี) และออกจากระบบ
+ * ใช้ Menu ของ Base UI (โฟกัส ลูกศร Esc คลิกนอกเมนู ได้ครบ) เมนูเปิดใต้ปุ่มชิดขอบขวา
+ */
+export function HeaderAccountMenu({
+  name,
+  phone,
+  showName = true,
+  isShop = false,
+  isAdmin = false,
+}: {
+  name: string;
+  phone: string;
+  showName?: boolean;
+  isShop?: boolean;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const active = inSection(pathname, ["/account", "/settings"]);
   const initial = Array.from(name.trim())[0] ?? "S";
+
+  function signOut() {
+    startTransition(async () => {
+      await logout();
+      router.replace("/");
+    });
+  }
+
+  const links: { href: string; label: string; icon: typeof Store }[] = [
+    ...MENU_LINKS,
+    ...(isShop ? [{ href: "/provider", label: "ร้านของฉัน", icon: Store }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "ผู้ดูแลระบบ", icon: ShieldCheck }] : []),
+  ];
+
   return (
-    <Link
-      href="/account"
-      aria-label={name ? `บัญชีของ ${name}` : "บัญชีของฉัน"}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "flex h-10 shrink-0 items-center gap-2 rounded-full border p-1 transition-colors",
-        showName && "xl:pr-4",
-        active ? "border-foreground bg-muted" : "border-foreground/20 hover:bg-muted",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className="flex size-8 items-center justify-center rounded-full bg-primary font-display text-base font-normal text-primary-foreground"
+    <Menu.Root>
+      <Menu.Trigger
+        aria-label={name ? `เมนูบัญชีของ ${name}` : "เมนูบัญชี"}
+        className={cn(
+          "flex h-10 shrink-0 items-center gap-2 rounded-full p-1 transition-[background-color,transform] outline-none hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 data-[popup-open]:bg-muted",
+          showName && "xl:pr-4",
+          active && "bg-muted",
+        )}
       >
-        {initial}
-      </span>
-      {showName ? (
-        <span className="hidden max-w-28 truncate text-base font-medium xl:inline">
-          {name || "บัญชีของฉัน"}
+        <span
+          aria-hidden="true"
+          className="flex size-8 items-center justify-center rounded-full bg-primary font-display text-base font-normal text-primary-foreground"
+        >
+          {initial}
         </span>
-      ) : null}
-    </Link>
+        {showName ? (
+          <span className="hidden max-w-28 truncate text-base font-medium xl:inline">
+            {name || "บัญชีของฉัน"}
+          </span>
+        ) : null}
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Positioner side="bottom" align="end" sideOffset={14} className="z-50">
+          <Menu.Popup className="w-72 origin-top-right rounded-3xl border border-border bg-popover p-2 text-popover-foreground outline-none transition-[opacity,transform] duration-(--dur-base) ease-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:-translate-y-1 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0">
+            <div className="flex items-center gap-3 px-3 pt-2 pb-3">
+              <span
+                aria-hidden="true"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary font-display text-xl font-normal text-primary-foreground"
+              >
+                {initial}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-base font-medium">{name || "บัญชีของฉัน"}</p>
+                <p className="numeric truncate text-sm text-muted-foreground">{formatPhone(phone)}</p>
+              </div>
+            </div>
+            <div className="border-t border-border pt-1.5">
+              {links.map(({ href, label, icon: Icon }) => (
+                <Menu.Item key={href} render={<Link href={href} />} className={itemClass}>
+                  <Icon className="size-5 text-muted-foreground" strokeWidth={1.8} aria-hidden="true" />
+                  {label}
+                </Menu.Item>
+              ))}
+            </div>
+            <div className="mt-1.5 border-t border-border pt-1.5">
+              <Menu.Item onClick={signOut} disabled={pending} className={itemClass}>
+                <LogOut className="size-5 text-muted-foreground" strokeWidth={1.8} aria-hidden="true" />
+                {pending ? "กำลังออกจากระบบ" : "ออกจากระบบ"}
+              </Menu.Item>
+            </div>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }

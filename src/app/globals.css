@@ -272,11 +272,24 @@
   }
   @media (min-width: 64rem) {
     :root {
-      --site-header-h: 4.5rem;
+      /* เกาะลอย: เกาะสูง 4.5rem + ห่างขอบบน 0.75rem (ตอนหดเหลือ 3.75rem ที่ว่างยังจองเท่าเดิม เนื้อหาไม่กระโดด) */
+      --site-header-h: 5.25rem;
       --section-mt: 3.5rem;
     }
     html {
       scroll-padding-top: calc(var(--site-header-h) + 1.5rem);
+    }
+  }
+  /* ส่วนหัว v7 "เกาะลอย": ข้อยกเว้นข้อเดียวของกฎ "ไม่เบลอ" พื้นกึ่งโปร่ง 85% ของ --background + เบลอ 12px
+     เส้นขอบ 1px (ไม่มีเงา ไม่มีไล่สี) เบราว์เซอร์ที่ไม่รองรับ backdrop-filter ได้พื้นทึบ */
+  .site-island {
+    background: var(--background);
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-island {
+      background: color-mix(in oklab, var(--background) 85%, transparent);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
     }
   }
   /* โหมดตัวอักษรใหญ่: ทุกขนาดในแอปอิง rem จึงขยายตามทั้งหมด */
