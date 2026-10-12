@@ -40,6 +40,7 @@ export function ProductCard({
   product,
   className,
   near,
+  href,
 }: {
   product: ProductDTO;
   /** @deprecated v6: ไม่มีการ์ดใหญ่แล้ว */
@@ -51,6 +52,8 @@ export function ProductCard({
   className?: string;
   /** "lat,lng" ที่ปัดแล้ว ต่อท้ายลิงก์เป็น ?near= เพื่อให้หน้ารายละเอียดบอกระยะได้ */
   near?: string;
+  /** แทนที่ลิงก์ปลายทางทั้งเส้น (ค่าเริ่มต้น /products/<id>, หรือ ?near= เมื่อมี near; เมื่อใส่ href จะไม่เติม near ให้) เช่น ส่งต่อคำตอบจากตัวช่วยตั้งศาล */
+  href?: string;
 }) {
   const { provider } = product;
   const area = areaLabel(provider.areas);
@@ -63,7 +66,7 @@ export function ProductCard({
   return (
     <div className={cn("product-card group/card relative h-full", className)}>
       <Link
-        href={near ? `/products/${product.id}?near=${near}` : `/products/${product.id}`}
+        href={href ?? (near ? `/products/${product.id}?near=${near}` : `/products/${product.id}`)}
         className="flex h-full flex-col overflow-hidden surface transition-[border-color] duration-200 group-hover/card:border-foreground/30"
       >
         <div className="relative overflow-hidden">
@@ -149,6 +152,7 @@ export function ProductCard({
         productId={product.id}
         productName={product.name}
         overlay
+        transition
         className="absolute top-3 right-3"
       />
     </div>

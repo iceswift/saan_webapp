@@ -4,7 +4,6 @@ import {
   ArrowDownUp,
   Check,
   MapPin,
-  Search,
   SlidersHorizontal,
   X,
   type LucideIcon,
@@ -12,13 +11,13 @@ import {
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { BottomSheet, BottomSheetClose } from "@/components/bottom-sheet";
 import { Chip, ChipRow, chipClass } from "@/components/chip";
+import { MobileSearch } from "@/components/header-search";
 import { LinkButton } from "@/components/link-button";
 import { ProductCard } from "@/components/product-card";
 import { Reveal } from "@/components/reveal";
 import { CardGrid, TwoColumn } from "@/components/page-layout";
 import { Rise } from "@/components/rise";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/visuals";
 import { AREAS, AREA_CODES, SHRINE_KINDS, SHRINE_KIND_CODES } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
@@ -235,31 +234,10 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
         aside={
           <div className="flex flex-col gap-4 lg:gap-0">
             <Rise>
-              <form action="/browse" method="get" role="search" className="relative lg:hidden">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  name="q"
-                  type="search"
-                  aria-label="ค้นหาศาล"
-                  placeholder="ค้นหาศาล เช่น ศาลพระภูมิ"
-                  defaultValue={q ?? ""}
-                  className="h-14 rounded-full pr-28 pl-12"
-                />
-                {kind ? <input type="hidden" name="kind" value={kind} /> : null}
-                {area ? <input type="hidden" name="area" value={area} /> : null}
-                {max ? <input type="hidden" name="max" value={max} /> : null}
-                {sort ? <input type="hidden" name="sort" value={sort} /> : null}
-                {nearParam ? <input type="hidden" name="near" value={nearParam} /> : null}
-                <Button
-                  type="submit"
-                  className="absolute top-1/2 right-1.5 h-11 -translate-y-1/2 rounded-full px-5 text-base font-medium"
-                >
-                  ค้นหา
-                </Button>
-              </form>
+              {/* มือถือ: แตะช่องนี้แล้วเปิดแผ่นค้นหาเต็มความสูง (ค้นหาล่าสุด คำแนะนำสด Enter ไป /browse?q= คงตัวกรอง) เดสก์ท็อปใช้ช่องในส่วนหัว */}
+              <div className="lg:hidden">
+                <MobileSearch variant="field" placeholder="ค้นหาศาล เช่น ศาลพระภูมิ" defaultQuery={q ?? ""} />
+              </div>
             </Rise>
 
             <Rise i={1}>
@@ -400,8 +378,8 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
           />
         ) : (
           <CardGrid cols="products-side">
-            {products.map((product, index) => (
-              <Reveal as="li" key={product.id} i={index % 4}>
+            {products.map((product) => (
+              <Reveal as="li" key={product.id}>
                 <ProductCard product={product} near={nearParam} />
               </Reveal>
             ))}

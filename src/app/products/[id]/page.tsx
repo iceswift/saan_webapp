@@ -15,7 +15,8 @@ import { ExpandableMap } from "@/components/map/expandable-map";
 import { MapView } from "@/components/map/map-view";
 import { Monogram, ShrineImage } from "@/components/visuals";
 import { Reveal } from "@/components/reveal";
-import { ShareActions } from "@/components/share-actions";
+import { ImageRail } from "@/components/image-rail";
+import { ProductCard } from "@/components/product-card";
 import { ORDER_FLOW_STEPS } from "@/app/orders/display";
 import { firstValue, pickCode } from "@/app/new/options";
 import { PackageRow, RatingBreakdown, ReviewItem, monogramName } from "@/app/shops/public-parts";
@@ -23,8 +24,9 @@ import { AREAS, AREA_CODES, DEPOSIT_RATE, SHRINE_KINDS } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
 import { distanceKm, formatDistance, isInThailand } from "@/lib/geo";
 import { getProduct, getPublicProvider } from "@/server/queries";
-import { AreaRow, OrderCta, type OrderParams } from "./order-panel";
-import { SaveButton, ShareButton } from "../saved-products";
+import { AreaRow, OrderCta, checkoutHref, type OrderParams } from "./order-panel";
+import { PriceBar } from "./price-bar";
+import { ProductActions } from "./product-actions";
 
 export async function generateMetadata({ params }: PageProps<"/products/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -57,6 +59,10 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
   const shop = await getPublicProvider(provider.id);
   const allReviews = shop?.reviews ?? [];
   const reviews = allReviews.slice(0, 3);
+  // ดีไซน์อื่นของร้านเดียวกัน (เฉพาะที่เปิดขายอยู่ ไม่รวมศาลนี้) สูงสุด 4 ใบ
+  const moreFromShop = (shop?.products ?? []).filter((p) => p.id !== product.id).slice(0, 4);
+  // รูปจริงของศาล: ตอนนี้มีรูปเดียว (imageUrl) ไม่มี = ภาพวาดประกอบ ไม่ปลอมรูปเพิ่ม
+  const images = product.imageUrl ? [product.imageUrl] : [];
 
   // คำตอบจากตัวช่วย /new ที่ส่งต่อมาทาง URL ใช้เฉพาะพื้นที่ที่ร้านให้บริการจริง
   const areaParam = pickCode(firstValue(sp.area), AREA_CODES);
@@ -75,6 +81,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
   const outOfRadius =
     distance !== null && provider.serviceRadiusKm !== null && distance > provider.serviceRadiusKm;
   // ตำแหน่งร้านที่แสดงต้องเป็นค่าโดยประมาณ (ปัด 3 ตำแหน่ง ≈ 100 เมตร)
+  const nearParam = near ? `${near.lat.toFixed(2)},${near.lng.toFixed(2)}` : undefined;
   const shopPoint = provider.location
     ? {
         lat: Math.round(provider.location.lat * 1000) / 1000,
@@ -107,40 +114,55 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             <div className="mt-5 border-t border-border pt-2">
               <AreaRow productId={product.id} areas={provider.areas} params={orderParams} />
             </div>
-            <OrderCta
-              productId={product.id}
-              areas={provider.areas}
-              params={orderParams}
-              price={product.price}
-              className="mt-4 w-full"
-            />
+            <div id="product-order-cta" className="mt-4">
+              <OrderCta
+                productId={product.id}
+                areas={provider.areas}
+                params={orderParams}
+                price={product.price}
+                className="w-full"
+              />
+            </div>
             <TrustNote items={["deposit", "cancel"]} className="mt-5" />
           </SidePanel>
         }
       >
         <Rise>
-          <div className="relative -mx-5 sm:-mx-8 lg:mx-0">
-            <ViewTransition name={`product-${product.id}`} share="morph-image" default="none">
-              <ShrineImage
-                src={product.imageUrl}
-                alt={product.name}
-                kind={product.kind}
-                seed={product.id}
-                arch
-                flush
-                showCaption
-                className="aspect-4/3 w-full [--arch-r:7rem] lg:aspect-[16/10] lg:rounded-b-lg lg:[--arch-r:12rem]"
-              />
-            </ViewTransition>
-            <div className="absolute top-3 right-5 flex gap-2 sm:right-8 lg:right-3">
-              <ShareButton title={product.name} overlay />
-              <SaveButton productId={product.id} productName={product.name} overlay />
-            </div>
+          <div className="-mx-5 sm:-mx-8 lg:mx-0">
+            <ImageRail
+              images={images}
+              alt={product.name}
+              transitionName={`product-${product.id}`}
+              className="aspect-4/3 w-full [--arch-r:7rem] lg:aspect-[16/10] lg:rounded-b-lg lg:[--arch-r:12rem]"
+              fallback={
+                <ShrineImage
+                  src={null}
+                  alt={product.name}
+                  kind={product.kind}
+                  seed={product.id}
+                  arch
+                  flush
+                  showCaption
+                  className="size-full"
+                />
+              }
+            />
           </div>
         </Rise>
 
-        {/* มือถือ: ราคา พื้นที่ และคำมั่นอยู่ใต้รูป (เดสก์ท็อปอยู่ในแผงด้านข้าง) */}
+        {/* กลุ่มปุ่มเดียวใต้รูป: บันทึก · แชร์ · LINE · ดูตำแหน่งร้าน */}
         <Rise i={1}>
+          <ProductActions
+            productId={product.id}
+            productName={product.name}
+            shareTitle={`${product.name} จากร้าน ${provider.name}`}
+            hasMap={Boolean(shopPoint)}
+            className="mt-4"
+          />
+        </Rise>
+
+        {/* มือถือ: ราคา พื้นที่ และคำมั่นอยู่ใต้รูป (เดสก์ท็อปอยู่ในแผงด้านข้าง) */}
+        <Rise i={2}>
           <div className="mt-6 flex flex-col gap-4 lg:hidden">
             <div>
               <Price amount={product.price} size="xl" emphasis />
@@ -153,7 +175,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           </div>
         </Rise>
 
-        <Rise i={2}>
+        <Rise i={3}>
           <dl className="mt-6 divide-y divide-border border-y border-border lg:mt-8">
             {[
               { label: "ประเภทศาล", value: SHRINE_KINDS[product.kind] },
@@ -176,22 +198,34 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
                   ]
                 : []),
             ].map((fact) => (
-              <div key={fact.label} className="flex items-baseline justify-between gap-6 py-3.5">
+              <div
+                key={fact.label}
+                className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-x-5 py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)]"
+              >
                 <dt className="text-base text-muted-foreground">{fact.label}</dt>
-                <dd className="text-right text-base leading-snug font-medium">{fact.value}</dd>
+                <dd className="text-base leading-snug font-medium">{fact.value}</dd>
               </div>
             ))}
           </dl>
         </Rise>
 
-        <Reveal>
-          <ShareActions title={`${product.name} จากร้าน ${provider.name}`} className="mt-6" />
-        </Reveal>
-
         {product.description ? (
           <Reveal as="section">
             <SectionTitle>เกี่ยวกับศาลนี้</SectionTitle>
             <p className="max-w-3xl text-base leading-relaxed whitespace-pre-line">{product.description}</p>
+          </Reveal>
+        ) : null}
+
+        {moreFromShop.length > 0 ? (
+          <Reveal as="section">
+            <SectionTitle>ดีไซน์อื่นจากร้านนี้</SectionTitle>
+            <ul className="-mx-5 flex snap-x gap-3 overflow-x-auto scroll-px-5 px-5 pb-1 sm:-mx-8 sm:scroll-px-8 sm:px-8 lg:mx-0 lg:scroll-px-0 lg:gap-4 lg:px-0">
+              {moreFromShop.map((p) => (
+                <li key={p.id} className="w-44 shrink-0 snap-start lg:w-56">
+                  <ProductCard product={p} near={nearParam} />
+                </li>
+              ))}
+            </ul>
           </Reveal>
         ) : null}
 
@@ -205,7 +239,11 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           <ListGroup>
             <ListRow
               href={`/shops/${provider.id}`}
-              thumb={<Monogram name={monogramName(provider.name)} size="md" />}
+              thumb={
+                <ViewTransition name={`shop-${provider.id}`} share="morph-mark" default="none">
+                  <Monogram name={monogramName(provider.name)} size="md" />
+                </ViewTransition>
+              }
               title={provider.name}
               meta={
                 <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -223,7 +261,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         </section>
 
         {shopPoint ? (
-          <section className="mt-3">
+          <section id="shop-map" className="mt-3 scroll-mt-[calc(var(--site-header-h)+1rem)]">
             <ExpandableMap title="ดูตำแหน่งร้าน" hint="ตำแหน่งโดยประมาณและพื้นที่ที่ร้านรับงาน">
               <MapView
                 markers={[{ ...shopPoint, tone: "shop", label: provider.name }]}
@@ -278,6 +316,15 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           </section>
         ) : null}
       </TwoColumn>
+
+      <PriceBar
+        targetId="product-order-cta"
+        name={product.name}
+        kind={product.kind}
+        imageUrl={product.imageUrl}
+        price={product.price}
+        href={checkoutHref(product.id, provider.areas, orderParams)}
+      />
     </AppShell>
   );
 }

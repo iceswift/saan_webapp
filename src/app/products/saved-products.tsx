@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore, ViewTransition } from "react";
 import Link from "next/link";
 import { Check, Heart, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -79,11 +79,17 @@ export function SaveButton({
   productId,
   productName,
   overlay = false,
+  pill = false,
+  transition = false,
   className,
 }: {
   productId: string;
   productName: string;
   overlay?: boolean;
+  /** ปุ่มทรงเม็ดยามีข้อความ "บันทึก" / "บันทึกแล้ว" (กลุ่มปุ่มในหน้ารายละเอียด) แทนปุ่มวงกลมไอคอนล้วน */
+  pill?: boolean;
+  /** v6.2: ให้หัวใจเป็นองค์ประกอบร่วมของการเปลี่ยนหน้า (การ์ด -> หน้ารายละเอียด) ชื่อ heart-<id> เฉพาะหัวใจ จึงเลื่อนต่อเนื่องแม้กรอบปุ่มต่างกัน */
+  transition?: boolean;
   className?: string;
 }) {
   const saved = useSavedIds().includes(productId);
@@ -91,6 +97,16 @@ export function SaveButton({
   const [popped, setPopped] = useState(false);
   const [burst, setBurst] = useState(0);
   const [message, setMessage] = useState("");
+  const heart = (
+    <Heart
+      aria-hidden="true"
+      className={cn(
+        "size-5 transition-colors duration-200",
+        saved ? "fill-gold text-gold" : "text-foreground",
+        saved && popped && "animate-pop",
+      )}
+    />
+  );
   return (
     <>
       <button
@@ -104,19 +120,22 @@ export function SaveButton({
           setMessage(nowSaved ? "บันทึกศาลไว้แล้ว" : "เอาออกจากที่บันทึกไว้แล้ว");
         }}
         className={cn(
-          "relative flex size-11 items-center justify-center rounded-full transition-[transform,background-color] active:scale-90",
-          overlay ? "glass" : "bg-card hover:bg-muted",
+          "relative flex items-center justify-center rounded-full transition-[transform,background-color] active:scale-90",
+          pill
+            ? "min-h-11 gap-2 border border-foreground/20 px-5 text-base font-medium hover:bg-muted active:scale-95 lg:min-h-10"
+            : "size-11",
+          !pill && (overlay ? "glass" : "bg-card hover:bg-muted"),
           className,
         )}
       >
-        <Heart
-          aria-hidden="true"
-          className={cn(
-            "size-5 transition-colors duration-200",
-            saved ? "fill-gold text-gold" : "text-foreground",
-            saved && popped && "animate-pop",
-          )}
-        />
+        {transition ? (
+          <ViewTransition name={`heart-${productId}`} share="morph-mark" default="none">
+            {heart}
+          </ViewTransition>
+        ) : (
+          heart
+        )}
+        {pill ? <span>{saved ? "บันทึกแล้ว" : "บันทึก"}</span> : null}
         {burst > 0 && saved ? (
           <span key={burst} aria-hidden="true" className="heart-burst">
             {BURST.map(([x, y], i) => (

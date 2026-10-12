@@ -5,7 +5,7 @@ import { MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const pill =
+export const pillClass =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-foreground/20 px-5 text-base font-medium transition-colors hover:bg-muted active:scale-95 lg:min-h-10";
 
 const noop = () => () => {};
@@ -16,7 +16,22 @@ const pageUrl = () => window.location.origin + window.location.pathname;
  * - title: ชื่อที่ใส่ในข้อความที่แชร์ (เช่น ชื่อศาลหรือชื่อร้าน)
  * - ลิงก์ที่แชร์คือที่อยู่หน้าปัจจุบัน (ไม่รวม query) ไม่ใส่ข้อมูลส่วนตัวหรือตำแหน่งของใคร
  */
-export function ShareActions({ title, className }: { title: string; className?: string }) {
+export function ShareActions({
+  title,
+  className,
+  leading,
+  compact = false,
+  children,
+}: {
+  title: string;
+  className?: string;
+  /** ปุ่มที่ต่อหน้าปุ่มแชร์ในแถวเดียวกัน (เช่น บันทึก) */
+  leading?: React.ReactNode;
+  /** true = ปุ่ม LINE เหลือคำว่า "LINE" (ชื่อเต็มอยู่ใน aria-label) ให้กลุ่มปุ่มสั้นลงบนมือถือ */
+  compact?: boolean;
+  /** ปุ่มที่ต่อท้ายในแถวเดียวกัน (เช่น ดูตำแหน่งร้าน) */
+  children?: React.ReactNode;
+}) {
   // ฝั่งเซิร์ฟเวอร์ยังไม่รู้โดเมน จึงเป็นข้อความว่างก่อนแล้วเติมหลังโหลดหน้า
   const url = useSyncExternalStore(noop, pageUrl, () => "");
 
@@ -40,7 +55,8 @@ export function ShareActions({ title, className }: { title: string; className?: 
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <button type="button" onClick={share} className={pill}>
+      {leading}
+      <button type="button" onClick={share} className={pillClass}>
         <Share2 className="size-5" aria-hidden="true" />
         แชร์
       </button>
@@ -48,11 +64,13 @@ export function ShareActions({ title, className }: { title: string; className?: 
         href={`https://line.me/R/share?text=${encodeURIComponent(url ? `${title} ${url}` : title)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className={pill}
+        aria-label={compact ? "แชร์ทาง LINE" : undefined}
+        className={pillClass}
       >
         <MessageCircle className="size-5" aria-hidden="true" />
-        แชร์ทาง LINE
+        {compact ? "LINE" : "แชร์ทาง LINE"}
       </a>
+      {children}
     </div>
   );
 }

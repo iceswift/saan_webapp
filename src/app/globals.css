@@ -930,3 +930,143 @@ html.text-large .card-peek {
   animation: heart-burst 400ms var(--ease-out) both;
 }
 
+
+/* v6.2 orders: เส้นเวลาติดตามงานและช่วงเวลาชำระเงินสำเร็จ
+   สภาพเริ่มต้นของ CSS คือสภาพสุดท้ายที่ครบถ้วน; การเคลื่อนไหวทั้งหมดอยู่ใน no-preference */
+@keyframes track-pulse {
+  from { transform: scale(1); opacity: 0.55; }
+  to { transform: scale(1.9); opacity: 0; }
+}
+@keyframes moment-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes moment-rise {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* ลูปที่อนุญาตเพียงอย่างเดียวของหน้านี้: วงชาดที่จุด "ตอนนี้" เต้นช้า ๆ หยุดเมื่อเส้นเวลาพ้นจอ (data-paused) */
+  .track-now::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 9999px;
+    border: 2px solid var(--gold);
+    pointer-events: none;
+    animation: track-pulse 2.6s var(--ease-out) infinite;
+  }
+  [data-paused="true"] .track-now::after {
+    animation: none;
+    opacity: 0;
+  }
+  .track-moment {
+    animation: moment-in 250ms var(--ease-out) both;
+  }
+  .track-moment > div > * {
+    animation: moment-rise var(--dur-slow) var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 90ms + 120ms);
+  }
+}
+
+/* ---------- v6.2 product & transitions ----------
+   หน่วงการโผล่ของการ์ดในกริดตามคอลัมน์ (CardGrid ใส่ class ให้; <Reveal as="li"> ไม่ต้องใส่ i)
+   นับคอลัมน์ตามช่วงจอเดียวกับ COLS ใน page-layout.tsx: products 2 -> 3 (sm 40rem) -> 4 (lg 64rem),
+   products-side 2 -> 3 (sm) -> 4 (xl 80rem), cards 1 -> 2 (sm) -> 3 (lg), grid-reveal-3 (หน้าแรก) 2 -> 3 (sm) ค้างที่ 3
+   ตัวแปร --i ที่ตั้งตรงนี้ใช้กับ [data-reveal="in"] ด้านบน (หน่วง 70ms ต่อคอลัมน์) ไม่มี JS นับคอลัมน์ */
+.grid-reveal > * {
+  --i: 0;
+}
+.grid-reveal > :nth-child(2n) {
+  --i: 1;
+}
+@media (min-width: 40rem) {
+  .grid-reveal > :nth-child(n) {
+    --i: 0;
+  }
+  .grid-reveal > :nth-child(3n + 2) {
+    --i: 1;
+  }
+  .grid-reveal > :nth-child(3n + 3) {
+    --i: 2;
+  }
+}
+@media (min-width: 64rem) {
+  .grid-reveal:where(:not(.grid-reveal-side, .grid-reveal-cards, .grid-reveal-3)) > :nth-child(n) {
+    --i: 0;
+  }
+  .grid-reveal:where(:not(.grid-reveal-side, .grid-reveal-cards, .grid-reveal-3)) > :nth-child(4n + 2) {
+    --i: 1;
+  }
+  .grid-reveal:where(:not(.grid-reveal-side, .grid-reveal-cards, .grid-reveal-3)) > :nth-child(4n + 3) {
+    --i: 2;
+  }
+  .grid-reveal:where(:not(.grid-reveal-side, .grid-reveal-cards, .grid-reveal-3)) > :nth-child(4n + 4) {
+    --i: 3;
+  }
+}
+@media (min-width: 80rem) {
+  .grid-reveal-side > :nth-child(n) {
+    --i: 0;
+  }
+  .grid-reveal-side > :nth-child(4n + 2) {
+    --i: 1;
+  }
+  .grid-reveal-side > :nth-child(4n + 3) {
+    --i: 2;
+  }
+  .grid-reveal-side > :nth-child(4n + 4) {
+    --i: 3;
+  }
+}
+.grid-reveal-cards > :nth-child(n) {
+  --i: 0;
+}
+@media (min-width: 40rem) {
+  .grid-reveal-cards > :nth-child(2n) {
+    --i: 1;
+  }
+}
+@media (min-width: 64rem) {
+  .grid-reveal-cards > :nth-child(n) {
+    --i: 0;
+  }
+  .grid-reveal-cards > :nth-child(3n + 2) {
+    --i: 1;
+  }
+  .grid-reveal-cards > :nth-child(3n + 3) {
+    --i: 2;
+  }
+}
+
+/* แถบราคาติดใต้ส่วนหัวบนเดสก์ท็อป (หน้ารายละเอียดศาล): เลื่อนลงจากใต้เกาะส่วนหัวเมื่อรูปหลักพ้นจอ
+   สภาพซ่อน = ขยับขึ้น 0.5rem + จาง + inert (ไม่รับโฟกัส ไม่อยู่ในต้นไม้ a11y) สภาพโชว์ = ปกติ
+   ใช้โทเคนเวลา/เส้นโค้งเดิม ปิดเองเมื่อผู้ใช้ปิดการเคลื่อนไหว (บล็อก reduced-motion ด้านบนตัด transition ทั้งหมด) */
+.price-bar {
+  opacity: 0;
+  translate: 0 -0.5rem;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    translate var(--dur-base) var(--ease-out);
+}
+.price-bar[data-show="true"] {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
+/* ราวรูปสินค้า: เลื่อนจับเข้าช่อง (scroll-snap) ไม่มีแถบเลื่อน ปุ่มจุดบอกตำแหน่ง */
+.rail-dot > span {
+  transition:
+    width var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+/* องค์ประกอบร่วมของการเปลี่ยนหน้า: โลโก้ตัวอักษรร้าน (หน้าสินค้า -> หน้าร้าน) และหัวใจใช้คลาส morph-image เดิม
+   เฉพาะหัวใจ/โมโนแกรมเล็ก ๆ จึงใช้เวลาสั้นกว่ารูปหลักเล็กน้อย */
+::view-transition-group(.morph-mark) {
+  animation-duration: 340ms;
+  animation-timing-function: var(--ease-out);
+}
+

@@ -1,13 +1,14 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Wordmark } from "@/components/brand";
 import { CountUp } from "@/components/count-up";
 import { FlowSteps } from "@/components/flow-steps";
 import { HeroArt } from "@/components/hero-art";
 import { HERO_SEEN_COOKIE, HeroIntro } from "@/components/hero-intro";
+import { MobileSearch } from "@/components/header-search";
 import { LinkButton } from "@/components/link-button";
 import { ListGroup, ListRow } from "@/components/list-group";
 import { NotificationBell } from "@/components/notification-bell";
@@ -18,8 +19,6 @@ import { Rise } from "@/components/rise";
 import { HomeSkeleton } from "@/components/skeletons";
 import { TextLink } from "@/components/text-link";
 import { TrustNote } from "@/components/trust-note";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ServiceArt, ThumbArt, type ServiceArtName } from "@/components/visuals";
 import { type OrderType } from "@/lib/constants";
 import { formatBaht, formatShortDate } from "@/lib/format";
@@ -153,13 +152,16 @@ async function HomeContent() {
       <Rise className="lg:hidden">
         <header className="flex items-center justify-between">
           <Wordmark size="md" />
-          {user ? (
-            <NotificationBell userId={user.id} />
-          ) : (
-            <LinkButton href="/login" variant="outline" size="lg" className="min-h-11 px-5 text-base">
-              เข้าสู่ระบบ
-            </LinkButton>
-          )}
+          <div className="flex items-center gap-2">
+            <MobileSearch />
+            {user ? (
+              <NotificationBell userId={user.id} />
+            ) : (
+              <LinkButton href="/login" variant="outline" size="lg" className="min-h-11 px-5 text-base">
+                เข้าสู่ระบบ
+              </LinkButton>
+            )}
+          </div>
         </header>
       </Rise>
 
@@ -268,22 +270,9 @@ async function HomeContent() {
       )}
 
       <Rise i={2}>
-        <form action="/browse" method="get" role="search" className="relative mt-4 lg:hidden">
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            name="q"
-            type="search"
-            aria-label="ค้นหาศาลและบริการ"
-            placeholder="ค้นหาศาล เช่น ทรงไทย"
-            className="pr-28 pl-12"
-          />
-          <Button type="submit" className="absolute top-1/2 right-1 h-10 -translate-y-1/2 px-5 text-base">
-            ค้นหา
-          </Button>
-        </form>
+        <div className="mt-4 lg:hidden">
+          <MobileSearch variant="field" placeholder="ค้นหาศาล เช่น ทรงไทย" />
+        </div>
       </Rise>
 
       {/* บริการ: ซ้ายเป็นหัวข้อติดค้าง ขวาเป็นรายการเลขลำดับ คั่นด้วยเส้นบาง ไม่ใช้การ์ดเท่ากันสี่ใบ */}
@@ -333,9 +322,9 @@ async function HomeContent() {
               action={<TextLink href="/browse" className="max-sm:hidden">ดูทั้งหมด</TextLink>}
             />
           </Reveal>
-          <CardGrid cols="products" className="lg:grid-cols-3">
-            {newest.map((product, index) => (
-              <Reveal as="li" key={product.id} i={index % 3}>
+          <CardGrid cols="products" className="lg:grid-cols-3 grid-reveal-3">
+            {newest.map((product) => (
+              <Reveal as="li" key={product.id}>
                 <ProductCard product={product} />
               </Reveal>
             ))}

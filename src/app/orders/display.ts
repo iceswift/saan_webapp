@@ -69,3 +69,71 @@ export function truncateText(text: string, max: number): string {
   );
   return graphemes.length > max ? `${graphemes.slice(0, max).join("")}…` : text;
 }
+
+const whenFmt = new Intl.DateTimeFormat("th-TH", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Asia/Bangkok",
+});
+
+/** "อา. 18 ต.ค. 06:41 น." ใช้กับเวลานัดเข้างาน */
+export function formatWhen(iso: string): string {
+  const parts = whenFmt.formatToParts(new Date(iso));
+  const pick = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${pick("weekday")} ${pick("day")} ${pick("month")} ${pick("hour")}:${pick("minute")} น.`;
+}
+
+/** ขั้นที่ยังไม่เกิดบนเส้นเวลา (รายการแรกคือขั้นที่กำลังรอ) */
+export type TrackPending = { title: string; note?: string };
+
+/**
+ * ขั้นที่ลูกค้ากำลังรอและขั้นถัดไป ตามสถานะจริงของคำสั่ง
+ * ขั้นแรกคือ "ปัจจุบัน" ซึ่งตรงกับช่องที่กำลังเติมสีบน StatusLine (orderStepIndex)
+ */
+export function customerPending(
+  status: OrderStatus,
+  info: { scheduledAt: string | null; deposit: string },
+): TrackPending[] {
+  const confirm: TrackPending = { title: "ร้านยืนยันรับงาน", note: "ร้านจะนัดวันเข้างาน" };
+  const work: TrackPending = {
+    title: "ร้านเข้าทำงาน",
+    note: info.scheduledAt ? `นัด ${formatWhen(info.scheduledAt)}` : "ร้านจะแจ้งวันและเวลา",
+  };
+  const check: TrackPending = { title: "ตรวจรับงาน", note: "ดูงานแล้วจ่ายส่วนที่เหลือ" };
+  switch (status) {
+    case "AWAITING_DEPOSIT":
+      return [{ title: "จ่ายมัดจำ", note: `ยอด ${info.deposit}` }, confirm, { ...work, note: undefined }, check];
+    case "AWAITING_PROVIDER":
+      return [confirm, { ...work, note: undefined }, check];
+    case "CONFIRMED":
+      return [work, check];
+    case "DONE":
+      return [check];
+    default:
+      return [];
+  }
+}
+
+/** เหมือนกันแต่จากมุมมองร้าน (หน้า /provider/orders/[id]) */
+export function shopPending(status: OrderStatus, scheduledAt: string | null): TrackPending[] {
+  const confirm: TrackPending = { title: "ยืนยันรับงานและนัดวัน" };
+  const work: TrackPending = { title: "เข้าทำงานตามนัด", note: scheduledAt ? `นัด ${formatWhen(scheduledAt)}` : undefined };
+  const send: TrackPending = { title: "ส่งงาน" };
+  const check: TrackPending = { title: "ลูกค้าตรวจรับและจ่ายส่วนที่เหลือ" };
+  switch (status) {
+    case "AWAITING_DEPOSIT":
+      return [{ title: "ลูกค้าจ่ายมัดจำ" }, confirm, work, send, check];
+    case "AWAITING_PROVIDER":
+      return [confirm, work, send, check];
+    case "CONFIRMED":
+      return [work, send, check];
+    case "DONE":
+      return [check];
+    default:
+      return [];
+  }
+}

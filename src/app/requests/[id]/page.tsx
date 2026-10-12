@@ -36,13 +36,27 @@ function describe(request: RequestDetail): {
 } {
   const sent = request.quotes.filter((q) => q.status !== "DECLINED").length;
   if (request.status === "ACCEPTED") {
-    return { title: "คุณเลือกร้านแล้ว", detail: "จ่ายมัดจำที่หน้าคำสั่งซื้อ แล้วร้านจะนัดวันเข้างาน", tone: "good", step: FLOW.length };
+    return {
+      title: "คุณเลือกร้านแล้ว",
+      detail: "จ่ายมัดจำที่หน้าคำสั่งซื้อ แล้วร้านจะนัดวันเข้างาน",
+      tone: "good",
+      step: FLOW.length,
+    };
   }
   if (request.status === "CLOSED") {
-    return { title: "ปิดคำขอแล้ว", detail: "ร้านจะไม่เห็นคำขอนี้อีก", tone: "neutral" };
+    return {
+      title: "ปิดคำขอแล้ว",
+      detail: "ร้านจะไม่เห็นคำขอนี้อีก",
+      tone: "neutral",
+    };
   }
   if (request.quotes.length === 0) {
-    return { title: "รอร้านเสนอราคา", detail: "ใบเสนอราคาจะขึ้นที่หน้านี้เมื่อร้านตอบกลับ", tone: "wait", step: 1 };
+    return {
+      title: "รอร้านเสนอราคา",
+      detail: "ใบเสนอราคาจะขึ้นที่หน้านี้เมื่อร้านตอบกลับ",
+      tone: "wait",
+      step: 1,
+    };
   }
   return {
     title: `ได้รับใบเสนอราคา ${sent} ใบ เลือกร้านที่ต้องการ`,
@@ -60,7 +74,11 @@ function noteLines(note: string): string[] {
     .filter(Boolean);
 }
 
-export default async function RequestPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function RequestPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const user = await requireUser(`/requests/${id}`);
   const request = await getMyRequest(id, user.id);
@@ -71,16 +89,33 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
 
   // เรียงใบที่ยังเลือกได้ก่อน ราคาต่ำไปสูง แล้วตามด้วยใบที่ถูกเลือกหรือไม่ถูกเลือก
   const quotes = [...request.quotes].sort((a, b) => {
-    const rank = (q: QuoteDTO) => (q.status === "DECLINED" ? 2 : q.status === "ACCEPTED" ? 0 : 1);
+    const rank = (q: QuoteDTO) =>
+      q.status === "DECLINED" ? 2 : q.status === "ACCEPTED" ? 0 : 1;
     return rank(a) - rank(b) || a.price - b.price;
   });
   const comparable = quotes.filter((q) => q.status !== "DECLINED");
-  const lowest = comparable.length > 0 ? Math.min(...comparable.map((q) => q.price)) : null;
+  const lowest =
+    comparable.length > 0 ? Math.min(...comparable.map((q) => q.price)) : null;
   const compare = comparable.length > 1;
+  // สรุปเปรียบเทียบจากข้อมูลจริงเท่านั้น: ราคาต่ำสุด และคะแนนสูงสุดของร้านที่มีรีวิว
+  const cheapest = compare
+    ? comparable.find((q) => q.price === lowest)
+    : undefined;
+  const rated = comparable.filter((q) => q.provider.reviewCount > 0);
+  const topRated =
+    compare && rated.length > 0
+      ? rated.reduce((best, q) =>
+          (q.provider.rating ?? 0) > (best.provider.rating ?? 0) ? q : best,
+        )
+      : undefined;
 
   return (
     <AppShell width="full">
-      <PageHeader title={REQUEST_TYPES[request.type]} backHref="/orders" backLabel="งานของฉัน" />
+      <PageHeader
+        title={REQUEST_TYPES[request.type]}
+        backHref="/orders"
+        backLabel="งานของฉัน"
+      />
 
       <Rise>
         <StatusLine
@@ -91,7 +126,11 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
           step={status.step}
         >
           {request.orderId ? (
-            <LinkButton href={`/orders/${request.orderId}`} variant="gold" className="w-full sm:w-auto">
+            <LinkButton
+              href={`/orders/${request.orderId}`}
+              variant="gold"
+              className="w-full sm:w-auto"
+            >
               ดูคำสั่งซื้อ
             </LinkButton>
           ) : null}
@@ -117,25 +156,47 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
                   ))}
                 </div>
               ) : null}
-              <p className="text-base leading-relaxed whitespace-pre-line">{request.description}</p>
+              <p className="text-base leading-relaxed whitespace-pre-line">
+                {request.description}
+              </p>
               <dl className="flex flex-col border-y border-border text-base">
                 <div className="flex justify-between gap-6 border-b border-border py-3">
-                  <dt className="shrink-0 text-sm text-muted-foreground">พื้นที่</dt>
+                  <dt className="shrink-0 text-sm text-muted-foreground">
+                    พื้นที่
+                  </dt>
                   <dd className="text-right">{AREAS[request.area]}</dd>
                 </div>
                 <div className="flex justify-between gap-6 border-b border-border py-3">
-                  <dt className="shrink-0 text-sm text-muted-foreground">ที่อยู่</dt>
-                  <dd className="min-w-0 text-right break-words whitespace-pre-line">{request.address}</dd>
+                  <dt className="shrink-0 text-sm text-muted-foreground">
+                    ที่อยู่
+                  </dt>
+                  <dd className="min-w-0 text-right break-words whitespace-pre-line">
+                    {request.address}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-6 py-3">
-                  <dt className="shrink-0 text-sm text-muted-foreground">ส่งเมื่อ</dt>
-                  <dd className="numeric text-right">{formatShortDate(request.createdAt)}</dd>
+                  <dt className="shrink-0 text-sm text-muted-foreground">
+                    ส่งเมื่อ
+                  </dt>
+                  <dd className="numeric text-right">
+                    {formatShortDate(request.createdAt)}
+                  </dd>
                 </div>
               </dl>
               {request.location ? (
-                <ExpandableMap title="ดูหมุดที่คุณปักไว้" hint="ร้านที่รับงานจะเห็นหมุดนี้ ไม่แสดงให้คนอื่น" hasPin>
+                <ExpandableMap
+                  title="ดูหมุดที่คุณปักไว้"
+                  hint="ร้านที่รับงานจะเห็นหมุดนี้ ไม่แสดงให้คนอื่น"
+                  hasPin
+                >
                   <MapView
-                    markers={[{ ...request.location, tone: "customer", label: "ที่ตั้งศาล" }]}
+                    markers={[
+                      {
+                        ...request.location,
+                        tone: "customer",
+                        label: "ที่ตั้งศาล",
+                      },
+                    ]}
                     height="14rem"
                     zoom={15}
                     ariaLabel="แผนที่หมุดที่ตั้งศาลของคำขอ"
@@ -151,19 +212,49 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         {quotes.length === 0 ? (
           <EmptyState art="lotus" title="ยังไม่มีใบเสนอราคา" />
         ) : (
-          <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {quotes.map((quote) => (
-              <li key={quote.id} className={cn(quotes.length === 1 && "lg:col-span-2")}>
-                <QuoteCard
-                  quote={quote}
-                  canAccept={isOpen && quote.status === "SENT"}
-                  recommended={isOpen && quote.status === "SENT" && quote.price === lowest}
-                  compare={compare}
-                  lowest={lowest}
-                />
-              </li>
-            ))}
-          </ul>
+          <>
+            {cheapest ? (
+              <dl className="mb-4 flex flex-wrap gap-x-8 gap-y-2 rounded-2xl bg-muted px-5 py-3 text-base">
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-muted-foreground">ถูกที่สุด</dt>
+                  <dd className="numeric font-medium">
+                    {formatBaht(cheapest.price)}
+                  </dd>
+                </div>
+                {topRated ? (
+                  <div className="flex items-baseline gap-2">
+                    <dt className="text-muted-foreground">คะแนนสูงสุด</dt>
+                    <dd className="numeric font-medium">
+                      {(topRated.provider.rating ?? 0).toFixed(1)}
+                      <span className="ml-2 font-normal text-muted-foreground">
+                        {topRated.provider.name}
+                      </span>
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : null}
+            <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {quotes.map((quote) => (
+                <li
+                  key={quote.id}
+                  className={cn(quotes.length === 1 && "lg:col-span-2")}
+                >
+                  <QuoteCard
+                    quote={quote}
+                    canAccept={isOpen && quote.status === "SENT"}
+                    recommended={
+                      isOpen &&
+                      quote.status === "SENT" &&
+                      quote.price === lowest
+                    }
+                    compare={compare}
+                    lowest={lowest}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </TwoColumn>
     </AppShell>
@@ -188,17 +279,29 @@ function QuoteCard({
   const verified = provider.status === "VERIFIED";
   const declined = quote.status === "DECLINED";
   const lines = quote.note ? noteLines(quote.note) : [];
-  const extra = compare && lowest !== null && !declined && quote.price > lowest ? quote.price - lowest : 0;
+  const extra =
+    compare && lowest !== null && !declined && quote.price > lowest
+      ? quote.price - lowest
+      : 0;
 
   return (
-    <article className={cn("flex h-full flex-col gap-5 surface p-5", declined && "opacity-70")}>
+    <article
+      className={cn(
+        "flex h-full flex-col gap-5 surface p-5",
+        declined && "opacity-70",
+      )}
+    >
       <div className="flex items-center gap-3">
         <Monogram name={provider.name} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-base leading-snug font-medium">{provider.name}</p>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             {verified ? <VerifiedPill className="h-6 px-2.5" /> : null}
-            <Rating value={provider.rating} count={provider.reviewCount} size="sm" />
+            <Rating
+              value={provider.rating}
+              count={provider.reviewCount}
+              size="sm"
+            />
           </div>
         </div>
       </div>
@@ -211,7 +314,10 @@ function QuoteCard({
             : extra > 0
               ? `สูงกว่าต่ำสุด ${formatBaht(extra)} · `
               : ""}
-          มัดจำ {DEPOSIT_PCT}% <span className="numeric">{formatBaht(Math.round(quote.price * DEPOSIT_RATE))}</span>
+          มัดจำ {DEPOSIT_PCT}%{" "}
+          <span className="numeric">
+            {formatBaht(Math.round(quote.price * DEPOSIT_RATE))}
+          </span>
         </p>
       </div>
 
@@ -219,20 +325,32 @@ function QuoteCard({
         <ul className="flex flex-col gap-2 border-t border-border pt-4 text-base leading-relaxed">
           {lines.map((line) => (
             <li key={line} className="flex gap-3">
-              <span aria-hidden="true" className="mt-2.5 size-1.5 shrink-0 rounded-full bg-foreground/50" />
+              <span
+                aria-hidden="true"
+                className="mt-2.5 size-1.5 shrink-0 rounded-full bg-foreground/50"
+              />
               <span className="min-w-0 break-words">{line}</span>
             </li>
           ))}
         </ul>
       ) : lines.length === 1 ? (
-        <p className="border-t border-border pt-4 text-base leading-relaxed break-words">{lines[0]}</p>
+        <p className="border-t border-border pt-4 text-base leading-relaxed break-words">
+          {lines[0]}
+        </p>
       ) : null}
 
-      {quote.status === "ACCEPTED" ? <TonePill tone="good">เลือกแล้ว</TonePill> : null}
+      {quote.status === "ACCEPTED" ? (
+        <TonePill tone="good">เลือกแล้ว</TonePill>
+      ) : null}
       {declined ? <TonePill tone="neutral">ไม่ได้เลือก</TonePill> : null}
 
       <div className="mt-auto flex flex-col gap-1">
-        {canAccept ? <AcceptQuoteButton quoteId={quote.id} variant={recommended ? "gold" : "outline"} /> : null}
+        {canAccept ? (
+          <AcceptQuoteButton
+            quoteId={quote.id}
+            variant={recommended ? "gold" : "outline"}
+          />
+        ) : null}
         {verified ? (
           <Link
             href={`/shops/${provider.id}`}

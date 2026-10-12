@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
  * โผล่ขึ้นเบา ๆ เมื่อเลื่อนมาถึง (ใช้กับส่วนที่อยู่ต่ำกว่าจอแรก; ส่วนบนสุดของหน้าใช้ <Rise>)
  * - ไม่มี JavaScript หรือผู้ใช้ปิดการเคลื่อนไหว: เห็นเนื้อหาปกติทันที
  * - ส่วนที่อยู่ในจอตั้งแต่แรกจะไม่ถูกซ่อน (กันกระพริบ)
- * - i = ลำดับในกลุ่ม หน่วงทีละ 70ms (ใช้ i={index % 4} กับรายการยาว)
+ * - i = ลำดับในกลุ่ม หน่วงทีละ 70ms (ส่วนที่เรียงต่อกันในแนวตั้ง)
+ * - ไม่ใส่ i เมื่ออยู่ในกริดการ์ด: <CardGrid> ตั้ง --i ให้ตามคอลัมน์ด้วย CSS (nth-child ตามจำนวนคอลัมน์ของแต่ละช่วงจอ)
+ *   แถวแรกเลื่อนมาถึงก็ไล่ซ้ายไปขวา และไม่ต้องเดาจำนวนคอลัมน์ใน JS
  */
 export function Reveal({
   as: Tag = "div",
-  i = 0,
+  i,
   className,
   children,
 }: {
@@ -45,7 +47,7 @@ export function Reveal({
   }, []);
 
   return (
-    <Component ref={ref} className={cn(className)} style={{ "--i": i } as React.CSSProperties}>
+    <Component ref={ref} className={cn(className)} style={i === undefined ? undefined : ({ "--i": i } as React.CSSProperties)}>
       {children}
     </Component>
   );

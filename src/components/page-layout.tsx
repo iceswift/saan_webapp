@@ -108,6 +108,16 @@ const COLS = {
 } as const;
 
 /**
+ * v6.2: หน่วงการโผล่ของ <Reveal as="li"> (ไม่ใส่ i) ตามคอลัมน์ ไม่ใช่ตามลำดับรายการ (CSS: .grid-reveal* ใน globals.css)
+ * products = 2 -> 3 (sm) -> 4 (lg) | products-side = 2 -> 3 (sm) -> 4 (xl) | ถ้าแทนที่ด้วย lg:grid-cols-3 ใส่ className="grid-reveal-3"
+ */
+const REVEAL: Partial<Record<keyof typeof COLS, string>> = {
+  products: "grid-reveal",
+  "products-side": "grid-reveal grid-reveal-side",
+  cards: "grid-reveal grid-reveal-cards",
+};
+
+/**
  * กริดการ์ดที่ปรับจำนวนคอลัมน์ตามจอ ห่อลูกแต่ละตัวด้วย <li>
  * cols: "products" | "products-side" | "list" | "cards" | "tiles" (ดูความหมายที่ค่าคงที่ COLS)
  */
@@ -120,5 +130,5 @@ export function CardGrid({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <ul className={cn("grid gap-3 lg:gap-4", COLS[cols], className)}>{children}</ul>;
+  return <ul className={cn("grid gap-3 lg:gap-4", COLS[cols], REVEAL[cols], className)}>{children}</ul>;
 }

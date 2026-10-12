@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent } from "react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { Rise } from "@/components/rise";
 import { ExpandableMap } from "@/components/map/expandable-map";
 import { LocationPicker } from "@/components/map/location-picker";
 import { ThaiDateField } from "@/components/thai-date-field";
+import { FlashOnChange } from "@/components/track-flash";
 import { TrustNote } from "@/components/trust-note";
 import { ThumbArt } from "@/components/visuals";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ import {
   type AreaCode,
   type PlaceType,
 } from "@/lib/constants";
-import { formatBaht } from "@/lib/format";
+import { formatBaht, formatDateOnly } from "@/lib/format";
 import type { LatLng } from "@/lib/geo";
 import type { AddressDTO, ProductDetail } from "@/lib/types";
 import { createInstallOrder } from "@/server/actions/orders";
@@ -49,13 +51,36 @@ function firstLine(text: string): string {
   return text.split(/\r?\n/)[0] ?? text;
 }
 
-function SectionHeading({ n, children }: { n: number; children: React.ReactNode }) {
+/**
+ * หัวข้อส่วนของฟอร์ม: เมื่อกรอกครบแสดงเครื่องหมายถูกและสรุปหนึ่งบรรทัด
+ * (ไม่พับเนื้อหาส่วนที่ครบแล้ว เพื่อให้ช่องกรอกทุกช่องยังอยู่ในลำดับแท็บและโปรแกรมอ่านหน้าจอเสมอ)
+ */
+function SectionHeading({
+  n,
+  done = false,
+  recap,
+  children,
+}: {
+  n: number;
+  done?: boolean;
+  recap?: string;
+  children: React.ReactNode;
+}) {
   return (
     <h2 className="mt-10 mb-4 flex items-baseline gap-3 font-display text-xl font-medium text-balance lg:mt-12">
       <span aria-hidden="true" className="numeric text-base text-muted-foreground">
         {n}
       </span>
-      {children}
+      <span className="min-w-0">{children}</span>
+      {done ? (
+        <span className="ml-auto flex shrink-0 items-center gap-2 self-center font-sans text-sm font-normal text-muted-foreground">
+          {recap ? <span className="numeric max-w-[10rem] truncate max-sm:hidden">{recap}</span> : null}
+          <span className="animate-pop flex size-5 items-center justify-center rounded-full bg-foreground text-background">
+            <Check className="size-3" strokeWidth={3.5} aria-hidden="true" />
+            <span className="sr-only">กรอกครบแล้ว</span>
+          </span>
+        </span>
+      ) : null}
     </h2>
   );
 }
@@ -108,6 +133,7 @@ export function CheckoutForm({
   const [geo, setGeo] = useState<LatLng | null>(initialSaved?.location ?? null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Errors>({});
+  const [navigating, setNavigating] = useState(false);
 
   const chosen = product.packages.filter((p) => selected.includes(p.id));
   const total = product.price + chosen.reduce((sum, p) => sum + p.price, 0);
@@ -120,6 +146,8 @@ export function CheckoutForm({
   const area = matchedSaved?.area ?? chosenArea;
   const areaFixed = Boolean(matchedSaved) || providerAreas.length === 1;
   const canSave = trimmedAddress.length > 0 && !matchedSaved && area !== null;
+  const dateDone = date !== "";
+  const locationDone = trimmedAddress.length >= 5 && area !== null && place !== null;
 
   function clearError(key: keyof Errors) {
     setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
@@ -151,6 +179,8 @@ export function CheckoutForm({
       return;
     }
     const preferredDates = [...new Set([date, backupDate].filter((d) => d !== ""))];
+    // ตรวจผ่านแล้ว: เตรียมหน้างานของฉันไว้ก่อน หน้ารายละเอียดคำสั่งเตรียมทันทีที่รู้เลขที่
+    router.prefetch("/orders");
     startTransition(async () => {
       const res = await createInstallOrder({
         productId: product.id,
@@ -181,10 +211,14 @@ export function CheckoutForm({
           // ไม่ต้องแจ้งลูกค้า เพราะคำสั่งซื้อสำเร็จแล้ว
         }
       }
+      // ปุ่มคงสถานะกำลังยืนยันไว้จนกว่าจะเปลี่ยนหน้า (ไม่กระพริบกลับเป็นปุ่มปกติ)
+      setNavigating(true);
+      router.prefetch(`/orders/${res.data.orderId}`);
       router.push(`/orders/${res.data.orderId}`);
     });
   }
 
+  const busy = pending || navigating;
   const confirmLabel = `ยืนยันคำสั่งซื้อ · ${formatBaht(total)}`;
   const sectionOffset = product.packages.length > 0 ? 1 : 0;
 
@@ -193,8 +227,8 @@ export function CheckoutForm({
       width="full"
       desktopFooter="hide"
       footer={
-        <Button type="submit" form={FORM_ID} variant="gold" size="xl" loading={pending} className="w-full">
-          {pending ? "กำลังยืนยัน" : confirmLabel}
+        <Button type="submit" form={FORM_ID} variant="gold" size="xl" loading={busy} className="w-full">
+          {busy ? "กำลังยืนยัน" : confirmLabel}
         </Button>
       }
     >
@@ -220,13 +254,15 @@ export function CheckoutForm({
               <dl className="mt-4 flex flex-col gap-3 text-base">
                 <SummaryLine label="ค่าศาล" value={formatBaht(product.price)} />
                 {chosen.map((pkg) => (
-                  <SummaryLine key={pkg.id} label={pkg.name} value={formatBaht(pkg.price)} />
+                  <SummaryLine key={pkg.id} label={pkg.name} value={formatBaht(pkg.price)} flashOnMount />
                 ))}
               </dl>
 
               <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4">
                 <span className="text-base font-medium">ยอดรวม</span>
-                <PriceTicker amount={total} size="lg" />
+                <FlashOnChange value={total} className="-mx-2 px-2 py-0.5">
+                  <PriceTicker amount={total} size="lg" />
+                </FlashOnChange>
               </div>
 
               <div className="mt-4 flex flex-col gap-3 surface-quiet p-4">
@@ -234,7 +270,9 @@ export function CheckoutForm({
                   <span className="text-base font-medium">
                     จ่ายมัดจำ {Math.round(DEPOSIT_RATE * 100)}%
                   </span>
-                  <PriceTicker amount={deposit} size="md" emphasis />
+                  <FlashOnChange value={deposit} className="-mx-2 px-2 py-0.5">
+                    <PriceTicker amount={deposit} size="md" emphasis />
+                  </FlashOnChange>
                 </div>
                 <SummaryLine label="ส่วนที่เหลือ จ่ายเมื่อตรวจรับงาน" value={formatBaht(remaining)} />
               </div>
@@ -244,10 +282,10 @@ export function CheckoutForm({
                 form={FORM_ID}
                 variant="gold"
                 size="xl"
-                loading={pending}
+                loading={busy}
                 className="mt-5 hidden w-full lg:inline-flex"
               >
-                {pending ? "กำลังยืนยัน" : confirmLabel}
+                {busy ? "กำลังยืนยัน" : confirmLabel}
               </Button>
             </section>
 
@@ -269,7 +307,9 @@ export function CheckoutForm({
 
             {product.packages.length > 0 ? (
               <section>
-                <SectionHeading n={1}>เพิ่มพิธีและบริการ (ไม่บังคับ)</SectionHeading>
+                <SectionHeading n={1} done={selected.length > 0} recap={`เลือก ${selected.length} รายการ`}>
+                  เพิ่มพิธีและบริการ (ไม่บังคับ)
+                </SectionHeading>
                 <div className="flex flex-col gap-3 xl:grid xl:grid-cols-2">
                   {product.packages.map((pkg) => (
                     <ChoiceCard
@@ -292,7 +332,9 @@ export function CheckoutForm({
             ) : null}
 
             <section>
-              <SectionHeading n={1 + sectionOffset}>วันที่สะดวก</SectionHeading>
+              <SectionHeading n={1 + sectionOffset} done={dateDone} recap={dateDone ? formatDateOnly(date) : undefined}>
+                วันที่สะดวก
+              </SectionHeading>
               <div className="flex flex-col gap-5 xl:grid xl:grid-cols-2 xl:gap-4">
                 <div>
                   <Label htmlFor="date" className="mb-2 text-base">
@@ -338,7 +380,9 @@ export function CheckoutForm({
             </section>
 
             <section>
-              <SectionHeading n={2 + sectionOffset}>ที่ตั้งศาล</SectionHeading>
+              <SectionHeading n={2 + sectionOffset} done={locationDone} recap={locationDone && area ? AREAS[area] : undefined}>
+                ที่ตั้งศาล
+              </SectionHeading>
 
               {savedAddresses.length > 0 ? (
                 <div className="mb-6 flex flex-col gap-3">
@@ -491,11 +535,19 @@ export function CheckoutForm({
   );
 }
 
-function SummaryLine({ label, value }: { label: string; value: string }) {
+function SummaryLine({
+  label,
+  value,
+  flashOnMount = false,
+}: {
+  label: string;
+  value: string;
+  flashOnMount?: boolean;
+}) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <FlashOnChange onMount={flashOnMount} className="-mx-2 flex items-start justify-between gap-4 px-2 py-0.5">
       <dt className="min-w-0 text-muted-foreground">{label}</dt>
       <dd className="numeric shrink-0 font-medium">{value}</dd>
-    </div>
+    </FlashOnChange>
   );
 }

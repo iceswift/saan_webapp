@@ -14,9 +14,8 @@ import { TonePill } from "@/components/status-badge";
 import { AREAS, DEPOSIT_RATE, PAYMENT_METHODS, PAYMENT_STATUS, PLACE_TYPES, SHRINE_KINDS } from "@/lib/constants";
 import { formatBaht, formatDateOnly, formatPhone, formatShortDate } from "@/lib/format";
 import { mapsLink } from "@/lib/geo";
-import type { OrderDetail, OrderEventDTO, PaymentDTO, ReviewDTO } from "@/lib/types";
+import type { OrderDetail, PaymentDTO, ReviewDTO } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { formatShortDateTime } from "../display";
 
 const STAR_NUMBERS = [1, 2, 3, 4, 5] as const;
 
@@ -279,58 +278,6 @@ export function OpenAddressLink({ address }: { address: string }) {
         เปิดที่อยู่ในแผนที่
       </a>
     </div>
-  );
-}
-
-const EVENT_ROLE_LABEL = {
-  CUSTOMER: "คุณ",
-  PROVIDER: "ร้าน",
-  ADMIN: "ทีมงาน",
-  SYSTEM: "ระบบ",
-} as const;
-
-/** ความคืบหน้าที่เกิดขึ้นกับคำสั่ง: เส้นเวลาเรียบ ๆ จุดเล็ก ล่าสุดเป็นจุดชาด */
-export function OrderTimeline({ events }: { events: OrderEventDTO[] }) {
-  return (
-    <section>
-      <SectionTitle>ความคืบหน้า</SectionTitle>
-      <ol>
-        {events.map((event, index) => {
-          const last = index === events.length - 1;
-          return (
-            <li key={event.id} className={cn("relative flex gap-4", !last && "pb-6")}>
-              {last ? null : (
-                <span aria-hidden="true" className="absolute top-5 bottom-0 left-[0.3125rem] w-px bg-border" />
-              )}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "relative mt-2 size-2.5 shrink-0 rounded-full",
-                  last ? "bg-gold" : "bg-input",
-                )}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-base leading-snug font-medium">{event.title}</p>
-                {event.note ? <p className="mt-0.5 text-base text-muted-foreground">{event.note}</p> : null}
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {EVENT_ROLE_LABEL[event.byRole]} · {formatShortDateTime(event.createdAt)}
-                </p>
-                {event.photoUrl ? (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={event.photoUrl}
-                      alt={event.title}
-                      className="mt-3 max-h-64 w-full rounded-lg object-cover ring-1 ring-foreground/6 ring-inset"
-                    />
-                  </>
-                ) : null}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
   );
 }
 

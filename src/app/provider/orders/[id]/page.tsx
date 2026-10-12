@@ -7,6 +7,7 @@ import { Price } from "@/components/price";
 import { Rating } from "@/components/rating";
 import { Rise } from "@/components/rise";
 import { StatusLine } from "@/components/status-line";
+import { TrackTimeline, type TrackEvent } from "@/components/track-timeline";
 import { TonePill, type Tone } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Monogram } from "@/components/visuals";
@@ -28,6 +29,7 @@ import { requireUser } from "@/server/auth";
 import { getMyProvider, getOrder } from "@/server/queries";
 import { AdminNav } from "@/app/admin/admin-nav";
 import { loadAdminQueueCount } from "@/app/admin/nav-data";
+import { shopPending, formatShortDateTime } from "@/app/orders/display";
 import { dayParts, timeLabel } from "../../day-utils";
 import { loadProviderNavBadges } from "../../nav-data";
 import { ProviderNav } from "../../provider-nav";
@@ -109,6 +111,15 @@ export default async function OrderDetailPage({ params }: PageProps<"/provider/o
   }
 
   const sentence = statusSentence(order, depositPaid);
+  const upcoming = shopPending(order.status, order.scheduledAt);
+  const trackEvents: TrackEvent[] = order.events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    note: event.note || undefined,
+    photoUrl: event.photoUrl,
+    actor: EVENT_ROLE[event.byRole],
+    time: formatShortDateTime(event.createdAt),
+  }));
 
   const siteRows: { label: string; value: React.ReactNode }[] = [];
   if (order.scheduledAt) {
@@ -230,37 +241,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/provider/o
         </section>
       ) : null}
 
-      {order.events.length > 0 ? (
-        <section aria-labelledby="events-heading">
-          <h2 id="events-heading" className="mb-4 text-base font-medium">
-            ความคืบหน้า
-          </h2>
-          <ol className="ml-1 border-l border-border">
-            {order.events.map((event, i) => (
-              <li key={event.id} className={cn("relative pl-5", i < order.events.length - 1 && "pb-6")}>
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "absolute top-2 -left-[5px] size-2.5 rounded-full",
-                    i === order.events.length - 1 ? "bg-gold" : "bg-foreground",
-                  )}
-                />
-                <p className="text-base leading-snug font-medium">{event.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {EVENT_ROLE[event.byRole]} · {formatShortDate(event.createdAt)} {timeLabel(event.createdAt)}
-                </p>
-                {event.note ? <p className="mt-2 text-base whitespace-pre-line">{event.note}</p> : null}
-                {event.photoUrl ? (
-                  <div className="relative mt-3 aspect-video w-full max-w-xs overflow-hidden rounded-lg bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={event.photoUrl} alt="รูปความคืบหน้า" className="size-full object-cover" />
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
+      <section aria-labelledby="events-heading">
+        <h2 id="events-heading" className="mb-4 text-base font-medium">
+          ความคืบหน้า
+        </h2>
+        <TrackTimeline events={trackEvents} upcoming={upcoming} closed={cancelled ? "cancelled" : null} />
+      </section>
 
       {order.payments.length > 0 ? (
         <section aria-labelledby="payments-heading">

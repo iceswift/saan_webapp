@@ -59,15 +59,24 @@ export function StatusLine({
           }
           className="mt-4 flex gap-1"
         >
-          {steps?.map((label, i) => (
-            <span
-              key={label}
-              className={cn(
-                "h-1 flex-1 rounded-full transition-colors duration-300",
-                i < current ? "bg-primary" : i === current && tone !== "bad" ? "bg-gold" : "bg-border",
-              )}
-            />
-          ))}
+          {steps?.map((label, i) => {
+            const done = i < current;
+            const now = i === current && tone !== "bad";
+            return (
+              // v6.2: รางบาง ๆ + แถบเติมที่ขยายจากซ้ายไปขวา (scaleX) เมื่อสถานะเปลี่ยนจึงเห็นความคืบหน้าเดินไปข้างหน้า
+              // ใช้ transform ไม่ใช้ความกว้าง จึงไม่มีเลย์เอาต์ขยับ และสถานะสุดท้ายถูกต้องเสมอแม้ไม่มีแอนิเมชัน
+              <span key={label} className="relative h-1 flex-1 overflow-hidden rounded-full bg-border">
+                <span
+                  className={cn(
+                    "absolute inset-0 origin-left rounded-full transition-[transform,background-color] duration-500 ease-soft",
+                    done || now ? "scale-x-100" : "scale-x-0",
+                    done ? "bg-primary" : "bg-gold",
+                    now && "delay-150",
+                  )}
+                />
+              </span>
+            );
+          })}
         </div>
       ) : null}
       {children ? <div className="mt-4">{children}</div> : null}

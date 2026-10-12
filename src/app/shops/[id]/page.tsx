@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ViewTransition } from "react";
 import { notFound } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
@@ -96,11 +97,14 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
       <Rise>
         <CoverBand />
         <div className="-mt-9 flex flex-col gap-4 px-4 lg:flex-row lg:items-end lg:gap-6 lg:px-8">
-          <Monogram
-            name={monogramName(provider.name)}
-            size="lg"
-            className="border-4 border-background"
-          />
+          {/* ต่อกับโมโนแกรมในแถว "ร้านที่ขายศาลนี้" ของหน้าสินค้า (ชื่อเดียวกันต่อร้าน) */}
+          <ViewTransition name={`shop-${provider.id}`} share="morph-mark" default="none">
+            <Monogram
+              name={monogramName(provider.name)}
+              size="lg"
+              className="border-4 border-background"
+            />
+          </ViewTransition>
           <div className="flex min-w-0 flex-col gap-1.5 lg:pb-2">
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
               {verified ? (
@@ -170,8 +174,8 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
           <p className="text-base text-muted-foreground">ร้านนี้ยังไม่มีศาลที่เปิดขาย</p>
         ) : (
           <CardGrid cols="products">
-            {shop.products.map((product, index) => (
-              <Reveal as="li" key={product.id} i={index % 4}>
+            {shop.products.map((product) => (
+              <Reveal as="li" key={product.id}>
                 <ProductCard product={product} />
               </Reveal>
             ))}

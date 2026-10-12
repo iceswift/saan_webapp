@@ -3,16 +3,20 @@ import { notFound, redirect } from "next/navigation";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
 import { TwoColumn, SidePanel } from "@/components/page-layout";
 import { Rise } from "@/components/rise";
-import { StatusLine } from "@/components/status-line";
+import { LiveStatusLine, OrderLive } from "@/components/order-live";
+import { TrackTimeline, type TrackEvent } from "@/components/track-timeline";
+import { buttonVariants } from "@/components/ui/button";
+import { Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatBaht } from "@/lib/format";
 import type { OrderDetail } from "@/lib/types";
 import { requireUser } from "@/server/auth";
 import { IS_MOCK_PAYMENT } from "@/server/integrations";
 import { getOrder } from "@/server/queries";
-import { ORDER_FLOW_STEPS, orderStepIndex } from "../display";
+import { customerPending, formatShortDateTime, formatWhen, ORDER_FLOW_STEPS, orderStepIndex } from "../display";
 import {
   CancelOrderControl,
   CompleteOrderPanel,
-  OrderCelebrate,
   PayDepositPanel,
   ReviewForm,
 } from "./order-actions";
@@ -22,7 +26,6 @@ import {
   OrderDetails,
   OrderItems,
   OrderPayments,
-  OrderTimeline,
   ReviewView,
   ShopContact,
 } from "./order-sections";
@@ -30,23 +33,6 @@ import {
 export const metadata: Metadata = { title: "รายละเอียดคำสั่ง" };
 
 const QUICK_REPLIES = ["สอบถามรายละเอียดเพิ่มเติม", "ขอเลื่อนวันนัด", "ขอบคุณค่ะ/ครับ"];
-
-const whenFmt = new Intl.DateTimeFormat("th-TH", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "Asia/Bangkok",
-});
-
-/** "อา. 18 ต.ค. 06:41 น." */
-function whenText(iso: string): string {
-  const parts = whenFmt.formatToParts(new Date(iso));
-  const pick = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${pick("weekday")} ${pick("day")} ${pick("month")} ${pick("hour")}:${pick("minute")} น.`;
-}
 
 const STEP_LABELS = [...ORDER_FLOW_STEPS.map((s) => s.label)];
 
@@ -64,7 +50,7 @@ function describe(order: OrderDetail): {
       return { title: "รอร้านยืนยันและนัดวัน", detail: `จ่ายมัดจำแล้ว · ${shop}`, tone: "wait" };
     case "CONFIRMED":
       return {
-        title: order.scheduledAt ? `ร้านนัดเข้างาน ${whenText(order.scheduledAt)}` : "ร้านยืนยันแล้ว",
+        title: order.scheduledAt ? `ร้านนัดเข้างาน ${formatWhen(order.scheduledAt)}` : "ร้านยืนยันแล้ว",
         detail: order.scheduledAt ? shop : `${shop} จะแจ้งวันและเวลาอีกครั้ง`,
         tone: "info",
       };
@@ -88,6 +74,8 @@ function describe(order: OrderDetail): {
   }
 }
 
+const EVENT_ROLE_LABEL = { CUSTOMER: "คุณ", PROVIDER: "ร้าน", ADMIN: "ทีมงาน", SYSTEM: "ระบบ" } as const;
+
 export default async function OrderDetailPage({ params }: PageProps<"/orders/[id]">) {
   const { id } = await params;
   const user = await requireUser(`/orders/${id}`);
@@ -102,65 +90,127 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
     order.status === "DONE" ||
     (order.status === "COMPLETED" && order.review === null);
 
+  // เส้นเวลา: ขั้นที่ยังไม่เกิด (ตัวแรก = ขั้นปัจจุบัน ตรงกับช่องที่เติมใน StatusLine)
+  const upcoming = customerPending(order.status, {
+    scheduledAt: order.scheduledAt,
+    deposit: formatBaht(order.deposit),
+  });
+  const trackEvents: TrackEvent[] = order.events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    note: event.note || undefined,
+    photoUrl: event.photoUrl,
+    actor: EVENT_ROLE_LABEL[event.byRole],
+    time: formatShortDateTime(event.createdAt),
+  }));
+
+  // สถานะที่แสดงทันทีหลังทำรายการสำเร็จ (ก่อนข้อมูลจริงจากเซิร์ฟเวอร์มาถึง ซึ่งจะเข้ามาแทนเอง)
+  const shop = order.provider.name;
+  const after = {
+    deposit: {
+      title: "รอร้านยืนยันและนัดวัน",
+      detail: `จ่ายมัดจำแล้ว · ${shop}`,
+      tone: "wait" as const,
+      steps: STEP_LABELS,
+      step: 1,
+    },
+    complete: {
+      title: "งานเสร็จสมบูรณ์",
+      detail: `ขอบคุณที่ใช้บริการ ${shop}`,
+      tone: "good" as const,
+      steps: STEP_LABELS,
+      step: STEP_LABELS.length,
+    },
+  };
+
   return (
     <AppShell width="full">
-      <OrderCelebrate />
-      <PageHeader eyebrow={`เลขที่ ${order.code}`} title={order.title} backHref="/orders" backLabel="งานของฉัน" />
+      <OrderLive sig={order.status}>
+        <PageHeader eyebrow={`เลขที่ ${order.code}`} title={order.title} backHref="/orders" backLabel="งานของฉัน" />
 
-      {/* เดสก์ท็อป: การกระทำถัดไปอยู่ในแผงขวาที่ติดค้าง (ยอดเงิน ปุ่ม ร้าน) มือถือ: อยู่ใต้บรรทัดสถานะ */}
-      <TwoColumn
-        asideOn="hide"
-        aside={
-          <SidePanel>
-            <div className="flex flex-col gap-5">
-              <NextAction order={order} />
-              {order.status !== "AWAITING_DEPOSIT" && order.status !== "DONE" ? (
-                <MoneyRows order={order} withTotal />
-              ) : null}
-              <div className="border-t border-border pt-4">
-                <ShopContact order={order} />
+        {/* เดสก์ท็อป: การกระทำถัดไปอยู่ในแผงขวาที่ติดค้าง (ยอดเงิน ปุ่ม ร้าน) มือถือ: อยู่ใต้บรรทัดสถานะ */}
+        <TwoColumn
+          asideOn="hide"
+          aside={
+            <SidePanel>
+              <div className="flex flex-col gap-5">
+                <NextAction order={order} />
+                {order.status !== "AWAITING_DEPOSIT" && order.status !== "DONE" ? (
+                  <MoneyRows order={order} withTotal />
+                ) : null}
+                <div className="border-t border-border pt-4">
+                  <ShopContact order={order} />
+                </div>
               </div>
+            </SidePanel>
+          }
+        >
+          <Rise>
+            <LiveStatusLine
+              actual={{
+                title: status.title,
+                detail: status.detail,
+                tone: status.tone,
+                steps: stepIndex === null ? undefined : STEP_LABELS,
+                step: stepIndex ?? undefined,
+              }}
+              after={after}
+            >
+              {/* ติดตามงาน (มือถือ): ขั้นที่กำลังรอ เวลานัด และปุ่มโทรหาร้านในที่เดียว (เดสก์ท็อปอยู่ในแผงขวา) */}
+              {upcoming.length > 0 ? (
+                <div className="flex items-center gap-3 border-t border-border pt-4 lg:hidden">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-muted-foreground">ติดตามงาน · ขั้นตอนตอนนี้</p>
+                    <p className="text-base leading-snug font-medium">{upcoming[0].title}</p>
+                  </div>
+                  <a
+                    href={`tel:${order.provider.phone}`}
+                    className={cn(buttonVariants({ variant: "outline", size: "xl" }), "shrink-0 px-5")}
+                  >
+                    <Phone />
+                    โทรหาร้าน
+                  </a>
+                </div>
+              ) : null}
+            </LiveStatusLine>
+          </Rise>
+
+          {hasAction || order.status === "AWAITING_PROVIDER" ? (
+            <div className="mt-6 lg:hidden">
+              <NextAction order={order} />
             </div>
-          </SidePanel>
-        }
-      >
-        <Rise>
-          <StatusLine
-            title={status.title}
-            detail={status.detail}
-            tone={status.tone}
-            steps={stepIndex === null ? undefined : STEP_LABELS}
-            step={stepIndex ?? undefined}
-          />
-        </Rise>
+          ) : null}
 
-        {hasAction || order.status === "AWAITING_PROVIDER" ? (
-          <div className="mt-6 lg:hidden">
-            <NextAction order={order} />
-          </div>
-        ) : null}
+          {order.review ? (
+            <section>
+              <SectionTitle>รีวิวของคุณ</SectionTitle>
+              <ReviewView review={order.review} />
+            </section>
+          ) : null}
 
-        {order.review ? (
           <section>
-            <SectionTitle>รีวิวของคุณ</SectionTitle>
-            <ReviewView review={order.review} />
+            <SectionTitle>ติดตามงาน</SectionTitle>
+            <TrackTimeline
+              events={trackEvents}
+              upcoming={upcoming}
+              closed={order.status === "CANCELLED" ? "cancelled" : null}
+            />
           </section>
-        ) : null}
 
-        <OrderItems order={order} />
+          <OrderItems order={order} />
 
-        <OrderChat
-          orderId={order.id}
-          messages={order.messages}
-          disabled={order.status === "CANCELLED"}
-          counterpartLabel="ร้าน"
-          quickReplies={QUICK_REPLIES}
-        />
+          <OrderChat
+            orderId={order.id}
+            messages={order.messages}
+            disabled={order.status === "CANCELLED"}
+            counterpartLabel="ร้าน"
+            quickReplies={QUICK_REPLIES}
+          />
 
-        <OrderTimeline events={order.events} />
-        <OrderDetails order={order} />
-        <OrderPayments payments={order.payments} />
-      </TwoColumn>
+          <OrderDetails order={order} />
+          <OrderPayments payments={order.payments} />
+        </TwoColumn>
+      </OrderLive>
     </AppShell>
   );
 }

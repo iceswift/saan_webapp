@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
  * - children: เนื้อหาในแผ่น ใส่ปุ่มหลักได้ 1 ปุ่ม ปุ่มปิดมีให้แล้ว
  * - open / onOpenChange: ควบคุมจากภายนอก (เช่น ปฏิทินที่ปิดเองเมื่อเลือกวัน)
  * - stagger: เนื้อหาย่อยโผล่ขึ้นทีละกลุ่มตอนเปิด (ใส่ style={{"--i": n}} ที่ลูกเพื่อกำหนดลำดับ)
- * - maxWidth: ความกว้างสูงสุดของแผ่นบนมือถือ (ค่าเริ่มต้น max-w-md)
+ * - tall: แผ่นสูงเกือบเต็มจอบนมือถือ (ใช้กับช่องค้นหา) เนื้อหาในแผ่นยืดเต็มและเลื่อนเองได้ (ลูกควรมี min-h-0 + overflow เอง)
+ * - initialFocus: ref ของช่องที่ควรได้โฟกัสตอนเปิด (ค่าเริ่มต้นคือปุ่มแรกในแผ่น = ปุ่มปิด)
  */
 export function BottomSheet({
   trigger,
@@ -29,6 +30,8 @@ export function BottomSheet({
   open,
   onOpenChange,
   stagger = false,
+  tall = false,
+  initialFocus,
 }: {
   trigger?: React.ReactNode;
   triggerClassName?: string;
@@ -40,6 +43,8 @@ export function BottomSheet({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   stagger?: boolean;
+  tall?: boolean;
+  initialFocus?: React.RefObject<HTMLElement | null>;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -54,8 +59,12 @@ export function BottomSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
+        initialFocus={initialFocus}
         className={cn(
-          "mx-auto max-h-[88dvh] max-w-md gap-0 overflow-y-auto rounded-t-3xl border-t border-border px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]",
+          tall
+            ? "mx-auto max-h-[94dvh] max-w-md gap-0 data-[side=bottom]:h-[94dvh] max-lg:overflow-hidden"
+            : "mx-auto max-h-[88dvh] max-w-md gap-0 overflow-y-auto",
+          "rounded-t-3xl border-t border-border px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]",
           // เดสก์ท็อป: กลายเป็นกล่องโต้ตอบกลางจอ (จัดกึ่งกลางด้วย inset-0 + m-auto ไม่ใช้ translate จึงไม่ชนกับแอนิเมชัน)
           "lg:data-[side=bottom]:inset-0 lg:data-[side=bottom]:h-fit lg:data-[side=bottom]:max-h-[85dvh] lg:data-[side=bottom]:w-full lg:data-[side=bottom]:max-w-lg lg:data-[side=bottom]:overflow-y-auto lg:data-[side=bottom]:rounded-3xl lg:data-[side=bottom]:border lg:data-[side=bottom]:p-7 lg:data-[side=bottom]:m-auto",
         )}
@@ -76,7 +85,9 @@ export function BottomSheet({
           </SheetClose>
         </div>
         {children ? (
-          <div className={cn("mt-5 flex flex-col gap-4", stagger && "sheet-stagger")}>{children}</div>
+          <div className={cn("mt-5 flex flex-col gap-4", tall && "min-h-0 flex-1", stagger && "sheet-stagger")}>
+            {children}
+          </div>
         ) : null}
       </SheetContent>
     </Sheet>

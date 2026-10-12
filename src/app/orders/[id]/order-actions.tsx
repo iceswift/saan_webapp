@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Check, Star } from "lucide-react";
-import { BottomSheet } from "@/components/bottom-sheet";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
 import { ImageUpload } from "@/components/image-upload";
 import { PriceTicker } from "@/components/price-ticker";
-import { SuccessMark } from "@/components/success-mark";
+import { useOrderLive } from "@/components/order-live";
 import { TrustNote } from "@/components/trust-note";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -21,41 +20,6 @@ import { cancelOrder, confirmCompletion, payDeposit, submitReview } from "@/serv
 const METHODS: PaymentMethod[] = ["PROMPTPAY", "CARD"];
 const STARS = [1, 2, 3, 4, 5] as const;
 const RATING_WORDS = ["", "ยังไม่ประทับใจ", "พอใช้", "ดี", "ดีมาก", "ดีเยี่ยม"] as const;
-
-/* ---- ข้อความสำเร็จ ----
- * หลังทำรายการสำเร็จ หน้าจะโหลดใหม่และแผงที่กดอยู่หายไป จึงส่งเหตุการณ์ไปให้ <OrderCelebrate/>
- * ที่อยู่คงที่ในหน้าเป็นคนแสดงเครื่องหมายสำเร็จ */
-const EVENT = "saan:order-success";
-type Success = { title: string; text: string };
-
-function announce(detail: Success) {
-  window.dispatchEvent(new CustomEvent<Success>(EVENT, { detail }));
-}
-
-export function OrderCelebrate() {
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState<Success | null>(null);
-
-  useEffect(() => {
-    function onSuccess(e: Event) {
-      setMessage((e as CustomEvent<Success>).detail);
-      setOpen(true);
-    }
-    window.addEventListener(EVENT, onSuccess);
-    return () => window.removeEventListener(EVENT, onSuccess);
-  }, []);
-
-  return (
-    <BottomSheet open={open} onOpenChange={setOpen} title={message?.title ?? "สำเร็จ"} description={message?.text}>
-      <div className="flex flex-col items-center gap-5">
-        <SuccessMark className="size-24" />
-        <Button type="button" size="xl" className="w-full" onClick={() => setOpen(false)}>
-          ตกลง
-        </Button>
-      </div>
-    </BottomSheet>
-  );
-}
 
 function PaymentMethodPicker({
   value,
@@ -114,6 +78,7 @@ export function PayDepositPanel({
 }) {
   const [method, setMethod] = useState<PaymentMethod>("PROMPTPAY");
   const [pending, startTransition] = useTransition();
+  const { celebrate } = useOrderLive();
 
   function pay() {
     startTransition(async () => {
@@ -122,7 +87,13 @@ export function PayDepositPanel({
         toast.error(res.error);
         return;
       }
-      announce({ title: "จ่ายมัดจำแล้ว", text: "รอร้านยืนยันคำสั่งและนัดวัน" });
+      celebrate({
+        key: "deposit",
+        title: "ชำระมัดจำแล้ว",
+        text: "ร้านจะยืนยันรับงานเร็วๆ นี้",
+        amount,
+        mock: isMock,
+      });
     });
   }
 
@@ -150,6 +121,7 @@ export function CompleteOrderPanel({
 }) {
   const [method, setMethod] = useState<PaymentMethod>("PROMPTPAY");
   const [pending, startTransition] = useTransition();
+  const { celebrate } = useOrderLive();
 
   function complete() {
     startTransition(async () => {
@@ -158,7 +130,12 @@ export function CompleteOrderPanel({
         toast.error(res.error);
         return;
       }
-      announce({ title: "ตรวจรับงานแล้ว", text: "ขอบคุณที่ใช้ Saan" });
+      celebrate({
+        key: "complete",
+        title: "ตรวจรับงานแล้ว",
+        text: "งานนี้เสร็จสมบูรณ์ ขอบคุณที่ใช้ Saan",
+        ...(balance > 0 ? { amount: balance, mock: isMock } : {}),
+      });
     });
   }
 
@@ -218,6 +195,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const { celebrate } = useOrderLive();
   // หน้าลูกค้าบนเดสก์ท็อปแสดงแบบฟอร์มนี้ได้สองชุด (มือถือกับแผงข้าง) จึงต้องมี id ไม่ซ้ำ
   const commentId = useId();
   const ratingHint = useId();
@@ -235,7 +213,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
         toast.error(res.error);
         return;
       }
-      announce({ title: "ขอบคุณสำหรับรีวิว", text: "ความเห็นของคุณช่วยให้ลูกค้าท่านอื่นเลือกร้านได้" });
+      celebrate({ title: "ขอบคุณสำหรับรีวิว", text: "ความเห็นของคุณช่วยให้ลูกค้าท่านอื่นเลือกร้านได้" });
     });
   }
 
