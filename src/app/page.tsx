@@ -1,8 +1,13 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Wordmark } from "@/components/brand";
+import { CountUp } from "@/components/count-up";
+import { FlowSteps } from "@/components/flow-steps";
+import { HeroArt } from "@/components/hero-art";
+import { HERO_SEEN_COOKIE, HeroIntro } from "@/components/hero-intro";
 import { LinkButton } from "@/components/link-button";
 import { ListGroup, ListRow } from "@/components/list-group";
 import { NotificationBell } from "@/components/notification-bell";
@@ -15,7 +20,7 @@ import { TextLink } from "@/components/text-link";
 import { TrustNote } from "@/components/trust-note";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ServiceArt, ShrineImage, ThumbArt, type ServiceArtName } from "@/components/visuals";
+import { ServiceArt, ThumbArt, type ServiceArtName } from "@/components/visuals";
 import { type OrderType } from "@/lib/constants";
 import { formatBaht, formatShortDate } from "@/lib/format";
 import type { OrderSummary } from "@/lib/types";
@@ -128,6 +133,7 @@ export default function HomePage() {
 
 async function HomeContent() {
   const user = await getCurrentUser();
+  const heroSeen = (await cookies()).get(HERO_SEEN_COOKIE)?.value === "1";
   const [orders, shrines, products] = await Promise.all([
     user ? listMyOrders(user.id) : Promise.resolve([] as OrderSummary[]),
     user ? listMyShrines(user.id) : Promise.resolve([]),
@@ -135,6 +141,9 @@ async function HomeContent() {
   ]);
   const ongoing = orders.filter((o) => o.status !== "COMPLETED" && o.status !== "CANCELLED").slice(0, 3);
   const newest = products.slice(0, 6);
+  // ตัวเลขจริงจากข้อมูลที่หน้านี้อ่านอยู่แล้ว (listProducts คืนเฉพาะศาลที่เปิดขายของร้านที่ตรวจสอบแล้ว) ร้านน้อยกว่า 2 ร้านไม่แสดงเพราะดูเหมือนโอ้อวด
+  const shopCount = new Set(products.map((p) => p.provider.id)).size;
+  const showCounts = shopCount >= 2;
   const [primary] = SERVICES;
   // ผู้ใช้ที่มีงานค้าง เริ่มที่งานของตัวเอง ผู้เยี่ยมชมและคนที่ไม่มีงานค้างเห็นหน้าแนะนำ
   const returning = ongoing.length > 0;
@@ -162,7 +171,7 @@ async function HomeContent() {
               className="mb-4 lg:mb-5"
               action={<TextLink href="/orders">ดูทั้งหมด</TextLink>}
             />
-            <ListGroup>
+            <ListGroup className="stagger-rise">
               {ongoing.map((order) => {
                 const next = nextAction(order);
                 return (
@@ -191,18 +200,32 @@ async function HomeContent() {
           </section>
         </Rise>
       ) : (
-        <Rise i={1}>
-          <section className="mt-5 overflow-hidden surface-hero p-6 lg:mt-0 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-x-12 lg:py-14 lg:pr-14 lg:pl-14 xl:gap-x-16 xl:py-16 xl:pr-20 xl:pl-20">
-            <div className="lg:col-start-1 lg:row-start-1">
-              {user?.name ? <p className="eyebrow">สวัสดี {user.name}</p> : null}
-              <h1 className="mt-2 font-display text-[2.25rem] leading-[1.2] font-normal text-balance sm:text-5xl lg:mt-4 lg:text-[3rem] lg:leading-[1.15] xl:text-[4rem] xl:leading-[1.12]">
-                ดูแลเรื่องศาล
-                <span className="block text-muted-foreground">ครบจบในที่เดียว</span>
-              </h1>
-              <p className="mt-4 max-w-md text-base text-muted-foreground lg:mt-6 lg:max-w-lg lg:text-lg">
-                ค้นหาศาล ช่างฝีมือ พิธีกรรม และร้านค้าที่ผ่านการตรวจสอบ พร้อมราคาที่เห็นชัดก่อนตัดสินใจ
+        <HeroIntro
+          seen={heroSeen}
+          className="mt-5 overflow-hidden surface-hero p-6 lg:mt-0 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-x-12 lg:py-14 lg:pr-14 lg:pl-14 xl:gap-x-16 xl:py-16 xl:pr-20 xl:pl-20"
+        >
+          <div className="lg:col-start-1 lg:row-start-1">
+            {user?.name ? (
+              <p className="eyebrow hero-fade" style={{ "--h": 0 } as React.CSSProperties}>
+                สวัสดี {user.name}
               </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-9">
+            ) : null}
+            <h1 className="mt-2 font-display text-[2.25rem] leading-[1.2] font-normal text-balance sm:text-5xl lg:mt-4 lg:text-[3rem] lg:leading-[1.15] xl:text-[4rem] xl:leading-[1.12]">
+              <span className="hero-line" style={{ "--h": 60 } as React.CSSProperties}>
+                <span>ดูแลเรื่องศาล</span>
+              </span>
+              <span className="hero-line text-muted-foreground" style={{ "--h": 150 } as React.CSSProperties}>
+                <span>ครบจบในที่เดียว</span>
+              </span>
+            </h1>
+            <p
+              className="hero-fade mt-4 max-w-md text-base text-muted-foreground lg:mt-6 lg:max-w-lg lg:text-lg"
+              style={{ "--h": 270 } as React.CSSProperties}
+            >
+              ค้นหาศาล ช่างฝีมือ พิธีกรรม และร้านค้าที่ผ่านการตรวจสอบ พร้อมราคาที่เห็นชัดก่อนตัดสินใจ
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-9">
+              <div className="hero-fade" style={{ "--h": 340 } as React.CSSProperties}>
                 <LinkButton href={primary.href} variant="gold" className="group/cta w-full sm:w-auto">
                   {primary.title}
                   <ArrowRight
@@ -210,26 +233,38 @@ async function HomeContent() {
                     className="transition-transform duration-200 ease-soft group-hover/cta:translate-x-1"
                   />
                 </LinkButton>
-                <LinkButton href="/browse" variant="outline" className="hidden sm:inline-flex">
+              </div>
+              <div className="hero-fade hidden sm:block" style={{ "--h": 400 } as React.CSSProperties}>
+                <LinkButton href="/browse" variant="outline">
                   เลือกดูศาลทั้งหมด
                 </LinkButton>
               </div>
             </div>
-            {/* ภาพหลัก: ฉากศาลในกรอบซุ้มโค้ง (รูปทรงเดียวกับโลโก้) มีป้าย "ภาพประกอบ" กำกับเพราะยังไม่ใช่รูปถ่ายจริง */}
-            <div className="mt-8 flex justify-center lg:col-start-2 lg:row-start-1 lg:mt-0 [.text-large_&]:max-lg:hidden">
-              <ShrineImage
-                src={null}
-                alt="ภาพประกอบศาลพระภูมิ"
-                kind="PHRA_PHUM"
-                seed="home-hero"
-                arch
-                flush
-                showCaption
-                className="[--arch-r:7rem] h-60 w-56 sm:h-72 sm:w-64 lg:h-[24rem] lg:w-[19rem] xl:h-[29rem] xl:w-[23rem]"
-              />
-            </div>
-          </section>
-        </Rise>
+            {showCounts ? (
+              <dl
+                className="hero-fade mt-8 flex gap-x-10 border-t border-border pt-5 lg:mt-12"
+                style={{ "--h": 440 } as React.CSSProperties}
+              >
+                <div className="flex flex-col-reverse">
+                  <dt className="text-sm text-muted-foreground">ร้านที่ผ่านการตรวจสอบ</dt>
+                  <dd className="numeric font-display text-[1.75rem] leading-snug font-normal">
+                    <CountUp value={shopCount} duration={700} /> <span className="text-base text-muted-foreground">ร้าน</span>
+                  </dd>
+                </div>
+                <div className="flex flex-col-reverse">
+                  <dt className="text-sm text-muted-foreground">ศาลที่เปิดขายตอนนี้</dt>
+                  <dd className="numeric font-display text-[1.75rem] leading-snug font-normal">
+                    <CountUp value={products.length} duration={700} /> <span className="text-base text-muted-foreground">แบบ</span>
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
+          </div>
+          {/* ภาพหลัก: ฉากศาลในกรอบซุ้มโค้ง (รูปทรงเดียวกับโลโก้) เป็นภาพวาดล้วน ไม่ใช่รูปถ่ายสินค้า */}
+          <div className="mt-10 flex justify-center lg:col-start-2 lg:row-start-1 lg:mt-0 [.text-large_&]:max-lg:hidden">
+            <HeroArt className="w-56 sm:w-64 lg:w-[19rem] xl:w-[23rem]" />
+          </div>
+        </HeroIntro>
       )}
 
       <Rise i={2}>
@@ -316,17 +351,7 @@ async function HomeContent() {
         <Reveal>
           <Heading index="03" title="จากเลือกศาลถึงตรวจรับงาน" className="mb-6 lg:mb-9" />
         </Reveal>
-        <ol className="grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
-          {STEPS.map((step, index) => (
-            <Reveal as="li" key={step.title} i={index} className="border-t border-foreground pt-4">
-              <span className="numeric font-display text-4xl leading-none font-normal">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <p className="mt-4 font-display text-xl leading-snug font-medium">{step.title}</p>
-              <p className="mt-1.5 text-base text-muted-foreground">{step.text}</p>
-            </Reveal>
-          ))}
-        </ol>
+        <FlowSteps steps={STEPS} />
       </section>
 
       {/* ความมั่นใจ: คำมั่นจริงของระบบ (ไม่มีตัวเลขสถิติ) */}

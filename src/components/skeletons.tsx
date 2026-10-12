@@ -17,16 +17,28 @@ export function HeaderSkeleton({ className }: { className?: string }) {
   );
 }
 
-/** การ์ดศาลหนึ่งใบ (รูปเต็มขอบ ประเภท ชื่อ พื้นที่ ราคา) */
+/**
+ * การ์ดศาลหนึ่งใบ: รูปทรงเท่ากับ ProductCard เป๊ะ (รูป aspect เดียวกัน ขอบ 1px ช่องไฟเท่ากัน
+ * ประเภท h-6, ชื่อ min-h-12 (2 บรรทัด), พื้นที่ min-h-6, ราคา h-9) ตอนข้อมูลมาจึงไม่มีอะไรขยับ
+ */
 export function ProductCardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("flex h-full flex-col overflow-hidden surface", className)} aria-hidden="true">
       <Skeleton className="aspect-4/3 w-full rounded-none sm:aspect-square" />
-      <div className="flex flex-col gap-2 p-3.5 lg:p-4">
-        <Skeleton className="h-4 w-1/3 rounded-full" />
-        <Skeleton className="h-5 w-4/5 rounded-full" />
-        <Skeleton className="h-4 w-2/5 rounded-full" />
-        <Skeleton className="mt-2 h-6 w-20 rounded-full" />
+      <div className="flex flex-1 flex-col gap-0.5 p-3.5 lg:p-4">
+        <div className="flex h-6 items-center">
+          <Skeleton className="h-4 w-1/3 rounded-full" />
+        </div>
+        <div className="flex min-h-12 flex-col justify-center gap-2">
+          <Skeleton className="h-4 w-4/5 rounded-full" />
+          <Skeleton className="h-4 w-3/5 rounded-full" />
+        </div>
+        <div className="flex min-h-6 items-center">
+          <Skeleton className="h-4 w-2/5 rounded-full" />
+        </div>
+        <div className="mt-auto flex h-9 items-end pb-0.5">
+          <Skeleton className="h-6 w-20 rounded-full" />
+        </div>
       </div>
     </div>
   );

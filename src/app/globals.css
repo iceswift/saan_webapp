@@ -683,3 +683,250 @@ button.surface[aria-pressed="true"] > span[aria-hidden="true"]:last-child:not(:o
     animation: none !important;
   }
 }
+
+/* ---------- v6.1: หน้าแรก (hero) การ์ดศาล และหัวใจ ----------
+   ทุกอย่างในหัวข้อนี้เป็นของตกแต่งการเคลื่อนไหว: สภาพเริ่มต้นของ CSS คือสภาพสุดท้ายที่ครบถ้วน
+   ฉากเปิด/ลูปอยู่ใน @media (prefers-reduced-motion: no-preference) ทั้งหมด ผู้ใช้ที่ปิดการเคลื่อนไหวเห็นภาพนิ่งปกติ */
+
+/* ชั้นของภาพ hero ขยับตามเมาส์ผ่านตัวแปร --px/--py (HeroStage ตั้งให้เฉพาะเดสก์ท็อปที่มีเมาส์) ใช้คุณสมบัติ translate
+   เพื่อไม่ชนกับ transform ของฉากเปิด ชั้นไกล (l1) ขยับน้อย ชั้นใกล้ (l5) ขยับมาก ทิศตรงข้ามกับเมาส์ */
+.hero-layer {
+  translate: calc(var(--px, 0) * var(--hx, -4) * 1px) calc(var(--py, 0) * var(--hy, -2) * 1px);
+  transition: translate 320ms var(--ease-out);
+}
+.hero-l1 { --hx: -4; --hy: -2; }
+.hero-l2 { --hx: -5; --hy: -2.5; }
+.hero-l3 { --hx: -6; --hy: -3; }
+.hero-l4 { --hx: -8; --hy: -4; }
+.hero-l5 { --hx: -10; --hy: -5; }
+
+/* ควันธูป: สภาพนิ่งคือเส้นจาง ๆ (ใช้เมื่อปิดการเคลื่อนไหว) */
+.hero-wisp {
+  opacity: 0.4;
+}
+
+@keyframes hero-line-rise {
+  from { transform: translateY(110%); }
+}
+@keyframes hero-fade-up {
+  from { opacity: 0; transform: translateY(0.5rem); }
+}
+@keyframes hero-arch-rise {
+  from { clip-path: inset(100% 0 0 0); }
+}
+@keyframes hero-pop-in {
+  from { opacity: 0; transform: translateY(0.75rem) scale(0.96); }
+}
+@keyframes hero-drop-in {
+  from { opacity: 0; transform: translateY(-0.75rem); }
+}
+@keyframes hero-smoke {
+  0% { opacity: 0; translate: 0 6px; }
+  25% { opacity: 0.5; }
+  100% { opacity: 0; translate: 6px -34px; }
+}
+@keyframes hero-sway {
+  from { transform: rotate(-0.9deg); }
+  to { transform: rotate(0.9deg); }
+}
+
+/* หัวเรื่องแบบมีหน้ากาก: บรรทัดเลื่อนขึ้นจากใต้ขอบ ขอบบนล่างเผื่อสระ/วรรณยุกต์ภาษาไทยไม่ให้ถูกตัด */
+.hero-line {
+  display: block;
+  overflow: hidden;
+  padding-block: 0.2em;
+  margin-block: -0.2em;
+}
+.hero-line > span {
+  display: block;
+}
+
+/* ฉากเปิด: รวมไม่เกิน ~0.9 วินาที เล่นเมื่อยังไม่มี data-seen (เล่นครั้งเดียวต่อเซสชัน ดู HeroIntro) */
+@media (prefers-reduced-motion: no-preference) {
+  [data-hero]:not([data-seen]) .hero-line > span {
+    animation: hero-line-rise 620ms var(--ease-out) both;
+    animation-delay: calc(var(--h, 0) * 1ms);
+  }
+  [data-hero]:not([data-seen]) .hero-fade {
+    animation: hero-fade-up 420ms var(--ease-out) both;
+    animation-delay: calc(var(--h, 0) * 1ms);
+  }
+  [data-hero]:not([data-seen]) .hero-arch-in {
+    animation: hero-arch-rise 700ms var(--ease-out) 150ms both;
+  }
+  [data-hero]:not([data-seen]) .hero-pop {
+    animation: hero-pop-in 420ms var(--ease-out) both;
+    animation-delay: calc(var(--h, 300) * 1ms);
+  }
+  [data-hero]:not([data-seen]) .hero-drop {
+    animation: hero-drop-in 380ms var(--ease-out) both;
+    animation-delay: calc(var(--h, 500) * 1ms);
+  }
+  /* รายละเอียดที่วนเบา ๆ (ข้อยกเว้นเดียวของกฎ "ไม่มีอะไรวน"): เฉพาะ opacity/translate/rotate หยุดเมื่อกรอบพ้นจอ */
+  .hero-wisp {
+    animation: hero-smoke 7s var(--ease-in-out) infinite;
+    animation-delay: calc(var(--w, 0) * -2.3s);
+  }
+  .hero-sway {
+    transform-origin: 50% 0;
+    animation: hero-sway 9s var(--ease-in-out) infinite alternate;
+  }
+  .hero-sway.hero-drop {
+    /* พวงมาลัยทั้งเข้าฉากและแกว่ง: ใช้ animation หลายตัวเมื่อยังไม่ seen */
+    animation: hero-sway 9s var(--ease-in-out) infinite alternate;
+  }
+  [data-hero]:not([data-seen]) .hero-sway.hero-drop {
+    animation:
+      hero-drop-in 380ms var(--ease-out) calc(var(--h, 500) * 1ms) both,
+      hero-sway 9s var(--ease-in-out) 900ms infinite alternate;
+  }
+  .hero-stage[data-paused="true"] .hero-wisp,
+  .hero-stage[data-paused="true"] .hero-sway {
+    animation-play-state: paused;
+  }
+}
+
+/* เลื่อนหน้า (เบราว์เซอร์ที่รองรับ animation-timeline เท่านั้น, เดสก์ท็อป, ไม่ปิดการเคลื่อนไหว): ภาพตกช้ากว่าหน้า ≤24px และขอบซุ้มรอบนอกขยายเล็กน้อย */
+@keyframes hero-depth {
+  to { translate: 0 24px; }
+}
+@keyframes hero-echo-grow {
+  to { scale: 1.06; }
+}
+@supports (animation-timeline: view()) {
+  @media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+    .hero-depth {
+      animation: hero-depth linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+    .hero-echo {
+      animation-name: hero-echo-grow;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+/* รายการงานของผู้ใช้เดิมบนหน้าแรก: แถวลอยขึ้นต่อกัน 70ms (ตั้ง --n ให้ห้าแถวแรก) */
+.stagger-rise > li {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--n, 0) * 70ms + 100ms);
+}
+.stagger-rise > li:nth-child(2) { --n: 1; }
+.stagger-rise > li:nth-child(3) { --n: 2; }
+.stagger-rise > li:nth-child(4) { --n: 3; }
+.stagger-rise > li:nth-child(n + 5) { --n: 4; }
+
+/* ขั้นตอนบนหน้าแรก (FlowSteps): เส้นบนของแต่ละขั้นลากต่อกัน จุดสีชาดและตัวเลขสว่างขึ้นทีละขั้น
+   ซ่อนเฉพาะเมื่อ JS ตั้ง data-flow="pending" (ไม่มี JS = ครบสมบูรณ์) */
+.flow > li {
+  position: relative;
+}
+.flow > li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: calc(var(--flow-gap, 0rem) * -1);
+  height: 1px;
+  background: var(--foreground);
+  transform-origin: left;
+}
+.flow > li:last-child::before {
+  right: 0;
+}
+.flow > li::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: var(--gold);
+}
+.flow[data-flow] > li::before,
+.flow[data-flow] > li::after,
+.flow[data-flow] .flow-num,
+.flow[data-flow] .flow-text {
+  transition-property: transform, opacity, color;
+  transition-duration: 520ms;
+  transition-timing-function: var(--ease-out);
+  transition-delay: calc(var(--k, 0) * 260ms);
+}
+.flow[data-flow] > li::after {
+  transition-duration: 320ms;
+  transition-timing-function: var(--ease-spring);
+  transition-delay: calc(var(--k, 0) * 260ms + 260ms);
+}
+.flow[data-flow] .flow-num,
+.flow[data-flow] .flow-text {
+  transition-delay: calc(var(--k, 0) * 260ms + 200ms);
+}
+.flow[data-flow="pending"] > li::before {
+  transform: scaleX(0);
+}
+.flow[data-flow="pending"] > li::after {
+  transform: scale(0);
+}
+.flow[data-flow="pending"] .flow-num {
+  color: var(--muted-foreground);
+  opacity: 0.5;
+}
+.flow[data-flow="pending"] .flow-text {
+  opacity: 0.35;
+}
+
+/* การ์ดศาล: ยกขึ้น 2px + เส้นขอบเข้มขึ้น (ไม่มีเงา) และแผงข้อเท็จจริง "peek" เลื่อนขึ้นจากขอบล่างของรูป
+   peek แสดงเฉพาะเมาส์จริง (hover + pointer: fine) และไม่แสดงเมื่อเปิดโหมดตัวอักษรใหญ่ (กันข้อความล้น) */
+.product-card {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.card-peek {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover {
+    transform: translateY(-2px);
+  }
+  .card-peek {
+    display: block;
+    transform: translateY(100%);
+    opacity: 0;
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      opacity var(--dur-fast) var(--ease-out);
+  }
+  .product-card:hover .card-peek,
+  .product-card:has(:focus-visible) .card-peek {
+    transform: none;
+    opacity: 1;
+  }
+}
+html.text-large .card-peek {
+  display: none !important;
+}
+
+/* หัวใจบันทึก: จุดสีชาดหกจุดกระจายออกจากหัวใจ 400ms (CSS ล้วน) */
+@keyframes heart-burst {
+  from { translate: 0 0; scale: 1; opacity: 1; }
+  to { translate: calc(var(--bx) * 1px) calc(var(--by) * 1px); scale: 0.3; opacity: 0; }
+}
+.heart-burst > i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 9999px;
+  background: var(--gold);
+  opacity: 0;
+  pointer-events: none;
+  animation: heart-burst 400ms var(--ease-out) both;
+}
+

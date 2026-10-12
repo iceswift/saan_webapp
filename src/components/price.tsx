@@ -30,6 +30,7 @@ export function Price({
   was,
   suffix,
   emphasis = false,
+  smallSymbol = false,
   className,
 }: {
   amount: number;
@@ -42,6 +43,8 @@ export function Price({
   suffix?: string;
   /** true = ตัวเลขสีชาด ใช้กับราคาที่ใช้ตัดสินใจเพียงจุดเดียวต่อหน้า */
   emphasis?: boolean;
+  /** true = เครื่องหมาย ฿ เล็กกว่าตัวเลขเล็กน้อย (ใช้บนการ์ดศาล) */
+  smallSymbol?: boolean;
   /** @deprecated v6: สีดำเป็นค่าเริ่มต้นแล้ว prop นี้ไม่มีผล */
   plain?: boolean;
   className?: string;
@@ -49,7 +52,16 @@ export function Price({
   return (
     <span className={cn("inline-flex flex-wrap items-baseline gap-x-1.5", className)}>
       {prefix ? <span className="text-sm text-muted-foreground">{prefix}</span> : null}
-      <span className={priceNumberClass(size, emphasis)}>{formatBaht(amount)}</span>
+      <span className={priceNumberClass(size, emphasis)}>
+        {smallSymbol ? (
+          <>
+            <span className="mr-px text-[0.78em]">฿</span>
+            {amount.toLocaleString("en-US")}
+          </>
+        ) : (
+          formatBaht(amount)
+        )}
+      </span>
       {was ? (
         <span className="numeric text-sm text-muted-foreground line-through">{formatBaht(was)}</span>
       ) : null}

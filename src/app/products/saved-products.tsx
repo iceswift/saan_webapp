@@ -59,7 +59,22 @@ function toggleSaved(id: string): boolean {
   return nowSaved;
 }
 
-/** ปุ่มหัวใจบันทึกศาล overlay = ปุ่มลอยบนรูป */
+/** จุดสีชาดหกจุดของ burst: ทิศคงที่ทุก 60 องศา ระยะ 19px (ไม่ใช้ตรีโกณใน CSS เพื่อให้ทุกเบราว์เซอร์เหมือนกัน) */
+const BURST = [
+  [19, 0],
+  [9.5, 16.5],
+  [-9.5, 16.5],
+  [-19, 0],
+  [-9.5, -16.5],
+  [9.5, -16.5],
+] as const;
+
+/**
+ * ปุ่มหัวใจบันทึกศาล overlay = ปุ่มลอยบนรูป
+ * กดแล้วหัวใจเติมสีทันที (อ่านจาก localStorage ผ่าน useSyncExternalStore ที่แจ้งเปลี่ยนแบบซิงก์ จึงเป็น optimistic อยู่แล้ว)
+ * หัวใจเด้ง (animate-pop) และมีจุดสีชาดกระจายออกหกจุด (.heart-burst, 400ms) เฉพาะตอนกดบันทึก ไม่ใช่ตอนหน้าโหลดมาพร้อมค่าเดิม
+ * ไม่มี toast ตอนสำเร็จ: ยืนยันด้วย aria-pressed + ข้อความใน live region (sr-only) เท่านั้น ส่วนเก็บไม่ได้ยังขึ้น toast ผิดพลาด
+ */
 export function SaveButton({
   productId,
   productName,
@@ -72,33 +87,48 @@ export function SaveButton({
   className?: string;
 }) {
   const saved = useSavedIds().includes(productId);
-  // เด้งหัวใจเฉพาะตอนผู้ใช้กดบันทึก (ไม่เด้งตอนหน้าโหลดมาพร้อมค่าที่บันทึกไว้)
+  // เด้งและกระจายจุดเฉพาะตอนผู้ใช้กดบันทึก (นับครั้งเพื่อให้ key เปลี่ยนและเล่นซ้ำได้)
   const [popped, setPopped] = useState(false);
+  const [burst, setBurst] = useState(0);
+  const [message, setMessage] = useState("");
   return (
-    <button
-      type="button"
-      aria-pressed={saved}
-      aria-label={saved ? `เอา ${productName} ออกจากที่บันทึกไว้` : `บันทึก ${productName}`}
-      onClick={() => {
-        const nowSaved = toggleSaved(productId);
-        setPopped(nowSaved);
-        toast.success(nowSaved ? "บันทึกศาลไว้แล้ว" : "เอาออกจากที่บันทึกไว้แล้ว");
-      }}
-      className={cn(
-        "flex size-11 items-center justify-center rounded-full transition-[transform,background-color] active:scale-90",
-        overlay ? "glass" : "bg-card hover:bg-muted",
-        className,
-      )}
-    >
-      <Heart
-        aria-hidden="true"
+    <>
+      <button
+        type="button"
+        aria-pressed={saved}
+        aria-label={saved ? `เอา ${productName} ออกจากที่บันทึกไว้` : `บันทึก ${productName}`}
+        onClick={() => {
+          const nowSaved = toggleSaved(productId);
+          setPopped(nowSaved);
+          if (nowSaved) setBurst((n) => n + 1);
+          setMessage(nowSaved ? "บันทึกศาลไว้แล้ว" : "เอาออกจากที่บันทึกไว้แล้ว");
+        }}
         className={cn(
-          "size-5 transition-colors duration-200",
-          saved ? "fill-destructive text-destructive" : "text-foreground",
-          saved && popped && "animate-pop",
+          "relative flex size-11 items-center justify-center rounded-full transition-[transform,background-color] active:scale-90",
+          overlay ? "glass" : "bg-card hover:bg-muted",
+          className,
         )}
-      />
-    </button>
+      >
+        <Heart
+          aria-hidden="true"
+          className={cn(
+            "size-5 transition-colors duration-200",
+            saved ? "fill-gold text-gold" : "text-foreground",
+            saved && popped && "animate-pop",
+          )}
+        />
+        {burst > 0 && saved ? (
+          <span key={burst} aria-hidden="true" className="heart-burst">
+            {BURST.map(([x, y], i) => (
+              <i key={i} style={{ "--bx": x, "--by": y } as React.CSSProperties} />
+            ))}
+          </span>
+        ) : null}
+      </button>
+      <span role="status" aria-live="polite" className="sr-only">
+        {message}
+      </span>
+    </>
   );
 }
 

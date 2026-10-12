@@ -69,7 +69,7 @@ function KFrame({ className, children }: ArtProps & { children: React.ReactNode 
 }
 
 /** พวงมาลัย: โค้งห้อยจาก (x1,y1) ถึง (x2,y2) มีดอกสลับขาว/ชาด และพู่ปลาย */
-function Phuang({
+export function Phuang({
   x1,
   y1,
   x2,
@@ -136,7 +136,7 @@ function Incense({ x, y }: { x: number; y: number }) {
 }
 
 /** ต้นไม้ในกระถาง */
-function Plant({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+export function Plant({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
       <path d="M-9 0H9L7 13H-7Z" className={D} />
