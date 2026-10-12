@@ -68,13 +68,29 @@ model Provider {
   phone       String
   areas       String // JSON array ของรหัสพื้นที่ เช่น ["BKK","NBI"]
   status      String   @default("PENDING") // PENDING | VERIFIED | REJECTED
+  baseLat         Float? // ตำแหน่งร้าน (ใช้คำนวณระยะทาง)
+  baseLng         Float?
+  serviceRadiusKm Int? // รัศมีให้บริการ กม. ว่าง = ไม่จำกัดตามระยะ
   createdAt   DateTime @default(now())
 
+  blockedDates ProviderBlockedDate[]
   products Product[]
   packages ServicePackage[]
   orders   Order[]
   quotes   Quote[]
   reviews  Review[]
+}
+
+/// วันที่ร้านไม่รับงาน (ลูกค้าเลือกวันนี้ไม่ได้)
+model ProviderBlockedDate {
+  id         String   @id @default(cuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  date       String // YYYY-MM-DD
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@unique([providerId, date])
 }
 
 model Product {
@@ -115,6 +131,8 @@ model Shrine {
   area        String
   address     String    @default("")
   photoUrl    String?
+  lat         Float?
+  lng         Float?
   installedAt DateTime?
   createdAt   DateTime  @default(now())
 
@@ -141,6 +159,8 @@ model Order {
   placeType      String    @default("") // HOME | SHOP | FACTORY | ESTATE
   area           String
   address        String
+  lat            Float? // ตำแหน่งที่ลูกค้าปักหมุด
+  lng            Float?
   note           String    @default("")
   preferredDates String    @default("[]") // JSON array ของวันที่ YYYY-MM-DD ที่ลูกค้าสะดวก
   scheduledAt    DateTime? // วันเวลาที่ผู้ให้บริการยืนยัน
@@ -211,6 +231,8 @@ model ServiceRequest {
   description String
   area        String
   address     String
+  lat         Float?
+  lng         Float?
   photoUrls   String   @default("[]") // JSON array
   status      String   @default("OPEN") // OPEN | ACCEPTED | CLOSED
   createdAt   DateTime @default(now())
@@ -245,6 +267,7 @@ model Review {
   provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   rating     Int // 1-5
   comment    String   @default("")
+  photoUrls  String   @default("[]") // JSON array ของรูปงานจริง
   createdAt  DateTime @default(now())
 }
 
@@ -271,6 +294,8 @@ model Address {
   label     String // เช่น บ้าน ร้าน
   area      String
   address   String
+  lat       Float?
+  lng       Float?
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -297,7 +322,8 @@ model OrderMessage {
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   senderId  String
   sender    User     @relation(fields: [senderId], references: [id])
-  body      String
+  body      String   @default("")
+  photoUrl  String?
   createdAt DateTime @default(now())
 
   @@index([orderId])

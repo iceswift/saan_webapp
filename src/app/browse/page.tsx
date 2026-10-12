@@ -22,15 +22,17 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/visuals";
 import { AREAS, AREA_CODES, SHRINE_KINDS, SHRINE_KIND_CODES } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
+import { isInThailand } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import { firstValue, KIND_VISUALS, pickCode } from "@/app/new/options";
 import { SavedRow } from "@/app/products/saved-products";
 import { listProducts } from "@/server/queries";
+import { NearMe } from "./near-me";
 
 export const metadata: Metadata = { title: "เลือกดูศาล" };
 
-const SORT_CODES = ["price_asc", "price_desc", "newest"] as const;
-const SORT_OPTIONS: { value: (typeof SORT_CODES)[number]; label: string }[] = [
+const SORT_CODES = ["price_asc", "price_desc", "newest", "nearest"] as const;
+const SORT_OPTIONS: { value: Exclude<(typeof SORT_CODES)[number], "nearest">; label: string }[] = [
   { value: "price_asc", label: "ราคาต่ำไปสูง" },
   { value: "price_desc", label: "ราคาสูงไปต่ำ" },
   { value: "newest", label: "มาใหม่" },
@@ -45,7 +47,16 @@ type Filters = {
   area?: string;
   max?: number;
   sort?: string;
+  /** "lat,lng" ปัดแล้ว */
+  near?: string;
 };
+
+/** ?near=13.75,100.50 -> พิกัด (ต้องอยู่ในประเทศไทย ปัดเหลือ 2 ตำแหน่ง) หรือ undefined */
+function parseNear(value: string | undefined): { lat: number; lng: number } | undefined {
+  if (!value || !/^-?\d{1,3}(\.\d+)?,-?\d{1,3}(\.\d+)?$/.test(value)) return undefined;
+  const [lat, lng] = value.split(",").map((n) => Math.round(Number(n) * 100) / 100);
+  return isInThailand({ lat, lng }) ? { lat, lng } : undefined;
+}
 
 /** งบต้องเป็นจำนวนเต็มบวก ค่าอื่นถูกทิ้ง */
 function parseMax(value: string | undefined): number | undefined {
@@ -62,6 +73,7 @@ function browseHref(filters: Filters): string {
   if (filters.area) sp.set("area", filters.area);
   if (filters.max) sp.set("max", String(filters.max));
   if (filters.sort) sp.set("sort", filters.sort);
+  if (filters.near) sp.set("near", filters.near);
   const query = sp.toString();
   return query ? `/browse?${query}` : "/browse";
 }
@@ -138,15 +150,19 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
   const kind = pickCode(firstValue(sp.kind), SHRINE_KIND_CODES);
   const area = pickCode(firstValue(sp.area), AREA_CODES);
   const max = parseMax(firstValue(sp.max));
-  const sort = pickCode(firstValue(sp.sort), SORT_CODES);
+  const near = parseNear(firstValue(sp.near));
+  const nearParam = near ? `${near.lat.toFixed(2)},${near.lng.toFixed(2)}` : undefined;
+  // "ใกล้สุด" ใช้ได้เมื่อมีตำแหน่งเท่านั้น
+  const sortRaw = pickCode(firstValue(sp.sort), SORT_CODES);
+  const sort = sortRaw === "nearest" && !near ? undefined : sortRaw;
 
   const [products, everything] = await Promise.all([
-    listProducts({ q, kind, area, maxPrice: max, sort }),
+    listProducts({ q, kind, area, maxPrice: max, sort, ...(near ? { near } : {}) }),
     listProducts({ sort: "newest" }),
   ]);
-  const filters: Filters = { q, kind, area, max, sort };
-  const activeSort = sort ?? "price_asc";
-  const hasFilter = Boolean(q || kind || area || max);
+  const filters: Filters = { q, kind, area, max, sort, near: nearParam };
+  const activeSort = sort ?? (near ? "nearest" : "price_asc");
+  const hasFilter = Boolean(q || kind || area || max || near);
 
   const kindOptions: FilterOption[] = [
     { label: "ทั้งหมด", href: browseHref({ ...filters, kind: undefined }), active: kind === undefined },
@@ -166,7 +182,9 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
       icon: MapPin,
     })),
   ];
-  const sortOptions: FilterOption[] = SORT_OPTIONS.map((option) => ({
+  const sortOptions: FilterOption[] = (
+    near ? [{ value: "nearest" as const, label: "ใกล้สุด" }, ...SORT_OPTIONS] : SORT_OPTIONS
+  ).map((option) => ({
     label: option.label,
     href: browseHref({ ...filters, sort: option.value }),
     active: activeSort === option.value,
@@ -182,7 +200,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
     })),
   ];
   // จำนวนตัวกรองในแผ่น (พื้นที่ งบ เรียงลำดับที่ไม่ใช่ค่าเริ่มต้น) แสดงเป็นเลขบนปุ่ม "ตัวกรอง"
-  const sheetCount = (area ? 1 : 0) + (max ? 1 : 0) + (sort && sort !== "price_asc" ? 1 : 0);
+  const sheetCount = (area ? 1 : 0) + (max ? 1 : 0) + (near ? 1 : 0) + (sort && sort !== "price_asc" && sort !== "nearest" ? 1 : 0);
 
   // ตัวกรองที่ใช้อยู่ (แสดงเป็นป้ายที่กดเอาออกได้ เฉพาะเดสก์ท็อป)
   const activeFilters: { label: string; href: string }[] = [
@@ -191,6 +209,18 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
     ...(area ? [{ label: AREAS[area], href: browseHref({ ...filters, area: undefined }) }] : []),
     ...(max
       ? [{ label: `ไม่เกิน ${formatBaht(max)}`, href: browseHref({ ...filters, max: undefined }) }]
+      : []),
+    ...(near
+      ? [
+          {
+            label: "ใกล้ฉัน",
+            href: browseHref({
+              ...filters,
+              near: undefined,
+              sort: sort === "nearest" ? undefined : sort,
+            }),
+          },
+        ]
       : []),
   ];
 
@@ -222,6 +252,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
                 {area ? <input type="hidden" name="area" value={area} /> : null}
                 {max ? <input type="hidden" name="max" value={max} /> : null}
                 {sort ? <input type="hidden" name="sort" value={sort} /> : null}
+                {nearParam ? <input type="hidden" name="near" value={nearParam} /> : null}
                 <Button
                   type="submit"
                   className="absolute top-1/2 right-1.5 h-11 -translate-y-1/2 rounded-full px-5 text-base font-medium"
@@ -250,6 +281,12 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
                     </>
                   }
                 >
+                  <div style={{ "--i": 0 } as React.CSSProperties}>
+                    <p className="mb-2 text-base font-medium">ตำแหน่ง</p>
+                    <div className="flex flex-wrap gap-2">
+                      <NearMe active={Boolean(near)} />
+                    </div>
+                  </div>
                   <SheetGroup label="พื้นที่" options={areaOptions} index={0} />
                   <SheetGroup label="ราคา" options={maxOptions} index={1} />
                   <SheetGroup label="เรียงตาม" options={sortOptions} index={2} />
@@ -283,6 +320,10 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
                   options={areaOptions}
                   className="mt-5 border-t border-border pt-5"
                 />
+                <div className="mt-5 border-t border-border pt-5">
+                  <p className="mb-2 text-base font-medium">ตำแหน่ง</p>
+                  <NearMe variant="row" active={Boolean(near)} />
+                </div>
               </div>
             </Rise>
           </div>
@@ -305,6 +346,9 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
               <span className="lg:hidden">{max ? ` · ไม่เกิน ${formatBaht(max)}` : ""}</span>
             </span>
           </p>
+          {near ? (
+            <p className="w-full text-sm text-muted-foreground">แสดงเฉพาะร้านที่ให้บริการถึงที่ของคุณ</p>
+          ) : null}
           {activeFilters.length > 0 ? (
             <ul className="hidden flex-wrap items-center gap-2 lg:flex">
               {activeFilters.map((f) => (
@@ -358,7 +402,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
           <CardGrid cols="products-side">
             {products.map((product, index) => (
               <Reveal as="li" key={product.id} i={index % 4}>
-                <ProductCard product={product} />
+                <ProductCard product={product} near={nearParam} />
               </Reveal>
             ))}
           </CardGrid>

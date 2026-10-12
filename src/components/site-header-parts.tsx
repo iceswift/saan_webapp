@@ -56,6 +56,7 @@ function NavLinks({ items, label }: { items: NavItem[]; label: string }) {
 // เมนูของพื้นที่ร้านและหลังบ้าน (ลิงก์ไป ?tab= / ?view= ของหน้าเดียวกัน) ค่าเริ่มต้นของแต่ละพื้นที่คือรายการแรก
 const PROVIDER_ITEMS = [
   { value: "orders", label: "งาน" },
+  { value: "calendar", label: "ปฏิทิน" },
   { value: "requests", label: "คำขอ" },
   { value: "catalog", label: "สินค้า" },
   { value: "profile", label: "ข้อมูลร้าน" },
@@ -129,7 +130,7 @@ export function HeaderSearch({ className }: { className?: string }) {
   const current = onBrowse ? (params.get("q") ?? "") : "";
   // ค้นหาซ้ำในหน้าเลือกดูศาล: คงตัวกรองอื่นไว้
   const kept = onBrowse
-    ? (["kind", "area", "max", "sort"] as const).flatMap((name) => {
+    ? (["kind", "area", "max", "sort", "near"] as const).flatMap((name) => {
         const value = params.get(name);
         return value ? [[name, value] as const] : [];
       })

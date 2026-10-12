@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { getCurrentUser } from "../auth";
 import {
+  geoSchema,
   idSchema,
   newOrderCode,
   notify,
@@ -25,6 +26,7 @@ const requestSchema = z.object({
   address: z.string().trim().min(5, "กรอกที่อยู่").max(500),
   photoUrls: z.array(uploadUrlSchema).max(6, "แนบรูปได้ไม่เกิน 6 รูป"),
   shrineId: idSchema.optional(),
+  geo: geoSchema.optional(),
 });
 
 /** ส่งคำขอให้ร้านในพื้นที่เสนอราคา */
@@ -35,6 +37,7 @@ export async function createRequest(input: {
   address: string;
   photoUrls: string[];
   shrineId?: string;
+  geo?: { lat: number; lng: number };
 }): Promise<ActionResult<{ requestId: string }>> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
@@ -55,6 +58,8 @@ export async function createRequest(input: {
       description: data.description,
       area: data.area,
       address: data.address,
+      lat: data.geo?.lat ?? null,
+      lng: data.geo?.lng ?? null,
       photoUrls: JSON.stringify(data.photoUrls),
     },
   });

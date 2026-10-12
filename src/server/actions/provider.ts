@@ -6,6 +6,7 @@ import { db } from "../db";
 import { getCurrentUser } from "../auth";
 import {
   addEvent,
+  geoSchema,
   idSchema,
   notify,
   NOT_ALLOWED,
@@ -40,6 +41,15 @@ const profileSchema = z.object({
   description: z.string().trim().max(1000).optional(),
   phone: phoneSchema,
   areas: z.array(z.enum(AREA_CODES)).min(1, "เลือกพื้นที่ให้บริการอย่างน้อย 1 พื้นที่"),
+  /** ตำแหน่งร้านและรัศมีบริการ (ไม่บังคับ ส่ง null เพื่อล้างค่า) */
+  base: geoSchema.nullable().optional(),
+  serviceRadiusKm: z
+    .number("รัศมีต้องเป็นตัวเลข")
+    .int("รัศมีต้องเป็นจำนวนเต็ม")
+    .min(1, "รัศมีอย่างน้อย 1 กม.")
+    .max(500, "รัศมีมากสุด 500 กม.")
+    .nullable()
+    .optional(),
 });
 
 type ProfileInput = {
@@ -48,6 +58,8 @@ type ProfileInput = {
   description?: string;
   phone: string;
   areas: string[];
+  base?: { lat: number; lng: number } | null;
+  serviceRadiusKm?: number | null;
 };
 
 /** สมัครเป็นผู้ให้บริการ บัญชีจะอยู่ในสถานะรอตรวจสอบจนผู้ดูแลระบบอนุมัติ */
@@ -96,8 +108,53 @@ export async function updateProviderProfile(input: ProfileInput): Promise<Action
       description: data.description ?? "",
       phone: data.phone,
       areas: JSON.stringify([...new Set(data.areas)]),
+      // ส่งมาเฉพาะเมื่อฟอร์มมีส่วนแผนที่ (undefined = ไม่แตะค่าเดิม)
+      ...(data.base !== undefined
+        ? { baseLat: data.base?.lat ?? null, baseLng: data.base?.lng ?? null }
+        : {}),
+      ...(data.serviceRadiusKm !== undefined ? { serviceRadiusKm: data.serviceRadiusKm } : {}),
     },
   });
+
+  refreshAll();
+  return ok();
+}
+
+// ---------- ปฏิทินวันว่าง ----------
+
+const blockDateSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ไม่ถูกต้อง"),
+  blocked: z.boolean(),
+  note: z.string().trim().max(100).optional(),
+});
+
+/** ร้านปิดหรือเปิดรับงานในวันที่ระบุ (ปิดได้ล่วงหน้าไม่เกิน 1 ปี) */
+export async function setDateBlocked(input: {
+  date: string;
+  blocked: boolean;
+  note?: string;
+}): Promise<ActionResult> {
+  const provider = await myProvider();
+  if (!provider) return NOT_PROVIDER;
+  const parsed = parseInput(blockDateSchema, input);
+  if (!parsed.ok) return parsed;
+  const { date, blocked, note } = parsed.data;
+
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
+  const limit = new Date(Date.now() + 366 * 24 * 60 * 60 * 1000);
+  const limitDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(limit);
+  if (date < today) return fail("เลือกวันที่ผ่านมาแล้วไม่ได้");
+  if (date > limitDay) return fail("ตั้งวันไม่ว่างล่วงหน้าได้ไม่เกิน 1 ปี");
+
+  if (blocked) {
+    await db.providerBlockedDate.upsert({
+      where: { providerId_date: { providerId: provider.id, date } },
+      create: { providerId: provider.id, date, note: note ?? "" },
+      update: { note: note ?? "" },
+    });
+  } else {
+    await db.providerBlockedDate.deleteMany({ where: { providerId: provider.id, date } });
+  }
 
   refreshAll();
   return ok();

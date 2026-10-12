@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { db } from "../db";
 import { destroySession, getCurrentUser } from "../auth";
-import { idSchema, NOT_ALLOWED, NOT_LOGGED_IN, parseInput, refreshAll } from "../action-utils";
+import { geoSchema, idSchema, NOT_ALLOWED, NOT_LOGGED_IN, parseInput, refreshAll } from "../action-utils";
 import { fail, ok, type ActionResult } from "@/lib/result";
 import { AREA_CODES } from "@/lib/constants";
 import { TEXT_SIZE_COOKIE } from "@/lib/prefs";
@@ -56,6 +56,7 @@ const addressSchema = z.object({
   area: z.enum(AREA_CODES, "เลือกพื้นที่"),
   address: z.string().trim().min(5, "กรอกที่อยู่").max(500),
   isDefault: z.boolean().optional(),
+  geo: geoSchema.nullable().optional(),
 });
 
 /** เพิ่มที่อยู่ใหม่ หรือแก้ไขเมื่อส่ง id มาด้วย ที่อยู่แรกจะเป็นที่อยู่หลักอัตโนมัติ */
@@ -65,6 +66,7 @@ export async function saveAddress(input: {
   area: string;
   address: string;
   isDefault?: boolean;
+  geo?: { lat: number; lng: number } | null;
 }): Promise<ActionResult<{ addressId: string }>> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
@@ -84,6 +86,8 @@ export async function saveAddress(input: {
       label: data.label,
       area: data.area,
       address: data.address,
+      lat: data.geo?.lat ?? null,
+      lng: data.geo?.lng ?? null,
       ...(makeDefault ? { isDefault: true } : {}),
     };
     if (id) {

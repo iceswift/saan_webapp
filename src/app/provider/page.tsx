@@ -12,11 +12,13 @@ import { AREAS, PROVIDER_KINDS } from "@/lib/constants";
 import { requireUser } from "@/server/auth";
 import {
   getMyProvider,
+  listBlockedDates,
   listOpenRequestsForProvider,
   listProviderOrders,
   listProviderPackages,
   listProviderProducts,
 } from "@/server/queries";
+import { CalendarTab } from "./calendar-tab";
 import { CatalogTab } from "./catalog-tab";
 import { OrdersTab, parseOrderFilter } from "./orders-tab";
 import { providerNavBadges } from "./nav-data";
@@ -28,6 +30,7 @@ export const metadata: Metadata = { title: "ร้านของฉัน" };
 
 const TABS = [
   { value: "orders", label: "งาน" },
+  { value: "calendar", label: "ปฏิทิน" },
   { value: "requests", label: "คำขอ" },
   { value: "catalog", label: "สินค้า" },
   { value: "profile", label: "ข้อมูลร้าน" },
@@ -56,11 +59,12 @@ export default async function ProviderPage({ searchParams }: PageProps<"/provide
 
   const query = await searchParams;
   const tab = parseTab(query.tab);
-  const [orders, requests, products, packages] = await Promise.all([
+  const [orders, requests, products, packages, blockedDates] = await Promise.all([
     listProviderOrders(provider.id),
     listOpenRequestsForProvider(provider),
     listProviderProducts(provider.id),
     listProviderPackages(provider.id),
+    tab === "calendar" ? listBlockedDates(provider.id) : Promise.resolve([] as string[]),
   ]);
 
   const verified = provider.status === "VERIFIED";
@@ -134,6 +138,7 @@ export default async function ProviderPage({ searchParams }: PageProps<"/provide
           filter={parseOrderFilter(query.f)}
         />
       ) : null}
+      {tab === "calendar" ? <CalendarTab orders={orders} blocked={blockedDates} /> : null}
       {tab === "requests" ? (
         <RequestsTab provider={provider} requests={requests} filter={parseRequestFilter(query.f)} />
       ) : null}
@@ -148,6 +153,8 @@ export default async function ProviderPage({ searchParams }: PageProps<"/provide
               description: provider.description,
               phone: provider.phone,
               areas: provider.areas,
+              base: provider.location,
+              serviceRadiusKm: provider.serviceRadiusKm,
             }}
           />
         </div>

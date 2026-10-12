@@ -28,6 +28,10 @@ export type ProviderSummary = {
   /** คะแนนเฉลี่ย 1-5 หรือ null ถ้ายังไม่มีรีวิว */
   rating: number | null;
   reviewCount: number;
+  /** ตำแหน่งร้านที่ร้านตั้งไว้ หรือ null */
+  location: { lat: number; lng: number } | null;
+  /** รัศมีให้บริการ กม. หรือ null = ไม่จำกัดตามระยะ */
+  serviceRadiusKm: number | null;
 };
 
 export type PackageDTO = {
@@ -48,6 +52,8 @@ export type ProductDTO = {
   imageUrl: string | null;
   active: boolean;
   provider: ProviderSummary;
+  /** ระยะเส้นตรงจากตำแหน่งที่ผู้ใช้ระบุ (ใส่เมื่อค้นหาด้วย near) */
+  distanceKm?: number | null;
 };
 
 export type ProductDetail = ProductDTO & {
@@ -104,11 +110,15 @@ export type PaymentDTO = {
 export type ReviewDTO = {
   rating: number;
   comment: string;
+  /** รูปงานจริงที่ลูกค้าแนบ */
+  photoUrls: string[];
   createdAt: string;
 };
 
 export type OrderDetail = OrderSummary & {
   address: string;
+  /** ตำแหน่งที่ลูกค้าปักหมุดไว้ หรือ null */
+  location: { lat: number; lng: number } | null;
   note: string;
   placeType: PlaceType | "";
   shrineKind: ShrineKind | "";
@@ -130,6 +140,8 @@ export type OrderDetail = OrderSummary & {
 export type MessageDTO = {
   id: string;
   body: string;
+  /** รูปที่แนบมากับข้อความ */
+  photoUrl: string | null;
   createdAt: string;
   /** true เมื่อผู้ที่กำลังดูเป็นคนส่ง */
   mine: boolean;
@@ -153,6 +165,7 @@ export type RequestSummary = {
   description: string;
   area: AreaCode;
   address: string;
+  location: { lat: number; lng: number } | null;
   photoUrls: string[];
   createdAt: string;
   quoteCount: number;
@@ -202,6 +215,8 @@ export type AddressDTO = {
   label: string;
   area: AreaCode;
   address: string;
+  /** ตำแหน่งที่ปักหมุดไว้ หรือ null */
+  location: { lat: number; lng: number } | null;
   isDefault: boolean;
 };
 
@@ -233,6 +248,7 @@ export type ShrineDetail = ShrineDTO & {
 export type PublicReview = {
   rating: number;
   comment: string;
+  photoUrls: string[];
   createdAt: string;
   /** ชื่อลูกค้าแบบย่อ เช่น "คุณส." */
   customerName: string;

@@ -32,15 +32,26 @@ function MonthGrid({
   selected,
   min,
   max,
+  blocked,
   onPick,
 }: {
   selected: YMD | null;
   min: YMD | null;
   max: YMD | null;
+  blocked: Set<string>;
   onPick: (value: YMD) => void;
 }) {
   const today = todayYMD();
-  const [focus, setFocus] = useState<YMD>(() => clamp(selected ?? today, min, max));
+  const isBlocked = (d: YMD) => blocked.has(toYMDString(d));
+  /** ข้ามวันที่ปิดรับ: เดินต่อไปทางเดิมจนเจอวันที่เลือกได้ (ไม่เกิน 400 วัน) */
+  const skipBlocked = (d: YMD, dir: 1 | -1): YMD => {
+    let cur = d;
+    for (let i = 0; i < 400 && isBlocked(cur); i++) cur = addDays(cur, dir);
+    return cur;
+  };
+  const [focus, setFocus] = useState<YMD>(() =>
+    clamp(skipBlocked(clamp(selected ?? today, min, max), 1), min, max),
+  );
   const wantFocus = useRef(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -52,9 +63,11 @@ function MonthGrid({
       ?.focus();
   }, [focus]);
 
-  const move = (next: YMD) => {
+  const move = (next: YMD, dir: 1 | -1 = 1) => {
     wantFocus.current = true;
-    setFocus(clamp(next, min, max));
+    const free = skipBlocked(clamp(next, min, max), dir);
+    const clamped = clamp(free, min, max);
+    setFocus(isBlocked(clamped) ? focus : clamped);
   };
 
   const first = { y: focus.y, m: focus.m, d: 1 };
@@ -86,7 +99,7 @@ function MonthGrid({
     const next = step[event.key];
     if (!next) return;
     event.preventDefault();
-    move(next);
+    move(next, compareYMD(next, focus) < 0 ? -1 : 1);
   }
 
   return (
@@ -131,7 +144,9 @@ function MonthGrid({
           <div key={wi} role="row" className="grid grid-cols-7">
             {week.map((day, di) => {
               if (!day) return <span key={di} role="gridcell" aria-hidden="true" />;
-              const disabled = Boolean((min && compareYMD(day, min) < 0) || (max && compareYMD(day, max) > 0));
+              const outOfRange = Boolean((min && compareYMD(day, min) < 0) || (max && compareYMD(day, max) > 0));
+              const closed = !outOfRange && isBlocked(day);
+              const disabled = outOfRange;
               const isSelected = selected !== null && compareYMD(day, selected) === 0;
               const isToday = compareYMD(day, today) === 0;
               const isFocus = compareYMD(day, focus) === 0;
@@ -142,9 +157,15 @@ function MonthGrid({
                     data-ymd={toYMDString(day)}
                     tabIndex={isFocus ? 0 : -1}
                     disabled={disabled}
-                    aria-label={formatThaiLong(day) + (isToday ? " (วันนี้)" : "")}
+                    aria-disabled={closed ? true : undefined}
+                    aria-label={
+                      formatThaiLong(day) + (isToday ? " (วันนี้)" : "") + (closed ? " ร้านไม่ว่างวันนี้" : "")
+                    }
                     aria-pressed={isSelected}
-                    onClick={() => onPick(day)}
+                    title={closed ? "ร้านไม่ว่างวันนี้" : undefined}
+                    onClick={() => {
+                      if (!closed) onPick(day);
+                    }}
                     className={cn(
                       "cal-day numeric flex size-11 items-center justify-center rounded-full text-base",
                       isSelected
@@ -152,6 +173,8 @@ function MonthGrid({
                         : "hover:bg-muted",
                       isToday && !isSelected && "border border-gold font-medium",
                       disabled && "pointer-events-none text-muted-foreground opacity-35",
+                      closed &&
+                        "cursor-not-allowed text-muted-foreground line-through decoration-1 opacity-50 hover:bg-transparent",
                     )}
                   >
                     {day.d}
@@ -162,6 +185,11 @@ function MonthGrid({
           </div>
         ))}
       </div>
+      {blocked.size > 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          วันที่ขีดฆ่า ร้านไม่รับงาน
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -171,6 +199,7 @@ function MonthGrid({
  * - ค่าที่ส่งกับฟอร์ม/server action เป็น "yyyy-mm-dd" (ค.ศ.) เหมือน input date ทุกประการ ผ่าน <input type="hidden" name>
  * - แสดง "23 ต.ค. 2569" ในช่อง แตะแล้วเปิดปฏิทินในแผ่นล่าง (เดสก์ท็อปเป็นกล่องกลางจอ) เลือกวันแล้วปิดเอง
  * - min / max: "yyyy-mm-dd" วันนอกช่วงกดไม่ได้ | defaultValue (ไม่ควบคุม) หรือ value + onChange (ควบคุม)
+ * - disabledDates: ["yyyy-mm-dd"] วันที่ร้านปิดรับงาน แสดงขีดฆ่า กดไม่ได้ ปุ่มลูกศรข้ามให้ และมีคำอธิบายใต้ปฏิทิน
  * - ใส่ id ให้ตรงกับ <Label htmlFor> ได้ | aria-invalid / aria-describedby ส่งต่อไปที่ปุ่มช่อง (ใช้คู่ <FieldHint>)
  * - ข้อจำกัด: ไม่มี validation แบบ required ของเบราว์เซอร์ ให้ตรวจเองตอนกดปุ่ม (ดูรูปแบบใน FieldHint)
  */
@@ -182,6 +211,7 @@ export function ThaiDateField({
   onChange,
   min,
   max,
+  disabledDates,
   placeholder = "เลือกวันที่",
   title = "เลือกวันที่",
   disabled,
@@ -196,6 +226,8 @@ export function ThaiDateField({
   onChange?: (value: string) => void;
   min?: string;
   max?: string;
+  /** วันที่เลือกไม่ได้ (ร้านปิดรับงาน) "yyyy-mm-dd" */
+  disabledDates?: string[];
   placeholder?: string;
   /** หัวข้อของแผ่นปฏิทิน */
   title?: string;
@@ -212,6 +244,7 @@ export function ThaiDateField({
   const parsed = parseYMD(current);
   const minYMD = parseYMD(min);
   const maxYMD = parseYMD(max);
+  const blocked = new Set(disabledDates ?? []);
 
   function pick(day: YMD) {
     const next = toYMDString(day);
@@ -223,7 +256,9 @@ export function ThaiDateField({
 
   const today = todayYMD();
   const todayOk =
-    (!minYMD || compareYMD(today, minYMD) >= 0) && (!maxYMD || compareYMD(today, maxYMD) <= 0);
+    (!minYMD || compareYMD(today, minYMD) >= 0) &&
+    (!maxYMD || compareYMD(today, maxYMD) <= 0) &&
+    !blocked.has(toYMDString(today));
 
   return (
     <>
@@ -248,7 +283,7 @@ export function ThaiDateField({
         <CalendarDays className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       </button>
       <BottomSheet title={title} open={open} onOpenChange={setOpen}>
-        {open ? <MonthGrid selected={parsed} min={minYMD} max={maxYMD} onPick={pick} /> : null}
+        {open ? <MonthGrid selected={parsed} min={minYMD} max={maxYMD} blocked={blocked} onPick={pick} /> : null}
         {todayOk ? (
           <button
             type="button"

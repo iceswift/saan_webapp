@@ -17,7 +17,13 @@ export async function seedDemo(db: PrismaClient) {
   const address = "99/1 ซอยทดสอบ แขวงทดสอบ เขตทดสอบ กรุงเทพมหานคร";
 
   await db.address.create({
-    data: { userId: customer.id, label: "บ้าน", area: "BKK", address, isDefault: true },
+    data: { userId: customer.id, label: "บ้าน", area: "BKK", address, lat: 13.7563, lng: 100.5018, isDefault: true },
+  });
+
+  // ร้านตัวอย่างไม่ว่างสามวัน เพื่อทดสอบปฏิทินวันว่าง
+  const dayKey = (n: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(daysFromNow(n));
+  await db.providerBlockedDate.createMany({
+    data: [12, 13, 14].map((n) => ({ providerId: shop.id, date: dayKey(n), note: "ร้านปิดรับงาน" })),
   });
 
   const shrine = await db.shrine.create({

@@ -42,6 +42,9 @@ async function main() {
       phone: "0800000003",
       areas: JSON.stringify(["BKK", "NBI", "PTE", "SPK"]),
       status: "VERIFIED",
+      baseLat: 13.8021, // สถานที่สมมติ ใกล้ลาดพร้าว ใช้ทดสอบแผนที่
+      baseLng: 100.5604,
+      serviceRadiusKm: 40,
     },
   });
 
@@ -109,6 +112,9 @@ async function main() {
       phone: "0800000005",
       areas: JSON.stringify(["BKK", "NBI"]),
       status: "VERIFIED",
+      baseLat: 13.7367,
+      baseLng: 100.5231,
+      serviceRadiusKm: 25,
     },
   });
   await db.product.createMany({

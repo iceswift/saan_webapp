@@ -1,5 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { Chip, ChipRow } from "@/components/chip";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { MapView } from "@/components/map/map-view";
 import { Notice } from "@/components/notice";
 import { ListGroup } from "@/components/list-group";
 import { Price } from "@/components/price";
@@ -7,6 +9,7 @@ import { TonePill } from "@/components/status-badge";
 import { EmptyState, ThumbArt } from "@/components/visuals";
 import { AREAS, REQUEST_TYPES } from "@/lib/constants";
 import { formatShortDate } from "@/lib/format";
+import { distanceKm, formatDistance } from "@/lib/geo";
 import type { ProviderRequest, ProviderSummary } from "@/lib/types";
 import { REQUEST_TYPE_ART } from "./icon-map";
 import { QuoteForm } from "./quote-form";
@@ -76,7 +79,7 @@ export function RequestsTab({
         <ListGroup className="mt-4" label="คำขอจากลูกค้า">
           {shown.map((request) => (
             <li key={request.id} className="min-w-0">
-              <RequestRow request={request} verified={verified} />
+              <RequestRow request={request} verified={verified} provider={provider} />
             </li>
           ))}
         </ListGroup>
@@ -85,8 +88,18 @@ export function RequestsTab({
   );
 }
 
-function RequestRow({ request, verified }: { request: ProviderRequest; verified: boolean }) {
+function RequestRow({
+  request,
+  verified,
+  provider,
+}: {
+  request: ProviderRequest;
+  verified: boolean;
+  provider: ProviderSummary;
+}) {
   const quote = request.myQuote;
+  const away =
+    request.location && provider.location ? distanceKm(provider.location, request.location) : null;
   return (
     <details className="group/req">
       <summary className="flex min-h-16 cursor-pointer list-none items-center gap-4 px-4 py-3 transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
@@ -118,6 +131,37 @@ function RequestRow({ request, verified }: { request: ProviderRequest; verified:
         <p className="text-base whitespace-pre-line">{request.description}</p>
         {request.address ? <p className="mt-2 text-base text-muted-foreground">{request.address}</p> : null}
         <p className="mt-2 text-sm text-muted-foreground">ลูกค้า {request.customerName}</p>
+        {away !== null ? (
+          <p className="mt-1 text-base">ห่างจากร้านคุณ{formatDistance(away)} (เส้นตรง ไม่ใช่ระยะทางถนน)</p>
+        ) : null}
+        {request.location ? (
+          <ExpandableMap
+            className="mt-4 max-w-md"
+            title="ดูหมุดหน้างาน"
+            hint="ตำแหน่งที่ลูกค้าปักไว้"
+            hasPin
+          >
+            <MapView
+              markers={[
+                { ...request.location, tone: "customer", label: "ที่ตั้งศาล" },
+                ...(provider.location
+                  ? [
+                      {
+                        lat: Math.round(provider.location.lat * 1000) / 1000,
+                        lng: Math.round(provider.location.lng * 1000) / 1000,
+                        tone: "shop" as const,
+                        label: provider.name,
+                      },
+                    ]
+                  : []),
+              ]}
+              radiusKm={provider.location ? provider.serviceRadiusKm : null}
+              height="14rem"
+              ariaLabel="แผนที่หมุดหน้างานของคำขอ"
+              description={`ที่อยู่: ${request.address}`}
+            />
+          </ExpandableMap>
+        ) : null}
 
         {request.photoUrls.length > 0 ? (
           <ul className="mt-4 grid max-w-md grid-cols-3 gap-2.5">

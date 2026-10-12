@@ -11,6 +11,8 @@ import { Price } from "@/components/price";
 import { PriceTicker } from "@/components/price-ticker";
 import { TwoColumn } from "@/components/page-layout";
 import { Rise } from "@/components/rise";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { LocationPicker } from "@/components/map/location-picker";
 import { ThaiDateField } from "@/components/thai-date-field";
 import { TrustNote } from "@/components/trust-note";
 import { ThumbArt } from "@/components/visuals";
@@ -28,6 +30,7 @@ import {
   type PlaceType,
 } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
+import type { LatLng } from "@/lib/geo";
 import type { AddressDTO, ProductDetail } from "@/lib/types";
 import { createInstallOrder } from "@/server/actions/orders";
 import { saveAddress } from "@/server/actions/settings";
@@ -65,6 +68,7 @@ export function CheckoutForm({
   backHref,
   backLabel,
   savedAddresses,
+  blockedDates,
   testMode,
 }: {
   product: ProductDetail;
@@ -77,6 +81,8 @@ export function CheckoutForm({
   backLabel: string;
   /** ที่อยู่ที่บันทึกไว้ในพื้นที่ที่ร้านให้บริการ ที่อยู่หลักอยู่ก่อน */
   savedAddresses: AddressDTO[];
+  /** วันที่ร้านปิดรับงาน (YYYY-MM-DD) */
+  blockedDates: string[];
   testMode: boolean;
 }) {
   const router = useRouter();
@@ -99,6 +105,8 @@ export function CheckoutForm({
   const [place, setPlace] = useState<PlaceType | null>(initialPlace);
   const [note, setNote] = useState("");
   const [saveForLater, setSaveForLater] = useState(false);
+  const [geo, setGeo] = useState<LatLng | null>(initialSaved?.location ?? null);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Errors>({});
 
   const chosen = product.packages.filter((p) => selected.includes(p.id));
@@ -124,6 +132,8 @@ export function CheckoutForm({
   function pickSaved(saved: AddressDTO) {
     setAddress(saved.address);
     setChosenArea(saved.area);
+    setGeo(saved.location ?? null);
+    setGeoError(null);
     clearError("address");
     clearError("area");
   }
@@ -150,15 +160,23 @@ export function CheckoutForm({
         address,
         preferredDates,
         note,
+        ...(geo ? { geo } : {}),
       });
       if (!res.ok) {
-        toast.error(res.error);
+        if (res.error.includes("รัศมี")) {
+          setGeoError(res.error);
+          requestAnimationFrame(() =>
+            document.getElementById("geo-section")?.scrollIntoView({ behavior: "smooth", block: "center" }),
+          );
+        } else {
+          toast.error(res.error);
+        }
         return;
       }
       // บันทึกที่อยู่ไว้ใช้ครั้งหน้า ความล้มเหลวของส่วนนี้ไม่กระทบคำสั่งซื้อ
       if (saveForLater && canSave) {
         try {
-          await saveAddress({ label: "ที่อยู่ตั้งศาล", area, address });
+          await saveAddress({ label: "ที่อยู่ตั้งศาล", area, address, ...(geo ? { geo } : {}) });
         } catch {
           // ไม่ต้องแจ้งลูกค้า เพราะคำสั่งซื้อสำเร็จแล้ว
         }
@@ -285,6 +303,7 @@ export function CheckoutForm({
                     name="date"
                     value={date}
                     min={minDate}
+                    disabledDates={blockedDates}
                     onChange={(v) => {
                       setDate(v);
                       clearError("date");
@@ -305,11 +324,17 @@ export function CheckoutForm({
                     name="backupDate"
                     value={backupDate}
                     min={minDate}
+                    disabledDates={blockedDates}
                     onChange={setBackupDate}
                     placeholder="เลือกวันสำรอง"
                   />
                 </div>
               </div>
+              {blockedDates.length > 0 ? (
+                <p className="mt-3 px-1 text-sm text-muted-foreground">
+                  ร้านนี้ปิดรับงานบางวัน (แสดงในปฏิทินแล้ว)
+                </p>
+              ) : null}
             </section>
 
             <section>
@@ -353,6 +378,23 @@ export function CheckoutForm({
                 aria-describedby="address-hint"
               />
               <FieldHint id="address-hint" error={errors.address} />
+
+              <div id="geo-section" className="mt-4">
+                <ExpandableMap hasPin={Boolean(geo)}>
+                  <LocationPicker
+                    value={geo}
+                    onChange={(v) => {
+                      setGeo(v);
+                      setGeoError(null);
+                    }}
+                    provider={{
+                      location: product.provider.location,
+                      serviceRadiusKm: product.provider.serviceRadiusKm,
+                    }}
+                  />
+                </ExpandableMap>
+                <FieldHint id="geo-hint" error={geoError} />
+              </div>
 
               {canSave ? (
                 <div className="mt-1 flex min-h-11 items-center gap-3">

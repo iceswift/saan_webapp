@@ -11,6 +11,8 @@ import { TonePill, type Tone } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Monogram } from "@/components/visuals";
 import { OrderChat } from "@/app/orders/[id]/order-chat";
+import { OpenAddressLink, OrderMap } from "@/app/orders/[id]/order-sections";
+import { PhotoThumbs } from "@/components/lightbox";
 import {
   AREAS,
   PAYMENT_METHODS,
@@ -149,6 +151,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/provider/o
           </div>
         ))}
       </dl>
+      {/* ส่วนนี้ถูกวาดสองชุดตามขนาดจอ จึงใช้แผนที่แบบพับ (ชุดที่ซ่อนอยู่ไม่โหลดแผนที่) */}
+      {order.location ? <OrderMap order={order} collapsible /> : <OpenAddressLink address={order.address} />}
     </section>
   );
 
@@ -221,6 +225,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/provider/o
           {order.review.comment ? (
             <p className="mt-3 text-base whitespace-pre-line">{order.review.comment}</p>
           ) : null}
+          <PhotoThumbs urls={order.review.photoUrls} alt="รูปงานจริงจากลูกค้า" className="mt-3" />
           <p className="mt-2 text-sm text-muted-foreground">{formatShortDate(order.review.createdAt)}</p>
         </section>
       ) : null}

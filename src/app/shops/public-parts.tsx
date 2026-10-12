@@ -1,5 +1,6 @@
 import { ShieldCheck, Star } from "lucide-react";
 import { ListRow } from "@/components/list-group";
+import { PhotoThumbs } from "@/components/lightbox";
 import { Price } from "@/components/price";
 import { Monogram, ThumbArt, type ServiceArtName } from "@/components/visuals";
 import type { PackageType } from "@/lib/constants";
@@ -65,6 +66,7 @@ export function ReviewItem({ review }: { review: PublicReview }) {
         {review.comment ? (
           <p className="mt-2 text-base leading-relaxed whitespace-pre-line">{review.comment}</p>
         ) : null}
+        <PhotoThumbs urls={review.photoUrls} alt="รูปงานจริงจากลูกค้า" className="mt-3" />
       </div>
     </li>
   );

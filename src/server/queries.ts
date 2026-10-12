@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma, Provider } from "@prisma/client";
 import { db } from "./db";
+import { distanceKm } from "@/lib/geo";
 import type { CurrentUser } from "./auth";
 import type {
   AreaCode,
@@ -80,7 +81,13 @@ function toProvider(
     areas: parseList<AreaCode>(p.areas),
     rating: r ? Math.round(r.rating * 10) / 10 : null,
     reviewCount: r?.count ?? 0,
+    location: p.baseLat !== null && p.baseLng !== null ? { lat: p.baseLat, lng: p.baseLng } : null,
+    serviceRadiusKm: p.serviceRadiusKm,
   };
+}
+
+function toLocation(lat: number | null, lng: number | null): { lat: number; lng: number } | null {
+  return lat !== null && lng !== null ? { lat, lng } : null;
 }
 
 type OrderRow = Prisma.OrderGetPayload<{
@@ -119,6 +126,7 @@ function toRequestSummary(r: RequestRow): RequestSummary {
     description: r.description,
     area: r.area as AreaCode,
     address: r.address,
+    location: toLocation(r.lat, r.lng),
     photoUrls: parseList(r.photoUrls),
     createdAt: r.createdAt.toISOString(),
     quoteCount: r._count.quotes,
@@ -142,7 +150,9 @@ export async function listProducts(filter: {
   maxPrice?: number;
   /** คำค้นจากชื่อหรือรายละเอียด */
   q?: string;
-  sort?: "price_asc" | "price_desc" | "newest";
+  sort?: "price_asc" | "price_desc" | "newest" | "nearest";
+  /** ตำแหน่งของลูกค้า: ซ่อนร้านที่รัศมีบริการไม่ถึง และคำนวณระยะให้ */
+  near?: { lat: number; lng: number };
 } = {}): Promise<ProductDTO[]> {
   const rows = await db.product.findMany({
     where: {
@@ -165,8 +175,20 @@ export async function listProducts(filter: {
   const inArea = filter.area
     ? rows.filter((p) => parseList(p.provider.areas).includes(filter.area!))
     : rows;
-  const ratings = await ratingsFor([...new Set(inArea.map((p) => p.providerId))]);
-  return inArea.map((p) => ({
+  const near = filter.near;
+  const withDistance = inArea.map((p) => {
+    const base = toLocation(p.provider.baseLat, p.provider.baseLng);
+    const km = near && base ? distanceKm(base, near) : null;
+    return { p, km };
+  });
+  const reachable = near
+    ? withDistance.filter(({ p, km }) => km === null || !p.provider.serviceRadiusKm || km <= p.provider.serviceRadiusKm)
+    : withDistance;
+  if (filter.sort === "nearest") {
+    reachable.sort((a, b) => (a.km ?? Infinity) - (b.km ?? Infinity));
+  }
+  const ratings = await ratingsFor([...new Set(reachable.map(({ p }) => p.providerId))]);
+  return reachable.map(({ p, km }) => ({
     id: p.id,
     name: p.name,
     description: p.description,
@@ -175,7 +197,19 @@ export async function listProducts(filter: {
     imageUrl: p.imageUrl,
     active: p.active,
     provider: toProvider(p.provider, ratings),
+    ...(near ? { distanceKm: km } : {}),
   }));
+}
+
+/** วันที่ร้านไม่รับงาน นับจากวันนี้เป็นต้นไป (YYYY-MM-DD เรียงจากใกล้ไปไกล) */
+export async function listBlockedDates(providerId: string): Promise<string[]> {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
+  const rows = await db.providerBlockedDate.findMany({
+    where: { providerId, date: { gte: today } },
+    orderBy: { date: "asc" },
+    select: { date: true },
+  });
+  return rows.map((r) => r.date);
 }
 
 /** ศาลหนึ่งรายการ พร้อมบริการเสริมของร้านเดียวกัน */
@@ -274,6 +308,7 @@ export async function getOrder(orderId: string, viewer: CurrentUser): Promise<Or
   return {
     ...toOrderSummary(o),
     address: o.address,
+    location: toLocation(o.lat, o.lng),
     note: o.note,
     placeType: o.placeType as PlaceType | "",
     shrineKind: o.shrineKind as ShrineKind | "",
@@ -299,6 +334,7 @@ export async function getOrder(orderId: string, viewer: CurrentUser): Promise<Or
       ? {
           rating: o.review.rating,
           comment: o.review.comment,
+          photoUrls: parseList(o.review.photoUrls),
           createdAt: o.review.createdAt.toISOString(),
         }
       : null,
@@ -308,6 +344,7 @@ export async function getOrder(orderId: string, viewer: CurrentUser): Promise<Or
     messages: o.messages.map((m) => ({
       id: m.id,
       body: m.body,
+      photoUrl: m.photoUrl,
       createdAt: m.createdAt.toISOString(),
       mine: m.senderId === viewer.id,
       senderName: m.senderId === o.userId ? o.user.name : m.senderId === o.provider.userId ? o.provider.name : "ทีมงาน Saan",
@@ -495,6 +532,7 @@ export async function listAddresses(userId: string): Promise<AddressDTO[]> {
     label: a.label,
     area: a.area as AreaCode,
     address: a.address,
+    location: toLocation(a.lat, a.lng),
     isDefault: a.isDefault,
   }));
 }
@@ -619,6 +657,7 @@ export async function getPublicProvider(providerId: string): Promise<PublicProvi
     reviews: p.reviews.map((r) => ({
       rating: r.rating,
       comment: r.comment,
+      photoUrls: parseList(r.photoUrls),
       createdAt: r.createdAt.toISOString(),
       customerName: maskName(r.user.name),
     })),

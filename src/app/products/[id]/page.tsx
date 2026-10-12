@@ -11,12 +11,17 @@ import { Rating } from "@/components/rating";
 import { Rise } from "@/components/rise";
 import { Stepper } from "@/components/stepper";
 import { TrustNote } from "@/components/trust-note";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { MapView } from "@/components/map/map-view";
 import { Monogram, ShrineImage } from "@/components/visuals";
 import { Reveal } from "@/components/reveal";
+import { ShareActions } from "@/components/share-actions";
 import { ORDER_FLOW_STEPS } from "@/app/orders/display";
 import { firstValue, pickCode } from "@/app/new/options";
 import { PackageRow, RatingBreakdown, ReviewItem, monogramName } from "@/app/shops/public-parts";
 import { AREAS, AREA_CODES, DEPOSIT_RATE, SHRINE_KINDS } from "@/lib/constants";
+import { formatBaht } from "@/lib/format";
+import { distanceKm, formatDistance, isInThailand } from "@/lib/geo";
 import { getProduct, getPublicProvider } from "@/server/queries";
 import { AreaRow, OrderCta, type OrderParams } from "./order-panel";
 import { SaveButton, ShareButton } from "../saved-products";
@@ -24,7 +29,22 @@ import { SaveButton, ShareButton } from "../saved-products";
 export async function generateMetadata({ params }: PageProps<"/products/[id]">): Promise<Metadata> {
   const { id } = await params;
   const product = await getProduct(id);
-  return { title: product ? product.name : "ไม่พบศาลนี้" };
+  if (!product) return { title: "ไม่พบศาลนี้" };
+  const title = product.name;
+  const description = `${SHRINE_KINDS[product.kind]} จากร้าน ${product.provider.name} ราคา ${formatBaht(product.price)}${
+    product.description ? ` · ${product.description.trim().slice(0, 100)}` : ""
+  }`;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", ...(product.imageUrl ? { images: [product.imageUrl] } : {}) },
+    twitter: {
+      card: product.imageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(product.imageUrl ? { images: [product.imageUrl] } : {}),
+    },
+  };
 }
 
 export default async function ProductPage({ params, searchParams }: PageProps<"/products/[id]">) {
@@ -46,6 +66,21 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
     kind: firstValue(sp.kind),
     max: firstValue(sp.max),
   };
+
+  // ระยะจากตำแหน่งของลูกค้า (?near=lat,lng ปัดแล้วจากหน้าเลือกดูศาล)
+  const nearRaw = firstValue(sp.near);
+  const nearMatch = nearRaw && /^-?\d{1,3}(\.\d+)?,-?\d{1,3}(\.\d+)?$/.test(nearRaw) ? nearRaw.split(",").map(Number) : null;
+  const near = nearMatch && isInThailand({ lat: nearMatch[0], lng: nearMatch[1] }) ? { lat: nearMatch[0], lng: nearMatch[1] } : null;
+  const distance = near && provider.location ? distanceKm(provider.location, near) : null;
+  const outOfRadius =
+    distance !== null && provider.serviceRadiusKm !== null && distance > provider.serviceRadiusKm;
+  // ตำแหน่งร้านที่แสดงต้องเป็นค่าโดยประมาณ (ปัด 3 ตำแหน่ง ≈ 100 เมตร)
+  const shopPoint = provider.location
+    ? {
+        lat: Math.round(provider.location.lat * 1000) / 1000,
+        lng: Math.round(provider.location.lng * 1000) / 1000,
+      }
+    : null;
 
   return (
     <AppShell
@@ -130,6 +165,16 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
                     : "ยังไม่ระบุ",
               },
               { label: "มัดจำ", value: `${Math.round(DEPOSIT_RATE * 100)}% ของยอดรวม` },
+              ...(distance !== null
+                ? [
+                    {
+                      label: "ระยะจากคุณ",
+                      value: outOfRadius
+                        ? `ห่าง${formatDistance(distance)} (นอกรัศมีบริการ)`
+                        : `ห่าง${formatDistance(distance)}`,
+                    },
+                  ]
+                : []),
             ].map((fact) => (
               <div key={fact.label} className="flex items-baseline justify-between gap-6 py-3.5">
                 <dt className="text-base text-muted-foreground">{fact.label}</dt>
@@ -138,6 +183,10 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             ))}
           </dl>
         </Rise>
+
+        <Reveal>
+          <ShareActions title={`${product.name} จากร้าน ${provider.name}`} className="mt-6" />
+        </Reveal>
 
         {product.description ? (
           <Reveal as="section">
@@ -172,6 +221,24 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
             />
           </ListGroup>
         </section>
+
+        {shopPoint ? (
+          <section className="mt-3">
+            <ExpandableMap title="ดูตำแหน่งร้าน" hint="ตำแหน่งโดยประมาณและพื้นที่ที่ร้านรับงาน">
+              <MapView
+                markers={[{ ...shopPoint, tone: "shop", label: provider.name }]}
+                radiusKm={provider.serviceRadiusKm}
+                height="16rem"
+                ariaLabel={`แผนที่ตำแหน่งโดยประมาณของ ${provider.name}`}
+                description={
+                  provider.serviceRadiusKm
+                    ? `ร้านรับงานในรัศมี ${provider.serviceRadiusKm} กิโลเมตรจากที่ตั้งร้าน`
+                    : undefined
+                }
+              />
+            </ExpandableMap>
+          </section>
+        ) : null}
 
         {product.packages.length > 0 ? (
           <section>

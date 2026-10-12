@@ -6,7 +6,9 @@ import { getCurrentUser } from "../auth";
 import { payments } from "../integrations";
 import {
   addEvent,
+  geoSchema,
   idSchema,
+  uploadUrlSchema,
   newOrderCode,
   notify,
   NOT_ALLOWED,
@@ -22,6 +24,7 @@ import {
   type PaymentMethod,
 } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
+import { distanceKm } from "@/lib/geo";
 
 const methodSchema = z.enum(["PROMPTPAY", "CARD"], "เลือกวิธีชำระเงิน");
 
@@ -40,6 +43,7 @@ const installSchema = z.object({
     .min(1, "เลือกวันที่สะดวกอย่างน้อย 1 วัน")
     .max(3, "เลือกได้ไม่เกิน 3 วัน"),
   note: z.string().trim().max(1000).optional(),
+  geo: geoSchema.optional(),
 });
 
 /**
@@ -54,6 +58,7 @@ export async function createInstallOrder(input: {
   address: string;
   preferredDates: string[];
   note?: string;
+  geo?: { lat: number; lng: number };
 }): Promise<ActionResult<{ orderId: string }>> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
@@ -75,6 +80,26 @@ export async function createInstallOrder(input: {
   const areas: string[] = JSON.parse(product.provider.areas);
   if (!areas.includes(data.area)) return fail("ร้านนี้ยังไม่ให้บริการในพื้นที่ที่เลือก");
 
+  // รัศมีบริการ: ตรวจเมื่อทั้งร้านและลูกค้าระบุตำแหน่ง
+  const { baseLat, baseLng, serviceRadiusKm } = product.provider;
+  if (data.geo && baseLat !== null && baseLng !== null && serviceRadiusKm) {
+    const km = distanceKm({ lat: baseLat, lng: baseLng }, data.geo);
+    if (km > serviceRadiusKm) {
+      return fail(
+        `ที่ตั้งศาลอยู่ห่างจากร้านประมาณ ${Math.round(km)} กม. ร้านนี้รับงานในรัศมี ${serviceRadiusKm} กม.`,
+      );
+    }
+  }
+
+  // ปฏิทินวันว่าง: ต้องมีอย่างน้อยหนึ่งวันที่ร้านรับงานได้
+  const blocked = await db.providerBlockedDate.findMany({
+    where: { providerId: product.providerId, date: { in: data.preferredDates } },
+    select: { date: true },
+  });
+  if (blocked.length === data.preferredDates.length) {
+    return fail("ร้านไม่ว่างในวันที่เลือก กรุณาเลือกวันอื่น");
+  }
+
   const packageIds = [...new Set(data.packageIds)];
   const packages = await db.servicePackage.findMany({
     where: { id: { in: packageIds }, providerId: product.providerId, active: true },
@@ -95,6 +120,8 @@ export async function createInstallOrder(input: {
       placeType: data.placeType,
       area: data.area,
       address: data.address,
+      lat: data.geo?.lat ?? null,
+      lng: data.geo?.lng ?? null,
       note: data.note ?? "",
       preferredDates: JSON.stringify([...data.preferredDates].sort()),
       total,
@@ -289,6 +316,7 @@ export async function submitReview(input: {
   orderId: string;
   rating: number;
   comment?: string;
+  photoUrls?: string[];
 }): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
@@ -297,11 +325,12 @@ export async function submitReview(input: {
       orderId: idSchema,
       rating: z.number().int().min(1, "ให้คะแนน 1 ถึง 5 ดาว").max(5, "ให้คะแนน 1 ถึง 5 ดาว"),
       comment: z.string().trim().max(1000).optional(),
+      photoUrls: z.array(uploadUrlSchema).max(4, "แนบรูปได้ไม่เกิน 4 รูป").optional(),
     }),
     input,
   );
   if (!parsed.ok) return parsed;
-  const { orderId, rating, comment } = parsed.data;
+  const { orderId, rating, comment, photoUrls } = parsed.data;
 
   const order = await db.order.findUnique({
     where: { id: orderId },
@@ -312,7 +341,14 @@ export async function submitReview(input: {
   if (order.review) return fail("คุณรีวิวคำสั่งนี้แล้ว");
 
   await db.review.create({
-    data: { orderId, userId: user.id, providerId: order.providerId, rating, comment: comment ?? "" },
+    data: {
+      orderId,
+      userId: user.id,
+      providerId: order.providerId,
+      rating,
+      comment: comment ?? "",
+      photoUrls: JSON.stringify(photoUrls ?? []),
+    },
   });
   await notify(db, order.provider.userId, "ORDER", `คุณได้รับรีวิว ${rating} ดาว`, {
     body: `จากคำสั่งเลขที่ ${order.code}`,

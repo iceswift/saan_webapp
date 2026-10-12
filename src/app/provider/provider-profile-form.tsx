@@ -6,6 +6,8 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { SoonBadge } from "@/components/coming-soon";
 import { focusFirstInvalid } from "@/components/field-hint";
 import { ListGroup, ListRow } from "@/components/list-group";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { LocationPicker } from "@/components/map/location-picker";
 import { Notice } from "@/components/notice";
 import { TwoColumn } from "@/components/page-layout";
 import { Rise } from "@/components/rise";
@@ -14,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ShrineArt } from "@/components/visuals";
+import type { LatLng } from "@/lib/geo";
+import { cn } from "@/lib/utils";
 import {
   AREA_CODES,
   AREAS,
@@ -30,6 +34,9 @@ import { buildOptions, OptionCards, ToggleChips } from "./pickers";
 const KIND_OPTIONS = buildOptions(PROVIDER_KINDS);
 const AREA_OPTIONS = AREA_CODES.map((code) => ({ value: code, label: AREAS[code] }));
 
+/** รัศมีให้บริการที่เลือกได้เร็ว ๆ (กม.) null = ไม่จำกัดตามระยะ */
+const RADIUS_PRESETS: (number | null)[] = [10, 20, 40, 80, null];
+
 const AFTER_APPLY = [
   { label: "ส่งใบสมัคร", description: "กรอกข้อมูลร้านและพื้นที่ให้บริการ ใช้เวลาไม่กี่นาที" },
   { label: "ทีมงานตรวจสอบ", description: "ระหว่างนี้เพิ่มสินค้าและบริการของร้านไว้ก่อนได้" },
@@ -42,9 +49,12 @@ type Initial = {
   description: string;
   phone: string;
   areas: AreaCode[];
+  /** ที่ตั้งร้านที่บันทึกไว้ (เฉพาะแบบฟอร์มแก้ไข) */
+  base?: LatLng | null;
+  serviceRadiusKm?: number | null;
 };
 
-type Errors = { name?: string; kind?: string; phone?: string; areas?: string };
+type Errors = { name?: string; kind?: string; phone?: string; areas?: string; radius?: string };
 
 /** ฟอร์มสมัครผู้ให้บริการ (ทั้งหน้า) และฟอร์มแก้ไขข้อมูลร้าน (ในแท็บ) ใช้ฟิลด์ชุดเดียวกัน */
 export function ProviderProfileForm({
@@ -59,6 +69,8 @@ export function ProviderProfileForm({
   const [description, setDescription] = useState(initial.description);
   const [phone, setPhone] = useState(initial.phone);
   const [areas, setAreas] = useState<AreaCode[]>(initial.areas);
+  const [base, setBase] = useState<LatLng | null>(initial.base ?? null);
+  const [radius, setRadius] = useState<number | null>(initial.serviceRadiusKm ?? null);
   const [errors, setErrors] = useState<Errors>({});
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -70,6 +82,7 @@ export function ProviderProfileForm({
     if (phone.replace(/\D/g, "").length < 9) next.phone = "กรอกเบอร์ติดต่อให้ครบ";
     if (!kind) next.kind = "เลือกประเภทผู้ให้บริการ";
     if (areas.length === 0) next.areas = "เลือกพื้นที่ให้บริการอย่างน้อย 1 พื้นที่";
+    if (mode === "profile" && radius !== null && !base) next.radius = "ปักหมุดที่ตั้งร้านก่อน จึงจะกำหนดรัศมีได้";
     setErrors(next);
     if (Object.keys(next).length > 0 || !kind) {
       requestAnimationFrame(() => focusFirstInvalid(formRef.current));
@@ -83,10 +96,13 @@ export function ProviderProfileForm({
       phone: phone.trim(),
       areas,
     };
+    // ส่วนแผนที่มีเฉพาะแบบฟอร์มแก้ไข (ตอนสมัครยังไม่ส่งค่านี้ เซิร์ฟเวอร์จะไม่แตะค่าเดิม)
+    const profileInput =
+      mode === "profile" ? { ...input, base, serviceRadiusKm: base ? radius : null } : input;
 
     startTransition(async () => {
       const res =
-        mode === "register" ? await registerProvider(input) : await updateProviderProfile(input);
+        mode === "register" ? await registerProvider(input) : await updateProviderProfile(profileInput);
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -185,6 +201,61 @@ export function ProviderProfileForm({
           </FieldHint>
         </fieldset>
       </FormSection>
+
+      {mode === "profile" ? (
+        <FormSection title="ตำแหน่งร้านและรัศมีบริการ">
+          <ExpandableMap
+            title="ที่ตั้งร้านบนแผนที่"
+            hint="ไม่บังคับ ช่วยให้ลูกค้าค้นหาร้านใกล้ตัวเจอ"
+            hasPin={Boolean(base)}
+            defaultOpen={Boolean(base)}
+          >
+            <LocationPicker
+              value={base}
+              onChange={(v) => {
+                setBase(v);
+                setErrors((s) => ({ ...s, radius: undefined }));
+              }}
+              circleKm={radius}
+              height="20rem"
+            />
+          </ExpandableMap>
+
+          <fieldset>
+            <legend className="mb-2 text-base font-medium">รัศมีให้บริการ</legend>
+            <div role="group" aria-label="รัศมีให้บริการ" className="flex flex-wrap gap-2">
+              {[...new Set([...RADIUS_PRESETS, radius])].map((km) => {
+                const on = radius === km;
+                return (
+                  <button
+                    key={km ?? "none"}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      setRadius(km);
+                      setErrors((s) => ({ ...s, radius: undefined }));
+                    }}
+                    className={cn(
+                      "numeric inline-flex min-h-11 items-center rounded-full border px-5 text-base font-medium transition-colors lg:min-h-10",
+                      on
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-foreground/20 hover:bg-muted",
+                    )}
+                  >
+                    {km === null ? "ไม่จำกัด" : `${km} กม.`}
+                  </button>
+                );
+              })}
+            </div>
+            <FieldHint id="provider-radius-hint" error={errors.radius}>
+              ลูกค้าที่อยู่นอกรัศมีจะสั่งไม่ได้ และร้านจะไม่แสดงเมื่อลูกค้าใช้ &quot;ใกล้ฉัน&quot;
+            </FieldHint>
+            <p className="mt-2 px-1 text-sm text-muted-foreground">
+              ที่ตั้งร้านแสดงต่อสาธารณะเป็นหมุดโดยประมาณ (ปัดให้คลาดเคลื่อนราว 100 เมตร) ไม่แสดงตำแหน่งที่แน่นอน
+            </p>
+          </fieldset>
+        </FormSection>
+      ) : null}
     </form>
   );
 

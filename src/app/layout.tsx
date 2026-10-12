@@ -27,7 +27,11 @@ const prompt = Prompt({
   weight: ["400", "500"],
 });
 
+// ที่อยู่เว็บจริงใช้ทำลิงก์เต็มของรูปและหน้าที่แชร์ (Open Graph) ตั้งค่าได้ด้วย NEXT_PUBLIC_SITE_URL ดู .env.example
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "Saan ดูแลเรื่องศาลครบในที่เดียว", template: "%s | Saan" },
   description: "ตั้งศาลใหม่ ถอนย้าย ซ่อม และสมุดบน กับร้านที่ตรวจสอบแล้ว ราคาชัดเจน",
   applicationName: "Saan",

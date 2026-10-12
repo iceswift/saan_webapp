@@ -4,6 +4,7 @@ import { ShieldCheck, Star } from "lucide-react";
 import { Price } from "@/components/price";
 import { ShrineImage } from "@/components/visuals";
 import { AREAS, SHRINE_KINDS } from "@/lib/constants";
+import { formatDistance } from "@/lib/geo";
 import type { ProductDTO } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SaveButton } from "@/app/products/saved-products";
@@ -19,12 +20,14 @@ function areaLabel(areas: ProductDTO["provider"]["areas"]): string | null {
  * รูปเต็มขอบการ์ด (ไม่มีกรอบรอบรูป) แล้วมีแค่: ประเภท · ชื่อ · พื้นที่/คะแนน · ราคา
  * ทั้งการ์ดเป็นลิงก์เดียว (ไม่มีวงกลมลูกศร ไม่มีเส้นคั่น ไม่มีป้าย "ค่าศาล") ราคาเป็นสีดำ
  * เครื่องหมายร้านผ่านการตรวจสอบอยู่หน้าพื้นที่ คะแนนแสดงเฉพาะเมื่อมีรีวิวจริง ปุ่มบันทึก (หัวใจ) ลอยมุมขวาบนของรูป
+ * product.distanceKm (ใส่เมื่อค้นหาด้วย near) แสดงเป็น "ห่างประมาณ N กม." ในบรรทัดพื้นที่
  * ชื่อร้านอยู่ในข้อความสำหรับโปรแกรมอ่านหน้าจอเท่านั้น (หน้ารายละเอียดมีชื่อร้านเต็ม)
  * prop variant / compact / showShop ยังรับได้เพื่อไม่ให้ผู้เรียกเดิมพัง แต่ไม่มีผลแล้ว (ไม่มีการ์ดใหญ่อีก)
  */
 export function ProductCard({
   product,
   className,
+  near,
 }: {
   product: ProductDTO;
   /** @deprecated v6: ไม่มีการ์ดใหญ่แล้ว */
@@ -34,16 +37,20 @@ export function ProductCard({
   /** @deprecated v6: ชื่อร้านไม่แสดงบนการ์ดอยู่แล้ว */
   showShop?: boolean;
   className?: string;
+  /** "lat,lng" ที่ปัดแล้ว ต่อท้ายลิงก์เป็น ?near= เพื่อให้หน้ารายละเอียดบอกระยะได้ */
+  near?: string;
 }) {
   const { provider } = product;
   const area = areaLabel(provider.areas);
   const verified = provider.status === "VERIFIED";
+  const distance =
+    typeof product.distanceKm === "number" ? formatDistance(product.distanceKm) : null;
   const rated = provider.rating !== null && provider.reviewCount > 0;
 
   return (
     <div className={cn("group/card relative h-full", className)}>
       <Link
-        href={`/products/${product.id}`}
+        href={near ? `/products/${product.id}?near=${near}` : `/products/${product.id}`}
         className="flex h-full flex-col overflow-hidden surface transition-colors hover:bg-muted"
       >
         <ViewTransition name={`product-${product.id}`} share="morph-image" default="none">
@@ -61,7 +68,7 @@ export function ProductCard({
           <span className="text-sm text-muted-foreground">{SHRINE_KINDS[product.kind]}</span>
           <span className="line-clamp-2 text-base leading-snug font-medium">{product.name}</span>
           <span className="sr-only">ร้าน {provider.name}</span>
-          {area || rated ? (
+          {area || rated || distance ? (
             <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
               {area ? (
                 <span className="inline-flex items-center gap-1">
@@ -75,6 +82,7 @@ export function ProductCard({
                   {area}
                 </span>
               ) : null}
+              {distance ? <span className="numeric">ห่าง{distance}</span> : null}
               {rated ? (
                 <span className="numeric inline-flex items-center gap-1">
                   <Star className="size-3.5 shrink-0 fill-marigold text-marigold" aria-hidden="true" />

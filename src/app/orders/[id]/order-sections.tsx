@@ -2,13 +2,18 @@
 // ไฟล์นี้ไม่ import ข้อมูลฝั่งเซิร์ฟเวอร์ จึงใช้ร่วมกับ client component ได้
 // v6: ส่วนต่าง ๆ เป็นรายการเรียบ ๆ คั่นด้วยเส้นบาง ไม่มีกล่องซ้อนกล่อง ไม่มีไอคอนในวงกลม
 
-import { Phone, Star } from "lucide-react";
+import { MapPin, Navigation, Phone, Star } from "lucide-react";
 import { SectionTitle } from "@/components/app-shell";
 import { ListGroup, ListRow } from "@/components/list-group";
+import { PhotoThumbs } from "@/components/lightbox";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { MapView, type MapMarker } from "@/components/map/map-view";
 import { Price } from "@/components/price";
+import { buttonVariants } from "@/components/ui/button";
 import { TonePill } from "@/components/status-badge";
 import { AREAS, DEPOSIT_RATE, PAYMENT_METHODS, PAYMENT_STATUS, PLACE_TYPES, SHRINE_KINDS } from "@/lib/constants";
 import { formatBaht, formatDateOnly, formatPhone, formatShortDate } from "@/lib/format";
+import { mapsLink } from "@/lib/geo";
 import type { OrderDetail, OrderEventDTO, PaymentDTO, ReviewDTO } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatShortDateTime } from "../display";
@@ -28,6 +33,7 @@ export function ReviewView({ review }: { review: ReviewDTO }) {
         ))}
       </div>
       {review.comment ? <p className="text-base leading-relaxed">{review.comment}</p> : null}
+      <PhotoThumbs urls={review.photoUrls} alt="รูปงานจริงจากลูกค้า" className="mt-1" />
       <p className="text-sm text-muted-foreground">รีวิวเมื่อ {formatShortDate(review.createdAt)}</p>
     </div>
   );
@@ -184,7 +190,9 @@ export function OrderDetails({ order }: { order: OrderDetail }) {
           <div
             key={row.label}
             className={cn(
-              "flex items-baseline justify-between gap-6 border-b border-border py-3 last:border-b-0 lg:grid lg:grid-cols-[9rem_minmax(0,1fr)] lg:justify-start lg:gap-4",
+              // เดสก์ท็อป: คอลัมน์แคบให้ป้ายอยู่เหนือค่า (ไม่แบ่งสองช่องแล้วบีบค่าทีละตัวอักษร) แถวเต็มความกว้างใช้ป้ายซ้ายได้
+              "flex items-baseline justify-between gap-6 border-b border-border py-3 last:border-b-0 lg:flex-col lg:items-stretch lg:justify-start lg:gap-1",
+              row.wide && "lg:grid lg:grid-cols-[9rem_minmax(0,1fr)] lg:items-baseline lg:gap-4",
               row.inPanel && "lg:hidden",
               row.wide && "lg:col-span-2",
             )}
@@ -196,7 +204,81 @@ export function OrderDetails({ order }: { order: OrderDetail }) {
           </div>
         ))}
       </dl>
+      <OrderMap order={order} />
     </section>
+  );
+}
+
+/**
+ * แผนที่ของงาน: หมุดที่ลูกค้าปักไว้ (สีชาด) + ที่ตั้งร้านโดยประมาณ (สีหมึก) + วงรัศมีบริการ
+ * ความเป็นส่วนตัว: คำสั่งนี้เปิดดูได้เฉพาะลูกค้าเจ้าของงานและร้านที่รับงาน หมุดบ้านจึงไม่รั่วออกหน้าสาธารณะ
+ * ร้านและผู้ดูแล (viewerIs ไม่ใช่ CUSTOMER) จะเห็นปุ่ม "นำทางไปหน้างาน" ไปยังหมุดงานด้วย
+ * collapsible: ปุ่มนำทางอยู่ด้านบนเสมอ ส่วนแผนที่พับไว้ (ไม่โหลดจนกว่าจะเปิด) ใช้เมื่อหน้าแสดงส่วนเดียวกันสองชุดตามขนาดจอ
+ */
+export function OrderMap({ order, collapsible = false }: { order: OrderDetail; collapsible?: boolean }) {
+  if (!order.location) return null;
+  const shop = order.provider.location
+    ? {
+        lat: Math.round(order.provider.location.lat * 1000) / 1000,
+        lng: Math.round(order.provider.location.lng * 1000) / 1000,
+      }
+    : null;
+  const markers: MapMarker[] = [{ ...order.location, tone: "customer", label: "ที่ตั้งศาล" }];
+  if (shop) markers.push({ ...shop, tone: "shop", label: order.provider.name });
+  const map = (
+    <MapView
+      markers={markers}
+      radiusKm={shop ? order.provider.serviceRadiusKm : null}
+      height="16rem"
+      ariaLabel="แผนที่ที่ตั้งศาลและที่ตั้งร้าน"
+      description={`ที่ตั้งศาลตามที่ปักหมุดไว้ ที่อยู่: ${order.address}`}
+    />
+  );
+  const navigate =
+    order.viewerIs !== "CUSTOMER" ? (
+      <a
+        href={mapsLink(order.location)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(buttonVariants({ variant: "outline", size: "xl" }), "w-full sm:w-auto")}
+      >
+        <Navigation />
+        นำทางไปหน้างาน
+      </a>
+    ) : null;
+  if (collapsible) {
+    return (
+      <div className="mt-5 flex flex-col gap-3">
+        {navigate}
+        <ExpandableMap title="ดูแผนที่หน้างาน" hint="หมุดที่ลูกค้าปักไว้และที่ตั้งร้านโดยประมาณ" hasPin>
+          {map}
+        </ExpandableMap>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-5">
+      {map}
+      {navigate ? <div className="mt-3">{navigate}</div> : null}
+    </div>
+  );
+}
+
+/** ลูกค้าไม่ได้ปักหมุด: เปิดที่อยู่ที่พิมพ์ไว้ในแผนที่ (ค้นหาตามข้อความ ไม่ใช่ตำแหน่งแน่นอน) */
+export function OpenAddressLink({ address }: { address: string }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      <p className="text-sm text-muted-foreground">ลูกค้าไม่ได้ปักหมุด ใช้ที่อยู่ด้านบน</p>
+      <a
+        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(buttonVariants({ variant: "outline", size: "xl" }), "w-full sm:w-auto")}
+      >
+        <MapPin />
+        เปิดที่อยู่ในแผนที่
+      </a>
+    </div>
   );
 }
 

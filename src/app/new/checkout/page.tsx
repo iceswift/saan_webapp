@@ -7,7 +7,7 @@ import {
 } from "@/lib/constants";
 import { IS_MOCK_PAYMENT } from "@/server/integrations";
 import { requireUser } from "@/server/auth";
-import { getProduct, listAddresses } from "@/server/queries";
+import { getProduct, listAddresses, listBlockedDates } from "@/server/queries";
 import { firstValue, parseBudget, pickCode } from "../options";
 import { CheckoutForm } from "./checkout-form";
 
@@ -60,6 +60,8 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/new/che
     product.provider.areas.includes(a.area),
   );
 
+  const blockedDates = await listBlockedDates(product.provider.id);
+
   return (
     <CheckoutForm
       product={product}
@@ -69,6 +71,7 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/new/che
       backHref={backHref}
       backLabel={backLabel}
       savedAddresses={savedAddresses}
+      blockedDates={blockedDates}
       testMode={IS_MOCK_PAYMENT}
     />
   );

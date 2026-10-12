@@ -70,6 +70,7 @@ export default async function AddressesPage() {
                   <>
                     {AREAS[a.area]}
                     <span className="mt-0.5 block break-words">{a.address}</span>
+                    {a.location ? <span className="mt-0.5 block">ปักหมุดแล้ว</span> : null}
                   </>
                 }
               />

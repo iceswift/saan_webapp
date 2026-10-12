@@ -26,18 +26,21 @@ function bangkokNoon(isoDate: string): Date {
 export async function sendOrderMessage(input: {
   orderId: string;
   body: string;
+  photoUrl?: string;
 }): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
   const parsed = parseInput(
     z.object({
       orderId: idSchema,
-      body: z.string().trim().min(1, "พิมพ์ข้อความก่อนส่ง").max(1000, "ข้อความยาวเกินไป"),
+      body: z.string().trim().max(1000, "ข้อความยาวเกินไป"),
+      photoUrl: uploadUrlSchema.optional(),
     }),
     input,
   );
   if (!parsed.ok) return parsed;
-  const { orderId, body } = parsed.data;
+  const { orderId, body, photoUrl } = parsed.data;
+  if (!body && !photoUrl) return fail("พิมพ์ข้อความหรือแนบรูปก่อนส่ง");
 
   const order = await db.order.findUnique({ where: { id: orderId }, include: { provider: true } });
   if (!order) return NOT_ALLOWED;
@@ -46,9 +49,10 @@ export async function sendOrderMessage(input: {
   if (!isCustomer && !isProvider && user.role !== "ADMIN") return NOT_ALLOWED;
   if (order.status === "CANCELLED") return fail("คำสั่งนี้ถูกยกเลิกแล้ว ส่งข้อความไม่ได้");
 
-  await db.orderMessage.create({ data: { orderId, senderId: user.id, body } });
+  await db.orderMessage.create({ data: { orderId, senderId: user.id, body, photoUrl: photoUrl ?? null } });
 
-  const preview = body.length > 80 ? `${body.slice(0, 80)}…` : body;
+  const text = body || "ส่งรูปภาพ";
+  const preview = text.length > 80 ? `${text.slice(0, 80)}…` : text;
   if (!isCustomer) {
     await notify(db, order.userId, "ORDER", `ข้อความใหม่จาก ${isProvider ? order.provider.name : "ทีมงาน Saan"}`, {
       body: preview,

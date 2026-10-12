@@ -9,6 +9,8 @@ import { Rating } from "@/components/rating";
 import { Rise } from "@/components/rise";
 import { StatusLine } from "@/components/status-line";
 import { TonePill } from "@/components/status-badge";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { MapView } from "@/components/map/map-view";
 import { SidePanel, TwoColumn } from "@/components/page-layout";
 import { EmptyState, Monogram } from "@/components/visuals";
 import { cn } from "@/lib/utils";
@@ -130,6 +132,17 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
                   <dd className="numeric text-right">{formatShortDate(request.createdAt)}</dd>
                 </div>
               </dl>
+              {request.location ? (
+                <ExpandableMap title="ดูหมุดที่คุณปักไว้" hint="ร้านที่รับงานจะเห็นหมุดนี้ ไม่แสดงให้คนอื่น" hasPin>
+                  <MapView
+                    markers={[{ ...request.location, tone: "customer", label: "ที่ตั้งศาล" }]}
+                    height="14rem"
+                    zoom={15}
+                    ariaLabel="แผนที่หมุดที่ตั้งศาลของคำขอ"
+                    description={`หมุดตามที่คุณปักไว้ ที่อยู่: ${request.address}`}
+                  />
+                </ExpandableMap>
+              ) : null}
               {isOpen ? <CloseRequestButton requestId={request.id} /> : null}
             </div>
           </SidePanel>

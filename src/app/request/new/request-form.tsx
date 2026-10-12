@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { LocationPicker } from "@/components/map/location-picker";
 import { ImageUpload } from "@/components/image-upload";
 import { SidePanel, TwoColumn } from "@/components/page-layout";
 import { ThumbArt } from "@/components/thumb-art";
@@ -13,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AREAS, REQUEST_TYPES, SHRINE_KINDS, type AreaCode, type RequestType } from "@/lib/constants";
+import type { LatLng } from "@/lib/geo";
 import type { AddressDTO, ShrineDTO } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createRequest } from "@/server/actions/customer";
@@ -45,6 +48,7 @@ export function RequestForm({
   const [area, setArea] = useState<AreaCode | "">("");
   const [address, setAddress] = useState("");
   const [shrineId, setShrineId] = useState<string | null>(null);
+  const [geo, setGeo] = useState<LatLng | null>(null);
   const [errors, setErrors] = useState<Errors>({});
 
   function clear(key: keyof Errors) {
@@ -68,6 +72,7 @@ export function RequestForm({
   function pickSavedAddress(saved: AddressDTO) {
     setArea(saved.area);
     setAddress(saved.address);
+    setGeo(saved.location ?? null);
     setErrors((prev) => ({ ...prev, area: undefined, address: undefined }));
   }
 
@@ -90,6 +95,7 @@ export function RequestForm({
         address,
         photoUrls,
         shrineId: shrineId ?? undefined,
+        ...(geo ? { geo } : {}),
       });
       if (!res.ok) {
         toast.error(res.error);
@@ -239,6 +245,10 @@ export function RequestForm({
             />
             <FieldHint id="address-hint" error={errors.address} className="mt-0" />
           </div>
+
+          <ExpandableMap hasPin={Boolean(geo)} className="mt-4">
+            <LocationPicker value={geo} onChange={setGeo} />
+          </ExpandableMap>
 
           {shrines.length > 0 ? (
             <>

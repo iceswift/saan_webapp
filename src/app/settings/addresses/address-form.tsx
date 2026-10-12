@@ -6,12 +6,15 @@ import { toast } from "sonner";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { Chip } from "@/components/chip";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { LocationPicker } from "@/components/map/location-picker";
 import { ListGroup } from "@/components/list-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AREAS, type AreaCode } from "@/lib/constants";
+import type { LatLng } from "@/lib/geo";
 import type { AddressDTO } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { saveAddress } from "@/server/actions/settings";
@@ -30,6 +33,7 @@ export function AddressForm({ initial }: { initial?: AddressDTO }) {
   const [label, setLabel] = useState(initial?.label ?? "");
   const [area, setArea] = useState<AreaCode | "">(initial?.area ?? "");
   const [address, setAddress] = useState(initial?.address ?? "");
+  const [geo, setGeo] = useState<LatLng | null>(initial?.location ?? null);
   const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
   const [errors, setErrors] = useState<{ label?: string; area?: string; address?: string }>({});
 
@@ -45,7 +49,7 @@ export function AddressForm({ initial }: { initial?: AddressDTO }) {
       return;
     }
     startTransition(async () => {
-      const res = await saveAddress({ id: initial?.id, label, area: area as AreaCode, address, isDefault });
+      const res = await saveAddress({ id: initial?.id, label, area: area as AreaCode, address, isDefault, geo });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -147,6 +151,10 @@ export function AddressForm({ initial }: { initial?: AddressDTO }) {
           />
           <FieldHint id="address-hint" error={errors.address} />
         </div>
+
+        <ExpandableMap hasPin={Boolean(geo)} defaultOpen={Boolean(initial?.location)}>
+          <LocationPicker value={geo} onChange={setGeo} />
+        </ExpandableMap>
 
         <ListGroup>
           <ToggleRow

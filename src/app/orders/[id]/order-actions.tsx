@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Check, Star } from "lucide-react";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
+import { ImageUpload } from "@/components/image-upload";
 import { PriceTicker } from "@/components/price-ticker";
 import { SuccessMark } from "@/components/success-mark";
 import { TrustNote } from "@/components/trust-note";
@@ -213,6 +214,7 @@ export function CancelOrderControl({
 export function ReviewForm({ orderId }: { orderId: string }) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -228,7 +230,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
       return;
     }
     startTransition(async () => {
-      const res = await submitReview({ orderId, rating, comment });
+      const res = await submitReview({ orderId, rating, comment, ...(photos.length > 0 ? { photoUrls: photos } : {}) });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -279,6 +281,13 @@ export function ReviewForm({ orderId }: { orderId: string }) {
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
+      </div>
+      <div className="flex flex-col gap-2">
+        <p className="text-base font-medium">แนบรูปผลงานจริง (ไม่บังคับ)</p>
+        <ImageUpload value={photos} onChange={setPhotos} max={4} label="เพิ่มรูป" />
+        <p className="text-sm text-muted-foreground">
+          แนบได้ไม่เกิน 4 รูป รูปจะแสดงให้ลูกค้าท่านอื่นเห็นในหน้าร้าน
+        </p>
       </div>
       <Button type="submit" size="xl" className="w-full" loading={pending}>
         ส่งรีวิว

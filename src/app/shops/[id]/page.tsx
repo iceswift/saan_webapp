@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { MapView } from "@/components/map/map-view";
+import { ShareActions } from "@/components/share-actions";
 import { ArchMark } from "@/components/brand";
 import { ListGroup } from "@/components/list-group";
 import { CardGrid } from "@/components/page-layout";
@@ -22,7 +25,27 @@ import { getPublicProvider } from "@/server/queries";
 export async function generateMetadata({ params }: PageProps<"/shops/[id]">): Promise<Metadata> {
   const { id } = await params;
   const shop = await getPublicProvider(id);
-  return { title: shop ? shop.provider.name : "ไม่พบร้านนี้" };
+  if (!shop) return { title: "ไม่พบร้านนี้" };
+  const { provider } = shop;
+  const areas = provider.areas.map((code) => AREAS[code]).join(" · ");
+  const title = provider.name;
+  const description = [
+    provider.description.trim().slice(0, 120),
+    areas ? `ให้บริการ ${areas}` : "",
+    provider.reviewCount > 0 && provider.rating !== null
+      ? `คะแนน ${provider.rating.toFixed(1)} จาก ${provider.reviewCount} รีวิว`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  // ใช้รูปสินค้าจริงของร้านเป็นรูปแชร์ ถ้ามี (ไม่ใช้รูปวาดประกอบ)
+  const photo = shop.products.find((p) => p.imageUrl)?.imageUrl;
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", ...(photo ? { images: [photo] } : {}) },
+    twitter: { card: photo ? "summary_large_image" : "summary", title, description, ...(photo ? { images: [photo] } : {}) },
+  };
 }
 
 /** แถบปกร้าน: พื้นเบจ มีซุ้มประตูศาลจาง ๆ เรียงเป็นลวดลาย (ใช้สีจากโทเคนทั้งหมด) */
@@ -58,6 +81,13 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
   const { provider } = shop;
   const verified = provider.status === "VERIFIED";
   const hasReviews = provider.reviewCount > 0 && provider.rating !== null;
+  // ที่ตั้งร้านแสดงสาธารณะเป็นค่าโดยประมาณ (ปัด 3 ตำแหน่ง ≈ 100 เมตร)
+  const shopPoint = provider.location
+    ? {
+        lat: Math.round(provider.location.lat * 1000) / 1000,
+        lng: Math.round(provider.location.lng * 1000) / 1000,
+      }
+    : null;
 
   return (
     <AppShell width="full">
@@ -99,12 +129,39 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
         </div>
       </Rise>
 
+      <Rise i={1}>
+        <ShareActions title={`${provider.name} ร้านศาลพระภูมิบน Saan`} className="mt-5 px-4 lg:px-8" />
+      </Rise>
+
       {provider.description ? (
         <Rise i={1}>
           <p className="mt-6 max-w-3xl text-base leading-relaxed whitespace-pre-line">
             {provider.description}
           </p>
         </Rise>
+      ) : null}
+
+      {shopPoint ? (
+        <section className="mt-6 max-w-3xl">
+          <ExpandableMap title="ดูตำแหน่งร้าน" hint="ตำแหน่งโดยประมาณและพื้นที่ที่ร้านรับงาน">
+            <MapView
+              markers={[{ ...shopPoint, tone: "shop", label: provider.name }]}
+              radiusKm={provider.serviceRadiusKm}
+              height="16rem"
+              ariaLabel={`แผนที่ตำแหน่งโดยประมาณของ ${provider.name}`}
+              description={
+                provider.serviceRadiusKm
+                  ? `ร้านรับงานในรัศมี ${provider.serviceRadiusKm} กิโลเมตรจากที่ตั้งร้าน`
+                  : undefined
+              }
+            />
+            <p className="numeric mt-3 px-1 text-base">
+              {provider.serviceRadiusKm
+                ? `รับงานในรัศมี ${provider.serviceRadiusKm} กม.`
+                : "ร้านไม่จำกัดรัศมีรับงาน"}
+            </p>
+          </ExpandableMap>
+        </section>
       ) : null}
 
       <section>
