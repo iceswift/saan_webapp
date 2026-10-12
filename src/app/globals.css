@@ -1,26 +1,672 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:is(.dark *));
+
+/* ระยะบรรทัดของภาษาไทย: ต้องโปร่งพอให้วรรณยุกต์และสระบนไม่ชนกัน */
+@theme {
+  --text-sm--line-height: 1.6;
+  --text-base--line-height: 1.65;
+  --text-lg--line-height: 1.55;
+  --text-xl--line-height: 1.45;
+  --text-2xl--line-height: 1.4;
+  --text-3xl--line-height: 1.35;
+}
+
+/* ภาษาการเคลื่อนไหว: เส้นโค้งและความยาว ใช้ผ่านคลาส ease-soft / ease-spring หรือ var(--ease-*) */
+@theme {
+  --ease-soft: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-canvas: var(--canvas);
+  --color-tint-mint: var(--tint-mint);
+  --color-tint-mint-ink: var(--tint-mint-ink);
+  --color-tint-amber: var(--tint-amber);
+  --color-tint-amber-ink: var(--tint-amber-ink);
+  --color-tint-rose: var(--tint-rose);
+  --color-tint-rose-ink: var(--tint-rose-ink);
+  --color-tint-sky: var(--tint-sky);
+  --color-tint-sky-ink: var(--tint-sky-ink);
+  --color-tint-violet: var(--tint-violet);
+  --color-tint-violet-ink: var(--tint-violet-ink);
+  --color-marigold: var(--marigold);
+  --color-gold: var(--gold);
+  --color-gold-hover: var(--gold-hover);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-gold-ink: var(--gold-ink);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-line: var(--gold-line);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
+  --shadow-gold: var(--shadow-gold);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-dm), var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-dm), var(--font-prompt), var(--font-anuphan), sans-serif;
+  --font-display: var(--font-dm), var(--font-prompt), var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
+/* ============================================================
+   ธีม Saan รุ่น 5 "Flat Minimal + Modern"
+   สว่าง: พื้นขาวล้วน ตัวอักษรดำ การ์ดขาวกำหนดขอบด้วยเส้น 1px (ไม่มีเงา) พื้นรองสีเบจอุ่น
+   มืด: พื้นดำอุ่น การ์ดยกขึ้นเล็กน้อย ตัวอักษรงาช้าง เส้นขอบงาช้างจาง
+   สีเน้นเดียวคือ "ชาด" (แดงส้ม) ใช้กับปุ่มหลักของหน้า ราคา ป้ายเล็ก และวงเลือก
+   ชื่อโทเคนกลุ่ม gold-* เป็นชื่อเดิม (ตอนนี้หมายถึงสีชาด) คงไว้เพื่อให้หน้าเดิมทำงานต่อ
+   ============================================================ */
+:root,
+.light {
+  color-scheme: light;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0.004 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.004 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.004 60);
+  --primary: oklch(0.17 0.004 60);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.962 0.014 80);
+  --secondary-foreground: oklch(0.17 0.004 60);
+  --muted: oklch(0.962 0.014 80);
+  --muted-foreground: oklch(0.49 0.008 70);
+  --accent: oklch(0.962 0.014 80);
+  --accent-foreground: oklch(0.17 0.004 60);
+  --destructive: oklch(0.52 0.2 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.012 80);
+  --input: oklch(0.68 0.008 80);
+  --ring: oklch(0.57 0.21 31);
+  --chart-1: oklch(0.57 0.21 31);
+  --chart-2: oklch(0.17 0.004 60);
+  --chart-3: oklch(0.5 0.01 70);
+  --chart-4: oklch(0.7 0.01 80);
+  --chart-5: oklch(0.85 0.012 80);
+  --radius: 1rem;
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.15 0.004 60);
+  --sidebar-primary: oklch(0.17 0.004 60);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.962 0.014 80);
+  --sidebar-accent-foreground: oklch(0.17 0.004 60);
+  --sidebar-border: oklch(0.9 0.012 80);
+  --sidebar-ring: oklch(0.57 0.21 31);
+
+  /* พื้นนอกคอลัมน์เนื้อหาบนจอกว้าง */
+  --canvas: oklch(0.975 0.008 80);
+
+  /* สีอ่อนเฉพาะป้ายสถานะและกล่องแจ้ง (ไอคอนใช้พื้นเบจกลาง) สีจางเพื่อไม่แย่งสีชาด */
+  --tint-mint: oklch(0.955 0.022 170);
+  --tint-mint-ink: oklch(0.38 0.06 170);
+  --tint-amber: oklch(0.96 0.03 88);
+  --tint-amber-ink: oklch(0.42 0.07 70);
+  --tint-rose: oklch(0.955 0.02 15);
+  --tint-rose-ink: oklch(0.45 0.1 18);
+  --tint-sky: oklch(0.955 0.02 238);
+  --tint-sky-ink: oklch(0.42 0.08 250);
+  --tint-violet: oklch(0.955 0.02 300);
+  --tint-violet-ink: oklch(0.42 0.09 300);
+
+  /* สีเน้น "ชาด": gold = พื้นปุ่ม, gold-ink = ตัวอักษร/ไอคอนสีเน้น, gold-soft = พื้นจาง */
+  --marigold: oklch(0.8 0.14 82);
+  --gold: oklch(0.57 0.21 31);
+  --gold-hover: oklch(0.42 0.15 28);
+  --gold-foreground: oklch(1 0 0);
+  --gold-ink: oklch(0.52 0.19 30);
+  --gold-soft: oklch(0.965 0.02 35);
+  --gold-line: oklch(0.57 0.21 31 / 0.4);
+
+  /* ไม่มีเงา: โทเคนเดิมยังอยู่แต่เป็นค่าว่าง */
+  --shadow-card: 0 0 0 0 transparent;
+  --shadow-float: 0 0 0 0 transparent;
+  --shadow-gold: 0 0 0 0 transparent;
+
+  /* ภาพประกอบเส้นบาง: เส้น, พื้นเบจ, สีเน้น */
+  --art-line: oklch(0.2 0.004 60);
+  --art-soft: oklch(0.962 0.014 80);
+  --art-mid: oklch(0.88 0.014 80);
+  --art-accent: oklch(0.57 0.21 31);
+  --art-paper: oklch(1 0 0);
+  /* v6: โทนลึกของภาพประกอบ (หลังคา พื้น กำแพง ใบไม้) เข้มกว่าเบจเล็กน้อย ยังเป็นสีอุ่นเดียวกับเบจ */
+  --art-deep: oklch(0.83 0.03 75);
+  --art-ground: oklch(0.93 0.02 80);
+  --art-leaf: oklch(0.82 0.035 150);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: oklch(0.145 0.005 60);
+  --foreground: oklch(0.95 0.015 85);
+  --card: oklch(0.18 0.008 55);
+  --card-foreground: oklch(0.95 0.015 85);
+  --popover: oklch(0.2 0.008 55);
+  --popover-foreground: oklch(0.95 0.015 85);
+  --primary: oklch(0.95 0.015 85);
+  --primary-foreground: oklch(0.15 0.005 60);
+  --secondary: oklch(0.23 0.008 55);
+  --secondary-foreground: oklch(0.95 0.015 85);
+  --muted: oklch(0.22 0.008 55);
+  --muted-foreground: oklch(0.72 0.012 80);
+  --accent: oklch(0.25 0.008 55);
+  --accent-foreground: oklch(0.95 0.015 85);
+  --destructive: oklch(0.72 0.17 24);
+  --destructive-foreground: oklch(0.18 0.02 25);
+  --border: oklch(0.95 0.015 85 / 0.12);
+  --input: oklch(0.52 0.01 75);
+  --ring: oklch(0.7 0.18 33);
+  --chart-1: oklch(0.7 0.18 33);
+  --chart-2: oklch(0.95 0.015 85);
+  --chart-3: oklch(0.7 0.012 80);
+  --chart-4: oklch(0.5 0.01 75);
+  --chart-5: oklch(0.32 0.008 60);
+  --sidebar: oklch(0.18 0.008 55);
+  --sidebar-foreground: oklch(0.95 0.015 85);
+  --sidebar-primary: oklch(0.95 0.015 85);
+  --sidebar-primary-foreground: oklch(0.15 0.005 60);
+  --sidebar-accent: oklch(0.23 0.008 55);
+  --sidebar-accent-foreground: oklch(0.95 0.015 85);
+  --sidebar-border: oklch(0.95 0.015 85 / 0.12);
+  --sidebar-ring: oklch(0.7 0.18 33);
+
+  --canvas: oklch(0.11 0.004 60);
+
+  --tint-mint: oklch(0.26 0.025 170);
+  --tint-mint-ink: oklch(0.82 0.08 170);
+  --tint-amber: oklch(0.27 0.03 85);
+  --tint-amber-ink: oklch(0.84 0.09 85);
+  --tint-rose: oklch(0.27 0.03 15);
+  --tint-rose-ink: oklch(0.82 0.08 15);
+  --tint-sky: oklch(0.26 0.025 240);
+  --tint-sky-ink: oklch(0.82 0.07 240);
+  --tint-violet: oklch(0.26 0.03 300);
+  --tint-violet-ink: oklch(0.83 0.07 300);
+
+  --marigold: oklch(0.8 0.14 82);
+  --gold: oklch(0.57 0.21 31);
+  --gold-hover: oklch(0.47 0.17 29);
+  --gold-foreground: oklch(1 0 0);
+  --gold-ink: oklch(0.75 0.16 34);
+  --gold-soft: oklch(0.235 0.022 40);
+  --gold-line: oklch(0.7 0.18 33 / 0.45);
+
+  --shadow-card: 0 0 0 0 transparent;
+  --shadow-float: 0 0 0 0 transparent;
+  --shadow-gold: 0 0 0 0 transparent;
+
+  --art-line: oklch(0.92 0.015 85);
+  --art-soft: oklch(0.22 0.008 55);
+  --art-mid: oklch(0.32 0.01 60);
+  --art-accent: oklch(0.68 0.19 33);
+  --art-paper: oklch(0.18 0.008 55);
+  --art-deep: oklch(0.3 0.012 60);
+  --art-ground: oklch(0.2 0.008 55);
+  --art-leaf: oklch(0.33 0.03 150);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-canvas text-foreground lg:bg-background;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* เดสก์ท็อป: Tailwind v4 ตั้งเคอร์เซอร์ปุ่มเป็น default ให้กลับเป็นรูปมือบนปุ่มที่กดได้ */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not(:disabled),
+  [role="radio"]:not(:disabled),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+  /* ความสูงส่วนหัวเว็บบนเดสก์ท็อป ใช้เป็นระยะ top ของแผงที่ติดค้าง (sticky) ใต้ส่วนหัว */
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --site-header-h: 0px;
+    --section-mt: 2.5rem;
+  }
+  @media (min-width: 64rem) {
+    :root {
+      --site-header-h: 4.5rem;
+      --section-mt: 3.5rem;
+    }
+    html {
+      scroll-padding-top: calc(var(--site-header-h) + 1.5rem);
+    }
+  }
+  /* โหมดตัวอักษรใหญ่: ทุกขนาดในแอปอิง rem จึงขยายตามทั้งหมด */
+  html.text-large {
+    font-size: 118.75%;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--gold) 28%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* แถวที่เลื่อนแนวนอนได้ (ตัวกรอง รายการสินค้า) ไม่ต้องแสดงแถบเลื่อน */
+  .overflow-x-auto {
+    scrollbar-width: none;
+  }
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- ยูทิลิตี้ของระบบดีไซน์ (แบน: เส้นขอบ 1px ไม่มีเงา) ---------- */
+
+/* การ์ดมาตรฐาน: พื้น card รัศมี 1rem เส้นขอบ 1px */
+@utility surface {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+}
+
+/* ช่องซ้อนในการ์ดหรือบนพื้น: พื้นเบจ ไม่มีเส้น */
+@utility surface-quiet {
+  border-radius: 1rem;
+  background-color: var(--muted);
+}
+
+/* แผงเด่นของหน้า: พื้นเบจเต็มแผง รัศมีใหญ่ ไม่มีเส้น (หน้าละ 1 แผง) */
+@utility surface-hero {
+  border-radius: 1.5rem;
+  background-color: var(--muted);
+}
+
+/* แถบติดขอบ (เมนูล่าง ส่วนท้าย): พื้นทึบ ไม่เบลอ */
+@utility glass {
+  background-color: var(--background);
+}
+
+/* เส้นสีเน้นบางรอบองค์ประกอบ */
+@utility hairline-gold {
+  box-shadow: inset 0 0 0 1px var(--gold-line);
+}
+
+/* v6: ยอดโค้งแบบซุ้มประตูศาล (ครึ่งวงกลมที่มุมบน) ใช้กับรูปหลักของสินค้าและภาพเด่นหน้าแรก
+   รัศมีคงที่ (ตั้งเองได้ด้วย --arch-r) จึงเป็นโค้งซุ้มจริงเมื่อรูปกว้างพอ และไม่บิดเป็นวงรี */
+@utility arch-top {
+  border-top-left-radius: var(--arch-r, 7rem);
+  border-top-right-radius: var(--arch-r, 7rem);
+}
+
+/* ตัวเลขราคา/จำนวนให้กว้างเท่ากันทุกหลัก */
+@utility numeric {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ป้ายเล็กสีเน้นเหนือหัวข้อ (ภาษาไทยห้ามเว้นระยะตัวอักษร) */
+@utility eyebrow {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--gold-ink);
+}
+
+/* ---------- การเคลื่อนไหว (ภาษาเดียวทั้งแอป: ดู AGENTS.md หัวข้อ Motion) ----------
+   ความยาว: fast 150ms (กด/โฮเวอร์) base 250ms (เปลี่ยนสถานะ) slow 400ms (เข้าฉาก)
+   เส้นโค้ง: ease-out นุ่ม (เข้า) spring (เด้งเล็กน้อย เฉพาะจุดเล็ก ๆ เช่น หัวใจ ไอคอนเมนู)
+   ไม่มีอะไรวนซ้ำ ยกเว้นพื้นโครงรอโหลด (กะพริบความทึบเบา ๆ) ทุกอย่างหยุดเมื่อผู้ใช้ปิดการเคลื่อนไหว */
+:root {
+  --ease-out: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 400ms;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.625rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.5;
+  }
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ค่อย ๆ ลอยขึ้นตอนโหลด: ใส่ style={{ "--i": 2 }} เพื่อหน่วงตามลำดับ */
+@utility rise {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+/* ชื่อเดิม คงไว้แต่ไม่เคลื่อนไหวแล้ว (ดีไซน์แบน) */
+@utility float-soft {
+  animation: none;
+}
+/* พื้นโครงรอโหลด: กะพริบความทึบเบา ๆ (ไม่มีแสงวิ่ง) ชื่อ shimmer คงไว้ให้โค้ดเดิม */
+@utility shimmer {
+  animation: pulse-soft 1.6s var(--ease-in-out) infinite;
+}
+@utility animate-pulse-soft {
+  animation: pulse-soft 1.6s var(--ease-in-out) infinite;
+}
+/* เด้งเล็ก ๆ ตอนกดบันทึก/เปลี่ยนแท็บ */
+@utility animate-pop {
+  animation: pop 320ms var(--ease-spring);
+}
+@keyframes grow {
+  from {
+    transform: scale(var(--gx, 1), var(--gy, 1));
+  }
+}
+@utility animate-grow-y {
+  --gx: 1;
+  --gy: 0;
+  animation: grow 450ms var(--ease-out) both;
+}
+@utility animate-grow-x {
+  --gx: 0;
+  --gy: 1;
+  animation: grow 450ms var(--ease-out) both;
+}
+@utility animate-spin-fast {
+  animation: spin 700ms linear infinite;
+}
+
+/* เส้นใต้ลิงก์ข้อความที่ค่อย ๆ ลากออกจากซ้ายไปขวาตอนโฮเวอร์ */
+@utility link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 1px;
+  padding-bottom: 0.125rem;
+  transition: background-size var(--dur-base) var(--ease-out);
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* โผล่ตอนเลื่อนมาถึง: คอมโพเนนต์ Reveal ตั้ง data-reveal ให้ (ไม่มี JS = เห็นปกติ) */
+[data-reveal="pending"] {
+  opacity: 0;
+  transform: translateY(0.875rem);
+}
+[data-reveal="in"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 520ms var(--ease-out) calc(var(--i, 0) * 70ms),
+    transform 520ms var(--ease-out) calc(var(--i, 0) * 70ms);
+}
+
+/* เส้นเช็กถูกที่ค่อย ๆ ลากเมื่อสำเร็จ (คอมโพเนนต์ SuccessMark) */
+.success-mark .ring {
+  animation: ring-in 360ms var(--ease-out) both;
+}
+.success-mark .tick {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: draw 420ms var(--ease-out) 220ms forwards;
+}
+
+/* กล่องยุบ/ขยาย (details) ทุกที่ในแอปเปิดปิดแบบค่อย ๆ เลื่อนความสูง */
+@supports (interpolate-size: allow-keywords) {
+  details {
+    interpolate-size: allow-keywords;
+  }
+  details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size var(--dur-base) var(--ease-out),
+      content-visibility var(--dur-base) allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+  }
+}
+
+/* เปลี่ยนหน้า (View Transitions): เนื้อหาเก่าจางออกเร็ว ๆ เนื้อหาใหม่จางเข้าพร้อมลอยขึ้นเล็กน้อย
+   ใช้คลาส page-in / page-out จาก <ViewTransition> ใน src/app/template.tsx */
+::view-transition-old(.page-out) {
+  animation: 140ms var(--ease-out) both fade-out;
+}
+::view-transition-new(.page-in) {
+  animation:
+    260ms var(--ease-out) 60ms both fade-in,
+    380ms var(--ease-out) 60ms both slide-up;
+}
+/* ขีดสีชาดของเมนูเลื่อนไปหาแท็บใหม่ (shared element) */
+::view-transition-group(.nav-bar) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out);
+}
+/* รูปศาลบนการ์ดขยายเป็นรูปหลักของหน้ารายละเอียด */
+::view-transition-group(.morph-image) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-out);
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes slide-up {
+  from {
+    translate: 0 0.75rem;
+  }
+}
+
+@layer base {
+  a.surface,
+  button.surface,
+  [role="switch"].surface {
+    transition:
+      transform var(--dur-fast) var(--ease-out),
+      background-color var(--dur-fast) ease,
+      border-color var(--dur-base) ease;
+  }
+  a.surface:active,
+  button.surface:active,
+  [role="switch"].surface:active {
+    transform: scale(0.99);
+  }
+  /* ทุกลิงก์และปุ่มเปลี่ยนสีนุ่ม ๆ ไม่กระตุก */
+  a,
+  button {
+    transition-timing-function: var(--ease-out);
+  }
+}
+
+/* สถานะเลือกของการ์ดตัวเลือก: เส้นสีชาดหนา 2px (ใช้เงาด้านในเพื่อไม่ให้ขนาดขยับ)
+   อยู่นอก layer เพื่อให้ชนะ border-primary / bg-secondary ที่หน้าต่าง ๆ ใส่มา */
+.surface.border-primary {
+  border-color: var(--gold);
+  background-color: var(--card);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+/* เปลี่ยนธีมแบบนุ่ม: ThemeToggle ใส่คลาสนี้ชั่วครู่ตอนสลับ */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-fade,
+  html.theme-fade *,
+  html.theme-fade *::before,
+  html.theme-fade *::after {
+    transition:
+      background-color 280ms ease,
+      color 280ms ease,
+      border-color 280ms ease,
+      fill 280ms ease,
+      stroke 280ms ease !important;
+  }
+}
+
+/* ---------- v6: การเคลื่อนไหวเพิ่ม ---------- */
+
+/* การ์ดตัวเลือก (button.surface[aria-pressed]): เส้นวงเลือกค่อย ๆ ลากเข้าใน 150ms
+   จุดวงกลมด้านขวาของการ์ดเด้งเล็กน้อยเมื่อถูกเลือก (ใช้กับ OptionCard เดิมได้โดยไม่ต้องแก้) */
+button.surface[aria-pressed] {
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    transform var(--dur-fast) var(--ease-out);
+}
+button.surface[aria-pressed="false"] {
+  box-shadow: inset 0 0 0 0 var(--gold);
+}
+button.surface[aria-pressed="true"] > span[aria-hidden="true"]:last-child:not(:only-child) {
+  animation: pop 260ms var(--ease-spring);
+}
+
+/* StepSlide: ขั้นตอนใหม่เลื่อนเข้าจากด้านที่ไปต่อ (ไปหน้า = จากขวา ย้อนกลับ = จากซ้าย) */
+@keyframes step-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(1.75rem);
+  }
+}
+@keyframes step-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-1.75rem);
+  }
+}
+.step-slide[data-dir="next"] {
+  animation: step-in-next var(--dur-base) var(--ease-out) both;
+}
+.step-slide[data-dir="back"] {
+  animation: step-in-back var(--dur-base) var(--ease-out) both;
+}
+
+/* ProgressBar และเส้นความคืบหน้าของ StatusLine: เส้นยืดจากซ้าย */
+.progress-fill {
+  transition: width var(--dur-slow) var(--ease-out);
+}
+
+/* แผ่นตัวกรอง: เนื้อหาในแผ่นค่อย ๆ ตามขึ้นมาทีละกลุ่ม (ใส่ class sheet-stagger ที่พ่อ และ --i ที่ลูก) */
+.sheet-stagger > * {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms + 100ms);
+}
+
+.cal-day {
+  transition:
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+
+/* ผู้ใช้ที่ปิดการเคลื่อนไหว: ตัดทุกอย่างออก */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .success-mark .tick {
+    stroke-dashoffset: 0;
+  }
+  .step-slide,
+  .sheet-stagger > * {
+    animation: none !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

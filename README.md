@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Saan
 
-## Getting Started
+เว็บแอปตัวกลางงานศาลพระภูมิ: ตั้งศาลใหม่ ถอนย้าย ซ่อม ศาลของฉัน และสมุดบน
+แผนผลิตภัณฑ์อยู่ที่ [docs/PLAN.md](docs/PLAN.md) แนวทางเขียนโค้ดอยู่ที่ [AGENTS.md](AGENTS.md)
 
-First, run the development server:
+## เริ่มใช้งานในเครื่อง
 
 ```bash
+npm install
+cp .env.example .env
+npm run db:push
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+เปิด http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## บัญชีทดสอบ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+เข้าสู่ระบบด้วยเบอร์โทร รหัส OTP จะแสดงบนหน้าจอเพราะยังไม่ได้ต่อระบบ SMS
 
-## Learn More
+| เบอร์ | บทบาท |
+|---|---|
+| 0800000001 | ผู้ดูแลระบบ |
+| 0800000002 | ลูกค้า |
+| 0800000003 | ร้านที่ตรวจสอบแล้ว มีสินค้าและบริการตัวอย่าง |
+| 0800000004 | ช่างที่รอตรวจสอบ |
+| 0800000005 | โรงงานที่ตรวจสอบแล้ว ขายศาลโมเดิร์นและศาลพระพรหม |
 
-To learn more about Next.js, take a look at the following resources:
+## สิ่งที่มีในแอป
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **ลูกค้า**: ตั้งศาลใหม่, ค้นหาและเลือกดูศาล, หน้าสินค้าและหน้าร้านพร้อมรีวิว, ขอใบเสนอราคาซ่อมหรือถอนย้าย, จ่ายมัดจำและตรวจรับงาน, แชตกับร้าน, ศาลของฉันพร้อมประวัติการดูแล, สมุดบนพร้อมวันเตือน
+- **บัญชีและตั้งค่า**: โปรไฟล์, ที่อยู่ที่บันทึกไว้, การแจ้งเตือนในแอป, โหมดตัวอักษรใหญ่, ออกจากระบบทุกอุปกรณ์, ดาวน์โหลดข้อมูลของตัวเอง, ลบบัญชี
+- **ร้าน**: สมัคร, จัดการสินค้าและบริการ, รับงาน, รายงานความคืบหน้า, ส่งใบเสนอราคา, แชตกับลูกค้า
+- **ผู้ดูแลระบบ**: อนุมัติร้าน, ดูคำสั่งทั้งหมด, คิวคืนมัดจำ
+- **อื่น ๆ**: คู่มือ, ช่วยเหลือ, ข้อกำหนดและนโยบายความเป็นส่วนตัว (ฉบับร่าง)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ธีมและดีไซน์
 
-## Deploy on Vercel
+แนวทางมินิมอลแบบแบน: พื้นขาว เส้นขอบบางแทนเงา ปุ่มและชิปทรงแคปซูล หัวเรื่องน้ำหนักปกติ สีแดงชาดเป็นสีเน้นเดียว รองรับโหมดสว่าง โหมดมืด และตามระบบ (ตั้งค่า > การแสดงผล) กติกาดีไซน์ทั้งหมดอยู่ใน [AGENTS.md](AGENTS.md) สีและเงาคุมจาก `src/app/globals.css`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### มือถือและจอคอม
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- ต่ำกว่า 1024px: คอลัมน์เดียว แถบเมนูล่าง ปุ่มหลักติดขอบล่าง
+- ตั้งแต่ 1024px: แถบนำทางด้านบน เนื้อหากว้างสูงสุด 1280px จัดวางหลายคอลัมน์ แผงดำเนินการติดตามด้านขวา ฝั่งร้านและแอดมินมีเมนูแถบข้างและตาราง
+- ชิ้นส่วนจัดวางอยู่ใน `src/components/` (`site-header.tsx`, `page-layout.tsx`, `side-nav.tsx`, `data-table.tsx`) กติกาอยู่ในหัวข้อ "Desktop layout" ของ AGENTS.md
+
+## ส่วนที่เป็นหน้าจออย่างเดียว ยังไม่มี backend
+
+ข้อมูลตัวอย่างเก็บใน `src/lib/mock/` แต่ละไฟล์ระบุ backend ที่ต้องมี หน้าจอติดป้าย "ตัวอย่าง" หรือ "เร็ว ๆ นี้"
+
+| หน้าจอ | ส่วน | สถานะ |
+|---|---|---|
+| ยืนยันคำสั่งซื้อ | โค้ดส่วนลด | เร็ว ๆ นี้ |
+| รายละเอียดศาล | ตั้งรอบเตือนดูแล, ส่งออกรายงานการดูแล | เร็ว ๆ นี้ (`me-care-routine.ts`) |
+| รายการบน | บันทึกเป็นภาพ | เร็ว ๆ นี้ |
+| หน้าร้าน (ผู้ให้บริการ) | เวลาทำการ, บัญชีรับเงิน, พนักงานร้าน, โปรโมชันร้าน | ข้อมูลตัวอย่างและเร็ว ๆ นี้ (`biz-tips.ts`) |
+| ผู้ดูแลระบบ | บันทึกกิจกรรมทีมงาน, ค่าธรรมเนียมแพลตฟอร์ม, รอบจ่ายเงินร้าน | ข้อมูลตัวอย่างและเร็ว ๆ นี้ (`admin-audit-log.ts`) |
+
+ส่วนที่ทำงานจริงโดยเก็บในเครื่องผู้ใช้: บันทึกศาลที่ชอบ (ปุ่มหัวใจ) และธีมสี
+
+ไฟล์ `promotions.ts` และ `holy-days.ts` ยังอยู่แต่ไม่มีหน้าไหนใช้แล้ว หลังหน้าแรกถูกปรับให้เรียบขึ้น
+
+## ต้องทำก่อนเปิดใช้จริง
+
+- ต่อผู้ให้บริการชำระเงิน, SMS และที่เก็บรูปจริง แล้วย้ายฐานข้อมูลไป PostgreSQL
+- ให้ทนายตรวจข้อกำหนดและนโยบายความเป็นส่วนตัว (`src/app/legal/`)
+- ใส่ช่องทางติดต่อทีมงานที่ `SUPPORT` ใน `src/lib/constants.ts`
+- ยืนยันอัตรามัดจำ (`DEPOSIT_RATE` ใน `src/lib/constants.ts` ตอนนี้ตั้งไว้ 30%)
+- การคืนมัดจำยังต้องโอนเองแล้วกดบันทึกในหน้าผู้ดูแลระบบ
+
+## ส่วนที่ยังเป็นตัวจำลอง
+
+จุดเชื่อมต่อทั้งหมดอยู่ใน `src/server/integrations.ts` และ `src/server/storage.ts`
+
+- **ชำระเงิน** ตอบว่าจ่ายสำเร็จทันที ไม่มีเงินเคลื่อนไหวจริง
+- **SMS** พิมพ์รหัส OTP ลง log ของเซิร์ฟเวอร์และแสดงบนหน้าจอ
+- **ที่เก็บรูป** เก็บในโฟลเดอร์ `storage/uploads` ของเครื่อง
+- **ฐานข้อมูล** SQLite ไฟล์เดียว เปลี่ยนเป็น PostgreSQL ได้ที่ `prisma/schema.prisma`
+
+## โครงสร้าง
+
+| ที่อยู่ | หน้าที่ |
+|---|---|
+| `prisma/schema.prisma` | โครงสร้างฐานข้อมูล |
+| `src/server/queries.ts` | อ่านข้อมูลสำหรับหน้าจอ |
+| `src/server/actions/` | แก้ไขข้อมูล ตรวจสิทธิ์ทุกฟังก์ชัน |
+| `src/lib/` | ค่าคงที่ ชนิดข้อมูล และตัวจัดรูปแบบที่ใช้ร่วมกัน |
+| `src/components/` | ชิ้นส่วนหน้าจอกลาง และ `ui/` จาก shadcn |
+| `src/app/` | หน้าจอแต่ละเส้นทาง |
+
+## คำสั่งตรวจสอบ
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```

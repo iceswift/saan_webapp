@@ -1,0 +1,290 @@
+// ส่วนแสดงผลของหน้ารายละเอียดคำสั่ง ไม่มี state จึงไม่ต้องเป็น client component
+// ไฟล์นี้ไม่ import ข้อมูลฝั่งเซิร์ฟเวอร์ จึงใช้ร่วมกับ client component ได้
+// v6: ส่วนต่าง ๆ เป็นรายการเรียบ ๆ คั่นด้วยเส้นบาง ไม่มีกล่องซ้อนกล่อง ไม่มีไอคอนในวงกลม
+
+import { Phone, Star } from "lucide-react";
+import { SectionTitle } from "@/components/app-shell";
+import { ListGroup, ListRow } from "@/components/list-group";
+import { Price } from "@/components/price";
+import { TonePill } from "@/components/status-badge";
+import { AREAS, DEPOSIT_RATE, PAYMENT_METHODS, PAYMENT_STATUS, PLACE_TYPES, SHRINE_KINDS } from "@/lib/constants";
+import { formatBaht, formatDateOnly, formatPhone, formatShortDate } from "@/lib/format";
+import type { OrderDetail, OrderEventDTO, PaymentDTO, ReviewDTO } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { formatShortDateTime } from "../display";
+
+const STAR_NUMBERS = [1, 2, 3, 4, 5] as const;
+
+export function ReviewView({ review }: { review: ReviewDTO }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-1" role="img" aria-label={`ให้ ${review.rating} ดาว`}>
+        {STAR_NUMBERS.map((n) => (
+          <Star
+            key={n}
+            aria-hidden="true"
+            className={cn("size-6", n <= review.rating ? "fill-marigold text-marigold" : "text-input")}
+          />
+        ))}
+      </div>
+      {review.comment ? <p className="text-base leading-relaxed">{review.comment}</p> : null}
+      <p className="text-sm text-muted-foreground">รีวิวเมื่อ {formatShortDate(review.createdAt)}</p>
+    </div>
+  );
+}
+
+function paidFlags(order: OrderDetail) {
+  const paidOf = (kind: PaymentDTO["kind"]) =>
+    order.payments.some((p) => p.kind === kind && p.status === "PAID");
+  return { depositPaid: paidOf("DEPOSIT"), balancePaid: paidOf("BALANCE") };
+}
+
+function MoneyRow({
+  label,
+  value,
+  badge,
+  strong = false,
+}: {
+  label: string;
+  value: React.ReactNode;
+  badge?: React.ReactNode;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <dt className={cn("flex flex-wrap items-center gap-x-2 gap-y-1", strong ? "font-medium" : "text-muted-foreground")}>
+        {label}
+        {badge}
+      </dt>
+      <dd className="numeric shrink-0 font-medium">{value}</dd>
+    </div>
+  );
+}
+
+/** แถวมัดจำ ส่วนที่เหลือ และยอดที่ต้องจ่ายอีก (ใช้ทั้งในส่วนรายการและแผงข้างบนเดสก์ท็อป) */
+export function MoneyRows({ order, withTotal = false }: { order: OrderDetail; withTotal?: boolean }) {
+  const { depositPaid, balancePaid } = paidFlags(order);
+  return (
+    <dl className="flex flex-col gap-3 text-base">
+      {withTotal ? (
+        <div className="flex items-end justify-between gap-4">
+          <dt className="font-medium">ยอดรวม</dt>
+          <dd>
+            <Price amount={order.total} size="lg" />
+          </dd>
+        </div>
+      ) : null}
+      <MoneyRow
+        label={`มัดจำ ${Math.round(DEPOSIT_RATE * 100)}%`}
+        value={formatBaht(order.deposit)}
+        badge={depositPaid ? <TonePill tone="good">จ่ายแล้ว</TonePill> : null}
+      />
+      <MoneyRow
+        label="ส่วนที่เหลือ"
+        value={formatBaht(Math.max(order.total - order.deposit, 0))}
+        badge={balancePaid ? <TonePill tone="good">จ่ายแล้ว</TonePill> : null}
+      />
+      {order.status !== "CANCELLED" && order.balance > 0 ? (
+        <div className="border-t border-border pt-3">
+          <MoneyRow label="ยอดที่ต้องจ่ายอีก" value={formatBaht(order.balance)} strong />
+        </div>
+      ) : null}
+    </dl>
+  );
+}
+
+/** รายการและยอดเงิน เป็นใบสรุปเรียบ ๆ ยอดทุกบรรทัดมาจากคำสั่งจริง */
+export function OrderItems({ order, titleClassName }: { order: OrderDetail; titleClassName?: string }) {
+  return (
+    <section>
+      <SectionTitle className={titleClassName}>รายการและยอดเงิน</SectionTitle>
+      <ul className="flex flex-col gap-3 border-y border-border py-4">
+        {order.items.map((item) => (
+          <li key={item.id} className="flex items-start justify-between gap-4 text-base">
+            <span className="min-w-0">{item.name}</span>
+            <span className="numeric shrink-0">{formatBaht(item.price)}</span>
+          </li>
+        ))}
+        <li className="mt-1 flex items-end justify-between gap-4 border-t border-border pt-4">
+          <span className="text-base font-medium">ยอดรวม</span>
+          <Price amount={order.total} size="lg" />
+        </li>
+      </ul>
+      <div className="mt-4 lg:hidden">
+        <MoneyRows order={order} />
+      </div>
+    </section>
+  );
+}
+
+/** ข้อมูลติดต่อร้านในแผงข้างบนเดสก์ท็อป */
+export function ShopContact({ order }: { order: OrderDetail }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-sm text-muted-foreground">ร้านที่รับงาน</p>
+      <p className="text-base leading-snug font-medium">{order.provider.name}</p>
+      <a
+        href={`tel:${order.provider.phone}`}
+        className="numeric -ml-2 inline-flex min-h-10 items-center gap-2 rounded-full px-2 text-base text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Phone className="size-4 shrink-0" aria-hidden="true" />
+        {formatPhone(order.provider.phone)}
+      </a>
+    </div>
+  );
+}
+
+type DetailRowData = {
+  label: string;
+  content: React.ReactNode;
+  /** ซ่อนบนเดสก์ท็อปเมื่อข้อมูลนี้อยู่ในแผงด้านข้างแล้ว */
+  inPanel?: boolean;
+  wide?: boolean;
+};
+
+export function OrderDetails({ order }: { order: OrderDetail }) {
+  const rows: DetailRowData[] = [
+    { label: "ร้าน", content: order.provider.name, inPanel: true },
+    {
+      label: "เบอร์ติดต่อร้าน",
+      content: (
+        <a
+          href={`tel:${order.provider.phone}`}
+          className="numeric inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+        >
+          {formatPhone(order.provider.phone)}
+        </a>
+      ),
+      inPanel: true,
+    },
+    { label: "พื้นที่", content: AREAS[order.area] },
+    { label: "ที่อยู่สำหรับตั้งศาล", content: order.address, wide: true },
+  ];
+  if (order.placeType) rows.push({ label: "ประเภทสถานที่", content: PLACE_TYPES[order.placeType] });
+  if (order.shrineKind) rows.push({ label: "ประเภทศาล", content: SHRINE_KINDS[order.shrineKind] });
+  if (order.scheduledAt === null && order.preferredDates.length > 0) {
+    rows.push({
+      label: "วันที่สะดวก",
+      content: (
+        <span className="flex flex-col">
+          {order.preferredDates.map((date) => (
+            <span key={date}>{formatDateOnly(date)}</span>
+          ))}
+        </span>
+      ),
+    });
+  }
+  if (order.note) rows.push({ label: "หมายเหตุ", content: order.note, wide: true });
+
+  return (
+    <section>
+      <SectionTitle>รายละเอียด</SectionTitle>
+      <dl className="border-y border-border lg:grid lg:grid-cols-2 lg:gap-x-10">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className={cn(
+              "flex items-baseline justify-between gap-6 border-b border-border py-3 last:border-b-0 lg:grid lg:grid-cols-[9rem_minmax(0,1fr)] lg:justify-start lg:gap-4",
+              row.inPanel && "lg:hidden",
+              row.wide && "lg:col-span-2",
+            )}
+          >
+            <dt className="shrink-0 text-sm text-muted-foreground">{row.label}</dt>
+            <dd className="min-w-0 text-right text-base break-words whitespace-pre-line lg:text-left">
+              {row.content}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+const EVENT_ROLE_LABEL = {
+  CUSTOMER: "คุณ",
+  PROVIDER: "ร้าน",
+  ADMIN: "ทีมงาน",
+  SYSTEM: "ระบบ",
+} as const;
+
+/** ความคืบหน้าที่เกิดขึ้นกับคำสั่ง: เส้นเวลาเรียบ ๆ จุดเล็ก ล่าสุดเป็นจุดชาด */
+export function OrderTimeline({ events }: { events: OrderEventDTO[] }) {
+  return (
+    <section>
+      <SectionTitle>ความคืบหน้า</SectionTitle>
+      <ol>
+        {events.map((event, index) => {
+          const last = index === events.length - 1;
+          return (
+            <li key={event.id} className={cn("relative flex gap-4", !last && "pb-6")}>
+              {last ? null : (
+                <span aria-hidden="true" className="absolute top-5 bottom-0 left-[0.3125rem] w-px bg-border" />
+              )}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "relative mt-2 size-2.5 shrink-0 rounded-full",
+                  last ? "bg-gold" : "bg-input",
+                )}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-base leading-snug font-medium">{event.title}</p>
+                {event.note ? <p className="mt-0.5 text-base text-muted-foreground">{event.note}</p> : null}
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {EVENT_ROLE_LABEL[event.byRole]} · {formatShortDateTime(event.createdAt)}
+                </p>
+                {event.photoUrl ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={event.photoUrl}
+                      alt={event.title}
+                      className="mt-3 max-h-64 w-full rounded-lg object-cover ring-1 ring-foreground/6 ring-inset"
+                    />
+                  </>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+export function OrderPayments({ payments }: { payments: PaymentDTO[] }) {
+  if (payments.length === 0) return null;
+  return (
+    <section>
+      <SectionTitle>การชำระเงิน</SectionTitle>
+      <ListGroup bare label="การชำระเงิน">
+        {payments.map((payment) => (
+          <ListRow
+            key={payment.id}
+            title={payment.kind === "DEPOSIT" ? "มัดจำ" : "ส่วนที่เหลือ"}
+            meta={`${PAYMENT_METHODS[payment.method]}${payment.paidAt ? ` · ${formatShortDate(payment.paidAt)}` : ""}`}
+            className="px-0"
+            trailing={
+              <span className="flex flex-col items-end gap-1.5">
+                <Price amount={payment.amount} size="md" />
+                <TonePill
+                  tone={
+                    payment.status === "PAID"
+                      ? "good"
+                      : payment.status === "PENDING"
+                        ? "wait"
+                        : payment.status === "REFUNDED"
+                          ? "info"
+                          : "bad"
+                  }
+                >
+                  {PAYMENT_STATUS[payment.status]}
+                </TonePill>
+              </span>
+            }
+          />
+        ))}
+      </ListGroup>
+    </section>
+  );
+}
