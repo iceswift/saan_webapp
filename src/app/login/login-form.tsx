@@ -15,7 +15,7 @@ type Step = "phone" | "code" | "name";
 const STEP_INDEX: Record<Step, number> = { phone: 1, code: 2, name: 3 };
 const STEP_LABEL: Record<Step, string> = { phone: "เบอร์โทร", code: "รหัสยืนยัน", name: "ชื่อของคุณ" };
 
-export function LoginForm({ next, needsNameOnly }: { next: string; needsNameOnly: boolean }) {
+export function LoginForm({ next, needsNameOnly, testMode = false }: { next: string; needsNameOnly: boolean; testMode?: boolean }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState<Step>(needsNameOnly ? "name" : "phone");
@@ -117,7 +117,7 @@ export function LoginForm({ next, needsNameOnly }: { next: string; needsNameOnly
               className="h-14 text-lg"
             />
             <FieldHint id="login-hint" error={error}>
-              เราจะส่งรหัสยืนยันให้เบอร์นี้
+              {testMode ? "ใช้เบอร์ทดสอบที่กำหนด รหัสจะแสดงบนหน้าจอ" : "เราจะส่งรหัสยืนยันให้เบอร์นี้"}
             </FieldHint>
           </div>
         ) : null}

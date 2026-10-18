@@ -23,6 +23,8 @@ test("durable simulated receipts survive another process and reject changed requ
   });
   assert.equal(other.status, 0, other.stderr);
   assert.deepEqual(JSON.parse(other.stdout.trim()), outcomes[0]);
+  const reordered = Object.fromEntries(Object.entries(input).reverse()) as GatewayRequest;
+  assert.deepEqual(await durableMockGateway.retrieve(reordered), outcomes[0]);
   await assert.rejects(durableMockGateway.execute({ ...input, amountMinor: 40000 }));
   await assert.rejects(durableMockGateway.retrieve({ ...input, amountMinor: 40000 }));
 });

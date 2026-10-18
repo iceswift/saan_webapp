@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div>
           <Rise i={2}>
             <div className="mt-8 lg:mt-0">
-              <LoginForm next={next} needsNameOnly={Boolean(user && !user.name)} />
+              <LoginForm next={next} needsNameOnly={Boolean(user && !user.name)} testMode={isStagingTestMode()} />
               {isStagingTestMode() ? <p className="mt-4 text-sm text-muted-foreground">บัญชีทดสอบ: {stagingPhones().join(" · ")} รหัสทดสอบจะแสดงหลังขอรหัส ไม่ได้ส่ง SMS</p> : null}
             </div>
           </Rise>
