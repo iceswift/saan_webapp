@@ -34,6 +34,7 @@ yarn-error.log*
 # env files
 .env*
 !.env.example
+!.env.staging.example
 
 # local data
 /prisma/dev.db*
