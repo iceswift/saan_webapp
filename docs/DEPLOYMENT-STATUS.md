@@ -15,5 +15,5 @@ Updated 2026-10-18. See OPERATIONS.md for architecture and runbook.
 - Existing gold-api and thai-gold-web stayed running. The webcam route on Tailscale 443 was not changed.
 - Private HTTPS 8443 is **not yet enabled**: `tailscale serve` returned permission denied. User must run `sudo tailscale serve --bg --https=8443 http://127.0.0.1:3100` on the server. Last observed Serve configuration still contained only the webcam on 443. Do not claim the external Saan URL works until verified.
 - No authenticated browser flow, real SMS, simulated payment flow on this production image, or public endpoint has been tested. This deployment is a private infrastructure staging baseline, not a launch-ready service.
-- Off-machine backup destination, scheduling and retention: not configured.
+- User explicitly chose not to copy backups off the home server on 2026-10-18. No backup was transferred to the development PC. Off-machine copies, scheduling and retention remain unconfigured; same-machine backups do not cover disk/server loss.
 - GitHub-hosted Actions blocked by account billing. Local results must be recorded separately.
