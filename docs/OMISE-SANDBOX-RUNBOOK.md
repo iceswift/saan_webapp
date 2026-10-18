@@ -61,3 +61,7 @@ Current refund-obligation release: `saan:refund-a7c7fa12ae14`. Buyer cancellatio
 Refund/payout capability guards reject submission and retrieval for the current Omise adapter. A proposed bank-transfer workaround requires a separately agreed provider/operational procedure, recipient verification and recorded evidence before implementation. The current release sends no refund/transfer requests. See cancellation QA for the THB 30 sandbox proof and regression results.
 
 Rollback to the previous collection image can use protected `deployment.env.before-refund-a7c7fa12ae14`, retaining current data/credentials. ACTION_REQUIRED rows must be preserved; older UI may not label them meaningfully. No schema migration or database restore is required for this release. Keep original Omise receipt identities and never replay collection on rollback.
+
+## Research handoff — external reimbursement
+
+See [refund/settlement design](OMISE-REFUND-SETTLEMENT-DESIGN.md) for the discovered PromptPay exception in the readable public channel terms, the unavailable currently linked terms version, and the separate external-case lifecycle. Unsupported Refund API does not imply a blanket prohibition on other reimbursement methods. This research has not activated that flow, changed the sandbox cases or sent any provider message. Account-specific confirmation questions are prepared in [Thai](OMISE-PROVIDER-QUESTIONS-TH.md).

@@ -227,3 +227,9 @@ Before enabling real collection or payouts:
 6. A deliberate live activation and limited initial rollout are authorized after the readiness report. Sandbox approval does not authorize charging real money.
 
 Next concrete action: phase 0 account contract spike, followed by phase 1 domain refactor. No need to buy PayFac or expose the full staging site merely to begin the engineering work.
+
+## Research update: external refunds and shop transfers (18 October 2026)
+
+Read [OMISE-REFUND-SETTLEMENT-DESIGN.md](OMISE-REFUND-SETTLEMENT-DESIGN.md) before implementing phase 4/5. The readable public payment-channel terms contain a PromptPay exception for direct alternative reimbursement; lack of Refund API support does not mean all external reimbursement is prohibited. The currently linked 2025 terms PDF returned HTTP 403, so account applicability still needs confirmation. Transfer recipients provide a technical payout route, not marketplace approval by themselves. Current pricing and an older fee schedule differ; no transfer tariff/commission has been adopted.
+
+Prepared owner-review inquiry: [OMISE-PROVIDER-QUESTIONS-TH.md](OMISE-PROVIDER-QUESTIONS-TH.md). No message sent. Current ACTION_REQUIRED cases and disabled Omise refund/payout execution remain correct until a separate external-case workflow or verified transfer adapter is implemented. Next engineering work is the test-mode case/evidence lifecycle and transfer contract spike described in the design, not the historical phase-0-first instruction above.
