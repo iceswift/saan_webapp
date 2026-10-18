@@ -69,3 +69,7 @@ See [refund/settlement design](OMISE-REFUND-SETTLEMENT-DESIGN.md) for the discov
 ## Refund case rehearsal
 
 Private staging now also rehearses admin refund cases behind `REFUND_CASE_TEST_MODE=true`. This is separate from the disabled Omise refund adapter: TEST_COMPLETED does not close the financial obligation or mark a payment refunded. Full instructions, rollback and remaining live work: [REFUND-CASE-SANDBOX.md](REFUND-CASE-SANDBOX.md). Migration `20261018030000_refund_cases` is additive. Defaults remain off outside deliberately enabled private testing.
+
+## Transfer probe checkpoint
+
+Standalone sandbox recipient created and verified, but not active; no transfer created. See [OMISE-TRANSFER-CONTRACT-SPIKE.md](OMISE-TRANSFER-CONTRACT-SPIKE.md). Continue with that original recipient after the owner restores their expired dashboard session. Do not repeat reserved API steps or route it into order settlement.
