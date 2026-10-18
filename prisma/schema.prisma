@@ -355,6 +355,14 @@ model OrderMessage {
   @@index([orderId])
 }
 
+// Provider-side simulated receipts, enabled only in explicitly gated staging.
+model MockGatewayReceipt {
+  key         String   @id
+  fingerprint String
+  reference   String   @unique
+  createdAt   DateTime @default(now())
+}
+
 model CareLog {
   id        String   @id @default(cuid())
   shrineId  String

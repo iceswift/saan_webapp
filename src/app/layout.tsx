@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TEXT_SIZE_COOKIE, THEME_COLOR_DARK, THEME_COLOR_LIGHT } from "@/lib/prefs";
 import "./globals.css";
+import { isStagingTestMode } from "@/server/runtime-policy";
 
 // ตัวอักษรละติน/ตัวเลข (DM Sans) วางหน้าสุด ตัวอักษรไทยจะตกไปใช้ Anuphan (เนื้อหา) หรือ Prompt (หัวเรื่อง)
 const dmSans = DM_Sans({
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-dvh flex-col">
         <ThemeProvider>
+          {isStagingTestMode() ? <p className="border-b border-border bg-muted px-4 py-3 text-center text-sm">พื้นที่ทดสอบ ใช้ข้อมูลสมมติเท่านั้น ไม่มีการส่งข้อความหรือตัดเงินจริง</p> : null}
           {/* ส่วนหัวและส่วนท้ายของเดสก์ท็อป (lg ขึ้นไป) มือถือซ่อนทั้งคู่ */}
           <SiteHeader />
           {children}

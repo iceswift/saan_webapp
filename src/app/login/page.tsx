@@ -7,6 +7,7 @@ import { Rise } from "@/components/rise";
 import { ShrineArt } from "@/components/visuals";
 import { getCurrentUser } from "@/server/auth";
 import { LoginForm } from "./login-form";
+import { isStagingTestMode, stagingPhones } from "@/server/runtime-policy";
 
 export const metadata: Metadata = { title: "เข้าสู่ระบบ" };
 
@@ -44,6 +45,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <Rise i={2}>
             <div className="mt-8 lg:mt-0">
               <LoginForm next={next} needsNameOnly={Boolean(user && !user.name)} />
+              {isStagingTestMode() ? <p className="mt-4 text-sm text-muted-foreground">บัญชีทดสอบ: {stagingPhones().join(" · ")} รหัสทดสอบจะแสดงหลังขอรหัส ไม่ได้ส่ง SMS</p> : null}
             </div>
           </Rise>
           <div className="mt-4 flex justify-center">

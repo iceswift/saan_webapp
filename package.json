@@ -11,6 +11,7 @@
     "test:integration": "node scripts/test-integration.mjs",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:staging": "node scripts/seed-staging.mjs",
     "db:postgres:schema": "node scripts/postgres-schema.mjs",
     "db:postgres:check": "node scripts/postgres-schema.mjs --check",
     "db:postgres:generate": "prisma generate --schema prisma/postgresql/schema.prisma",

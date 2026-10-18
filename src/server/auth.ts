@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "./db";
 import type { Role } from "@/lib/constants";
+import { canUseTestLogin } from "./runtime-policy";
 
 const SESSION_COOKIE = "saan_session";
 const SESSION_DAYS = 30;
@@ -46,6 +47,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     include: { user: true },
   });
   if (!session || session.expiresAt < new Date()) return null;
+  if (!canUseTestLogin(session.user.phone)) return null;
   const { id, phone, name, role } = session.user;
   return { id, phone, name, role: role as Role };
 }

@@ -68,3 +68,5 @@ jobs:
       - name: Verify migrations match the schema
         run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/postgresql/schema.prisma --exit-code
       - run: npm run test:postgres
+      - name: Verify durable mock receipts across processes
+        run: node --conditions=react-server --import tsx --test tests/durable-mock.integration.test.ts

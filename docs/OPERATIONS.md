@@ -5,9 +5,9 @@
 - Deploy a modular Next.js monolith, not microservices. A versioned Docker image runs the same code on the home server or a VDS.
 - PostgreSQL 16 is separate from the web container. Database ports are not published. SQLite remains local-development only.
 - Uploaded images have stable `/api/files/<random-key>` URLs. `UPLOAD_DIR` selects persistent storage outside the image. A future object-storage adapter must preserve these keys/URLs. This release implements filesystem storage only.
-- Database sessions and OTP records are shared. Mock gateway receipts are still process-local: use one app instance and do not claim reconciliation survives restart. Real gateway integration and replica-safe mock receipts remain future work.
+- Database sessions and OTP records are shared. Explicit private staging uses durable simulated receipts in PostgreSQL; local-development mocks remain process-local. Keep one app instance until Next.js multi-instance configuration is reviewed. Real gateway integration remains future work.
 - Runtime `SITE_URL` controls canonical metadata; no home-server IP is stored in image records. TLS terminates at the private Tailscale entry point; nginx handles request size/forwarding before Next.js.
-- No public staging access or real money yet. Production-mode images keep payments disabled. OTP still uses a development console sender; no real SMS delivery. Do not expose this deployment publicly before replacing/gating these integrations.
+- No public staging access or real money yet. Production rejects test login/payments by default. Explicitly gated private staging allows only designated synthetic phones and simulated payments; see STAGING-TESTING.md. No real SMS delivery. Do not expose test mode publicly.
 
 ## Known home-server facts
 
@@ -54,6 +54,6 @@ To move the exact image without a registry, use `docker save saan:COMMIT` on the
 
 Run PostgreSQL migration/constraint checks on a real PostgreSQL instance; schema validation alone is insufficient. SQLite service tests use a separately generated SQLite client and database. Never overwrite an active development server's generated client with PostgreSQL generation in the same checkout.
 
-Before public use: production authentication/SMS, real payment adapter, storage off-machine backup destination and retention, restore drills, monitoring and alert delivery. For multiple web replicas also review Next.js cache coordination, encryption key consistency and background job claiming. Do not start a second mock-payment instance yet.
+Before public use: production authentication/SMS, real payment adapter, storage off-machine backup destination and retention, monitoring and alert delivery. For multiple web replicas also review Next.js cache coordination, encryption key consistency and background job claiming. Restore drills must be repeated as data/schema evolve.
 
 Update `docs/DEPLOYMENT-STATUS.md` after every deployment or restore drill. Record evidence and remaining gaps, never call an untested step complete.
