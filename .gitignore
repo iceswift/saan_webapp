@@ -39,6 +39,7 @@ yarn-error.log*
 # local data
 /prisma/dev.db*
 /storage/
+/deploy/deployment.env
 
 # vercel
 .vercel

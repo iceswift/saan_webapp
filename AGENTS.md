@@ -10,6 +10,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Saan — implementation guide
 
+## Operations handoff
+
+Before deployment/infrastructure work, read `docs/OPERATIONS.md` and `docs/DEPLOYMENT-STATUS.md`. They record architecture, home-server boundaries, persistent data paths, backup/restore procedures and verified deployment status. Update the status document after changes. Never assume an old deployment or test result is current.
+
 Saan is a Thai-language web app: a marketplace for spirit-house (ศาลพระภูมิ) services. Product plan: `docs/PLAN.md`.
 All user-facing text is Thai. Code, identifiers and comments may be English or Thai.
 

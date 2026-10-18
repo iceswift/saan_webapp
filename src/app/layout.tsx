@@ -28,7 +28,7 @@ const prompt = Prompt({
 });
 
 // ที่อยู่เว็บจริงใช้ทำลิงก์เต็มของรูปและหน้าที่แชร์ (Open Graph) ตั้งค่าได้ด้วย NEXT_PUBLIC_SITE_URL ดู .env.example
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const SITE_URL = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

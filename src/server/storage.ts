@@ -4,7 +4,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // เก็บไฟล์ในเครื่องสำหรับพัฒนา เมื่อขึ้นระบบจริงให้เปลี่ยนไปใช้ object storage
-const UPLOAD_DIR = path.join(process.cwd(), "storage", "uploads");
+// Stable /api/files keys survive moving the data directory or implementing another backend.
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "storage", "uploads");
 const MAX_BYTES = 5 * 1024 * 1024;
 
 const TYPES = {
@@ -18,7 +19,8 @@ const NAME_PATTERN = /^[a-f0-9]{32}\.(jpg|png|webp)$/;
 
 function detect(bytes: Uint8Array): Ext | null {
   for (const ext of Object.keys(TYPES) as Ext[]) {
-    if (TYPES[ext].magic.every((b, i) => bytes[i] === b)) return ext;
+    if (TYPES[ext].magic.every((b, i) => bytes[i] === b) &&
+        (ext !== "webp" || (bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50))) return ext;
   }
   return null;
 }
