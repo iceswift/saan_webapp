@@ -24,3 +24,27 @@ The protected local tool uses a fixed HTTPS API origin, test-key and test-object
 4. Provider idempotency duplicate/mismatched amount and lost-POST-response recovery remain unproven. Do not enable automatic retries or order payouts on the basis of this happy-path probe.
 
 No transfer has been created as of this checkpoint. Live transfers, recipient onboarding approval, marketplace terms, commission, fee allocation and fund reservations remain separate gates.
+
+## Completed continuation
+
+After owner sign-in, activated the original synthetic recipient through the dashboard; independent GET confirmed active=true and verified=true. Created exactly one test transfer `trsf_test_69dupqk6smkr1idpp43` to that recipient with explicit amount 10,000 satang, fail_fast=true, idemp_key `saan-shop-20261018` and matching metadata. No order was linked or marked paid out.
+
+Observed the same object through all stages, using independent GET between test actions:
+
+| Stage | sent | paid | sendable |
+|---|---|---|---|
+| Created | false | false | true |
+| Test mark_as_sent | true | false | false |
+| Test mark_as_paid | true | true | false |
+
+Fee evidence on this specific sandbox transfer: amount 10,000 satang, fee 1,869, fee_vat 131, total_fee 2,000, net 8,000. Thus this test receipt's total fee is THB 20 including its reported VAT component, and the recipient net is THB 80. Do not treat that as a universal tariff quote or add VAT a second time to this observed total. Original metadata, mode, amount and recipient were validated; net equals amount minus total_fee and total_fee equals fee plus fee_vat.
+
+Dashboard independently displayed PAID, the same transfer identity, requested THB 100, fee THB 20, net THB 80, the synthetic shop and separate created/sent/paid events. Screenshot: ignored local `output/staging/omise-synthetic-transfer-paid.png`. Test balance decreased; no live bank payment occurred.
+
+### Implications
+
+- Recipient verification and activation are separate requirements. API HTTP 200 on an unsupported activation parameter is not enough; inspect actual active state.
+- Do not credit a shop with the requested amount when it receives a lower net. Decide who absorbs costs, lock a versioned fee policy and reconcile actual provider net.
+- A transfer created or sent is not paid. Use verified provider paid evidence and preserve pending/unknown outcomes.
+- This proves only one synthetic happy path. Provider idemp_key duplicate/mismatched-amount behavior, retention/scope, lookup without a transfer ID and lost-POST recovery remain NOT RUN. Current reservation files prevent local redispatch; they do not establish provider idempotency.
+- No production app, migration, gateway capability, actual refund or Saan shop-payout ledger was changed for this standalone probe. Order payout remains disabled. Next engineering milestone is a tested provider transfer boundary plus durable attempts/account mapping and fund reservation; it must pass failure/retry checks before registering a payout gateway.

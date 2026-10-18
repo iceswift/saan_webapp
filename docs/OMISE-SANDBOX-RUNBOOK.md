@@ -73,3 +73,5 @@ Private staging now also rehearses admin refund cases behind `REFUND_CASE_TEST_M
 ## Transfer probe checkpoint
 
 Standalone sandbox recipient created and verified, but not active; no transfer created. See [OMISE-TRANSFER-CONTRACT-SPIKE.md](OMISE-TRANSFER-CONTRACT-SPIKE.md). Continue with that original recipient after the owner restores their expired dashboard session. Do not repeat reserved API steps or route it into order settlement.
+
+Transfer checkpoint continued successfully after sign-in: original test recipient activated, one THB 100 synthetic transfer reached sent then paid with independent GET/dashboard evidence; observed total fee THB 20 and recipient net THB 80. No order payout integration enabled. Full result and unproven idempotency/recovery gates are in OMISE-TRANSFER-CONTRACT-SPIKE.md.
