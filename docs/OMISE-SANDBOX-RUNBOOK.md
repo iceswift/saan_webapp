@@ -19,7 +19,7 @@ There is still one reservation per deposit/balance. Expired/uncertain requests c
 - Payment/settlement/runtime suites: 28 tests passed on isolated SQLite and the same 28 on home-server **saan_test** PostgreSQL. PostgreSQL fault injection replaces the SQLite trigger rather than skipping its test.
 - Source-only PostgreSQL QA used `/tmp/payment-qa-20261018` inside the existing container; deployed application files were not replaced. No database backup was copied off the server.
 - Provider/signature/endpoint tests: `npm run test:payment-provider`.
-- Deployed browser deposit journey passed: QR → user Mark as paid → scheduled worker finalization → one Payment → app/worker restart persistence. Public callback delivery and the complete shop/balance journey remain unverified. Fixture tests do not establish those checks.
+- Deployed browser full-order journey passed: deposit → actual shop login/appointment/progress/delivery → buyer acceptance/balance → scheduled worker completion → exactly two Payments and one shrine → restart persistence. Expanded suites passed 30 tests on each isolated SQLite/PostgreSQL database. See the full-order section of staging QA. Public callback delivery remains unverified; fixture tests do not establish that check.
 
 ## Activation sequence
 

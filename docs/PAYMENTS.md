@@ -13,7 +13,7 @@ The server-only test client and guarded contract-spike command are implemented; 
 - This increment uses one reserved operation per deposit/balance. Expired/failed/uncertain attempts require inspection and cannot automatically generate a replacement QR. Multi-attempt recovery and account namespaces remain future work. Inbox/worker code now exists and PostgreSQL tests pass; public webhook ingress is not configured.
 - The owner rotated the exposed sandbox key; protected home-server configuration now selects `omise_test` for private sandbox testing. No live key is configured. Do not transfer secrets through chat or tracked files.
 
-Webhook inbox, worker and migration activation/recovery steps: [OMISE-SANDBOX-RUNBOOK.md](OMISE-SANDBOX-RUNBOOK.md). Tests passed on isolated SQLite and home-server `saan_test` PostgreSQL. Deployed browser deposit and worker/restart checks passed; public callback delivery and the complete shop/balance journey remain pending.
+Webhook inbox, worker and migration activation/recovery steps: [OMISE-SANDBOX-RUNBOOK.md](OMISE-SANDBOX-RUNBOOK.md). Expanded suites passed 30 tests each on isolated SQLite and home-server `saan_test` PostgreSQL. Deployed full-order shop/buyer/balance and worker/restart checks passed; public callback delivery remains pending.
 
 ## Current behavior
 

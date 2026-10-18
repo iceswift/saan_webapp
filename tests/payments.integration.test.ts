@@ -307,12 +307,16 @@ test("asynchronous QR reserves once, resumes the same charge, and only completes
   assert.equal(creates, 1);
 });
 
-test("durable inbox deduplicates, resumes after lease expiry, retrieves provider truth and finalizes once", async (t) => {
+async function ensureInboxSchema() {
   const sql = await readFile("prisma/postgresql/migrations/20261018020000_webhook_inbox/migration.sql", "utf8");
   for (const statement of sql.split(";").map((v) => v.trim()).filter(Boolean)) {
     await db.$executeRawUnsafe(statement.replace("CREATE TABLE ", "CREATE TABLE IF NOT EXISTS ")
       .replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS "));
   }
+}
+
+test("durable inbox deduplicates, resumes after lease expiry, retrieves provider truth and finalizes once", async (t) => {
+  await ensureInboxSchema();
   const f = await fixture(t);
   const id = `evnt_test_${randomUUID().replaceAll("-", "")}`;
   const chargeId = `chrg_test_${randomUUID().replaceAll("-", "")}`;
@@ -338,6 +342,78 @@ test("durable inbox deduplicates, resumes after lease expiry, retrieves provider
   assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
   assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "AWAITING_PROVIDER");
   await assert.rejects(storeOmiseEvent(Buffer.from(body.toString().replace('"failed"', '"pending"'))));
+});
+
+test("unpaid asynchronous balance never completes work; missing callback polling completes once", async (t) => {
+  await ensureInboxSchema();
+  const f = await fixture(t, "DONE", 300);
+  let creates = 0;
+  let reads = 0;
+  let paid = false;
+  const chargeId = `chrg_test_${randomUUID().replaceAll("-", "")}`;
+  const nextAction = { status: "PENDING" as const, qrUrl: "https://api.omise.co/test", expiresAt: new Date(Date.now() + 900000).toISOString() };
+  const adapter: PaymentGateway = { name: "omise_test",
+    execute: async (input) => {
+      creates++;
+      assert.equal(input.amountMinor, 70000);
+      return { status: "PENDING", reference: chargeId, nextAction };
+    },
+    retrieve: async (input) => {
+      reads++;
+      assert.equal(input.gatewayReference, chargeId);
+      return paid ? { status: "SUCCEEDED", reference: chargeId } : { status: "PENDING", reference: chargeId, nextAction };
+    },
+  };
+  const input = { ...f.input, kind: "PAYMENT_BALANCE" as const };
+  assert.equal((await runCustomerPayment(input, adapter)).ok, true);
+  const op = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:BALANCE` } });
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "DONE");
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
+  assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 0);
+  const repeated = await runCustomerPayment(input, adapter);
+  if (repeated.ok) assert.equal(repeated.data?.status, "PENDING"); // A slow runner may already pass the throttle window.
+  assert.equal(creates, 1);
+  await db.moneyOperation.update({ where: { id: op.id }, data: { updatedAt: new Date(Date.now() - 61000) } });
+  await reconcileOmiseBatch(adapter);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "DONE");
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
+  paid = true;
+  await db.moneyOperation.update({ where: { id: op.id }, data: { updatedAt: new Date(Date.now() - 61000) } });
+  await reconcileOmiseBatch(adapter);
+  const completed = await db.order.findUniqueOrThrow({ where: { id: f.order.id } });
+  assert.equal(completed.status, "COMPLETED");
+  assert.ok(completed.shrineId);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, kind: "BALANCE", status: "PAID" } }), 1);
+  assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 1);
+  assert.equal(await db.orderEvent.count({ where: { orderId: f.order.id, title: "ลูกค้าตรวจรับงานแล้ว" } }), 1);
+  const readsBeforeRepeat = reads;
+  assert.equal((await runCustomerPayment(input, adapter)).ok, true);
+  await reconcileOmiseBatch(adapter);
+  assert.equal(creates, 1);
+  assert.equal(reads, readsBeforeRepeat);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 2);
+});
+
+test("concurrent balance confirmation creates one completion event, payment and shrine", async (t) => {
+  const f = await fixture(t, "DONE", 300);
+  let creates = 0;
+  const chargeId = `chrg_test_${randomUUID().replaceAll("-", "")}`;
+  const adapter: PaymentGateway = { name: "omise_test",
+    execute: async () => { creates++; return { status: "PENDING", reference: chargeId,
+      nextAction: { status: "PENDING", qrUrl: "https://api.omise.co/test", expiresAt: new Date().toISOString() } }; },
+    retrieve: async () => ({ status: "SUCCEEDED", reference: chargeId }),
+  };
+  await runCustomerPayment({ ...f.input, kind: "PAYMENT_BALANCE" }, adapter);
+  const op = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:BALANCE` } });
+  const results = await Promise.all([
+    reconcileCustomerPaymentOperation(op.id, adapter), reconcileCustomerPaymentOperation(op.id, adapter),
+  ]);
+  assert.ok(results.some((result) => result.ok));
+  assert.equal(creates, 1);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, kind: "BALANCE" } }), 1);
+  assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 1);
+  assert.equal(await db.orderEvent.count({ where: { orderId: f.order.id, title: "ลูกค้าตรวจรับงานแล้ว" } }), 1);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "COMPLETED");
 });
 
 test.after(async () => { await db.$disconnect(); });

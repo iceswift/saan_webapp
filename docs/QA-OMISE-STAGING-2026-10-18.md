@@ -24,6 +24,39 @@
 - Restarted app and worker, then independently read the order: same charge ID, SUCCEEDED operation, AWAITING_PROVIDER and Payment count still 1. Private HTTPS health passed.
 - Post-test server-local backup: `/home/ice/saan/backups/20261018T073912Z-2293047`, including successful sandbox payment and inbox schema. No backup transferred off the home server.
 
+## Full order journey verified
+
+The same synthetic order was continued through the real browser UI, without resetting its state or editing order status directly in SQL:
+
+1. Signed in as `staging-shop` using the allowlisted on-screen test OTP. Pressing acceptance without date/time showed the inline validation error and focused the date field.
+2. Selected 19 October 2026 at 09:00 Bangkok time through the Thai calendar/time UI; shop acceptance changed the order to CONFIRMED. Appointment was displayed consistently to buyer and shop.
+3. Submitted an explicitly synthetic progress report, then pressed the shop's “แจ้งว่างานเสร็จ”. Order became DONE, retaining only the already-paid THB 300 deposit.
+4. Signed back into the synthetic buyer account. The UI requested exactly THB 700. Acceptance generated balance charge `chrg_test_69drrbc7vy8nv6b9jju`, operation `cmvdisakw000ls201bmqb67f9`. While pending, order remained DONE, Payment count remained 1, and no completion/shrine was created.
+5. Reloaded and resumed: balance charge identity stayed unchanged; no third operation was created. The user selected Omise Testing → Mark as paid for this exact charge.
+6. Without pressing a Saan check button afterward, the scheduled worker finalized the balance. Order became COMPLETED with exactly one deposit and one balance Payment, total THB 1,000, two successful money operations and one linked shrine owned by the buyer. Shop acceptance, delivery and customer-completion events each appeared once.
+7. Both buyer and actual shop login showed the completed order and both paid amounts. No further pay/deliver/accept controls remained. The review form became available; no fake public review was submitted.
+8. Restarted app and worker; the same completed order, references, Payment count 2 and single shrine/completion event survived. HTTPS health passed. No refund/payout operation was created.
+
+This was an accelerated synthetic workflow: the appointment was in the future but progress/delivery were simulated immediately. No actual service or bank payment occurred. The buyer is the existing synthetic admin account acting as a customer; it does not gain shop-management permission for its own order (shop-route access as buyer correctly returned not found).
+
+### Independent provider reconciliation
+
+After restart, read both original charge IDs with the rotated test key and verified test mode, successful/paid status, THB amount and the original operation `ref_id`:
+
+| Stage | Amount | Provider fee | Fee VAT | Provider net |
+|---|---:|---:|---:|---:|
+| Deposit | THB 300.00 | THB 4.95 | THB 0.35 | THB 294.70 |
+| Balance | THB 700.00 | THB 11.55 | THB 0.81 | THB 687.64 |
+
+These are observed sandbox receipt fields, not Saan commission or a shop payout calculation. Customer total remains THB 1,000. No transfer was initiated.
+
+### Regression and persistence evidence
+
+- Expanded payment/settlement/runtime suites from 28 to 30 tests; all passed on isolated SQLite and home-server `saan_test` PostgreSQL using the deployed application code. New cases cover unpaid balance gating, missing-callback polling, no repeat execution and concurrent finalization producing one payment/shrine/completion event.
+- TypeScript and targeted ESLint passed. No production-code change or new image was necessary for this full-order test pass; only tests/documentation changed.
+- Screenshots (ignored local files): `output/staging/omise-shop-delivered.png`, `omise-balance-pending.png`, `omise-order-completed.png`, `omise-shop-completed.png`.
+- Completed-order backup retained on home server: `/home/ice/saan/backups/20261018T075137Z-2298865`. No off-server backup transfer.
+
 ## Scope limits
 
 This verifies sandbox collection, not bank money movement, public callback delivery, automatic refunds or shop payouts. Those provider operations remain unsupported. Expired/unknown charge replacement remains manual; multi-attempt recovery/account namespaces are not implemented.
