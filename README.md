@@ -111,3 +111,5 @@ CI ชุดนี้ไม่รวม production build; ผล build และ
 PostgreSQL มี schema และ migrations แยกจาก SQLite บนเครื่อง ดูขั้นตอน build, migrate และข้อจำกัดก่อน deploy ที่ [docs/STAGING.md](docs/STAGING.md) และตัวอย่างค่าใน `.env.staging.example`
 
 การรัน Docker, การย้ายเครื่อง, backup/restore และข้อมูลส่งต่อให้ AI อยู่ใน [docs/OPERATIONS.md](docs/OPERATIONS.md) โดยสถานะที่ตรวจสอบจริงอยู่ใน [docs/DEPLOYMENT-STATUS.md](docs/DEPLOYMENT-STATUS.md)
+
+บัญชีทดสอบ การเปิดโหมดจำลองเฉพาะ staging และขั้นตอนปิดโหมดอยู่ใน [docs/STAGING-TESTING.md](docs/STAGING-TESTING.md) ผลทดสอบผ่าน HTTPS บน home server อยู่ใน [docs/QA-STAGING-2026-10-18.md](docs/QA-STAGING-2026-10-18.md)

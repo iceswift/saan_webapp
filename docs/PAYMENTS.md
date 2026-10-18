@@ -5,7 +5,7 @@ Implemented internal flow; provider selection remains open. No real money is mov
 ## Current behavior
 
 - Development defaults to `mock`. `PAYMENT_PROVIDER=mock` is documented in `.env.example`.
-- Production always uses the unavailable adapter until a reviewed real adapter is added. It cannot silently simulate successful charges.
+- Production uses the unavailable adapter until a reviewed real adapter is added. Explicit private staging can enable simulated payments only with the switches and synthetic phone allowlist in `STAGING-TESTING.md`; `PAYMENT_PROVIDER=mock` alone cannot enable it in a production build.
 - Customer: deposit -> shop acceptance -> work done -> balance and acceptance.
 - Admin: `/admin/finance` shows up to 100 recent orders, refund/payout history and unresolved operations.
 - Shop: `/provider/finance` shows only its own orders and settlement status.
@@ -23,7 +23,7 @@ Unique business keys identify deposit, balance, payout, and each original-paymen
 
 `PENDING` and `UNKNOWN` never trigger automatic re-execution. Reconciliation retrieves the SAME provider operation, then invokes the same atomic finalization. Abandoned `PROCESSING` can be retrieved after 60 seconds; fresh processing cannot be reconciled. `FAILED` is terminal for now: resolve with the provider/support rather than issuing a new automatic attempt. Never reset an uncertain operation or manufacture a new idempotency key to retry it.
 
-The mock creates synthetic receipts only when execute is called. Retrieval reads process-local receipts and returns UNKNOWN for absent receipts, including after a server restart; it never invents a successful payment. It does not model a persistent bank ledger. Production adapters must implement real provider retrieval semantics. A negative reconciliation response remains UNKNOWN when it could race with an in-flight settlement submission.
+The mock creates synthetic receipts only when execute is called. Local-development mocks read process-local receipts. Explicit private staging uses `MockGatewayReceipt` in PostgreSQL, so retrieval survives process restart. Both return UNKNOWN for absent receipts and never invent successful payments. Staging enforces unique receipt keys, reads the winning receipt after a concurrent unique-key conflict, and rejects changed request contents. This is not a bank ledger. Real adapters must implement provider retrieval semantics. A negative reconciliation response remains UNKNOWN when it could race with an in-flight settlement submission.
 
 ## Adding the chosen provider later
 

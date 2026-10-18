@@ -34,7 +34,7 @@ The Docker deployment and recovery runbooks are now in [OPERATIONS.md](OPERATION
 - Provision the staging database and select a hosting environment; no remote resources have been created by this change.
 - Configure object storage before accepting uploads. Uploads currently write to the local filesystem and are unsuitable for ephemeral hosting.
 - Replace development SMS/OTP and review authentication before granting access to real users. Use synthetic data while these integrations remain simulated.
-- Production builds currently disable simulated payments. A separately gated staging payment mode is still needed to test checkout on a production build; do not enable real charges until a gateway is integrated.
+- Private staging test login and mock payments are now separately gated; see STAGING-TESTING.md. Ordinary production configuration still disables simulated payments. Real charges require a reviewed provider adapter.
 - Resolve GitHub Actions billing to run hosted checks. Local migration generation and schema validation do not prove a successful PostgreSQL deployment.
 
 No hosting provider, database credentials or storage account is assumed by this setup.
