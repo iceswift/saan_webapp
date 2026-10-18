@@ -48,6 +48,8 @@ To restore: prepare a separate Compose project/environment and **new empty DATA_
 
 Migration to another server: rehearse restore there; pause writes on the old server; take a final consistent backup; transfer it and the protected environment configuration; restore into a new empty target; start the exact source image version; check data and endpoints; then change ingress/DNS. Keep the old app stopped to prevent split writes. A short planned write outage is acceptable initially.
 
+To move the exact image without a registry, use `docker save saan:COMMIT` on the source and `docker load` on the destination over a protected transfer. Record the image ID and verify it matches. The database and uploads are transferred separately via the consistent backup; never copy a running PostgreSQL data directory. Protect and transfer the environment file separately from repository source and backups.
+
 ## Checks and remaining work
 
 Run PostgreSQL migration/constraint checks on a real PostgreSQL instance; schema validation alone is insufficient. SQLite service tests use a separately generated SQLite client and database. Never overwrite an active development server's generated client with PostgreSQL generation in the same checkout.

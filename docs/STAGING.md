@@ -25,6 +25,10 @@ For later database changes: update the canonical schema, regenerate the PostgreS
 
 The PostgreSQL CI job starts a fresh PostgreSQL 16 instance, deploys migrations twice, and tests unique money-operation keys, foreign-key deletion protection and transactional rollback through the generated Prisma client. `npm run test:postgres` requires the dedicated database name `saan_test`; it creates and removes only its own fixtures. These are database compatibility checks, not a replacement for the 33 SQLite service tests or an end-to-end staging test.
 
+## Home-server implementation
+
+The Docker deployment and recovery runbooks are now in [OPERATIONS.md](OPERATIONS.md). Verified results and remaining access limitations are tracked in [DEPLOYMENT-STATUS.md](DEPLOYMENT-STATUS.md). Consult those documents before assuming this earlier preparation checklist is still pending.
+
 ## Remaining deployment prerequisites
 
 - Provision the staging database and select a hosting environment; no remote resources have been created by this change.

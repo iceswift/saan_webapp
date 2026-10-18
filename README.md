@@ -104,8 +104,10 @@ npm run build
 บน checkout ใหม่ ให้รัน `npx next typegen` ก่อน `npm run typecheck` เพื่อสร้างชนิดข้อมูลเส้นทาง
 ชุดทดสอบสร้างฐานข้อมูลแยกที่ `storage/tests/ci/money-test.db` และแทนที่ `DATABASE_URL` เฉพาะในโปรเซสทดสอบ จึงไม่ใช้ข้อมูลแอปหรือ seed
 GitHub Actions (`.github/workflows/ci.yml`) รัน type generation, TypeScript, ESLint และ integration tests ทุก push และ pull request ด้วย Node.js 22
-ขั้นตอนนี้ยังไม่ deploy และไม่ได้ทดสอบ production build
+CI ชุดนี้ไม่รวม production build; ผล build และ deploy บน home server ดูได้ที่ [docs/DEPLOYMENT-STATUS.md](docs/DEPLOYMENT-STATUS.md)
 
 ## เตรียม staging
 
 PostgreSQL มี schema และ migrations แยกจาก SQLite บนเครื่อง ดูขั้นตอน build, migrate และข้อจำกัดก่อน deploy ที่ [docs/STAGING.md](docs/STAGING.md) และตัวอย่างค่าใน `.env.staging.example`
+
+การรัน Docker, การย้ายเครื่อง, backup/restore และข้อมูลส่งต่อให้ AI อยู่ใน [docs/OPERATIONS.md](docs/OPERATIONS.md) โดยสถานะที่ตรวจสอบจริงอยู่ใน [docs/DEPLOYMENT-STATUS.md](docs/DEPLOYMENT-STATUS.md)
