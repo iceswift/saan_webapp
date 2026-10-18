@@ -7,9 +7,10 @@ export type RefundCaseView = {
 };
 
 export type FinanceOrder = {
-  id: string; code: string; status: string; total: number; paid: number; refunded: number;
+  id: string; code: string; providerId:string; status: string; total: number; paid: number; refunded: number;
   payable: number; payoutStatus: string; refundStatus: string;
   refundDue: number; settlementGateway: string;
+  payout: {requestedMinor:number;collectionFeeMinor:number;transferFeeMinor:number|null;bankNetMinor:number|null;policy:string;recipientId:string}|null;
   operations: { id: string; kind: string; status: string; amountMinor: number;
     gatewayRef: string; gateway: string; error: string; createdAt: string; refundCase: RefundCaseView | null }[];
 };
@@ -25,7 +26,7 @@ export async function listFinanceOrders(viewer: {id: string; role: string}, prov
     where: { ...(providerId ? {providerId} : {}), OR: [
       {status:{in:["COMPLETED","CANCELLED"]}}, {moneyOperations:{some:{}}},
     ]},
-    include:{payments:true,moneyOperations:{orderBy:{createdAt:"desc"},include:{refundCase:{include:{events:{orderBy:{createdAt:"asc"}}}}}}},
+    include:{payments:true,moneyOperations:{orderBy:{createdAt:"desc"},include:{payoutAttempt:true,refundCase:{include:{events:{orderBy:{createdAt:"asc"}}}}}}},
     orderBy:{updatedAt:"desc"}, take:100,
   });
   return orders.map(order => {
@@ -34,11 +35,12 @@ export async function listFinanceOrders(viewer: {id: string; role: string}, prov
     const payout = order.moneyOperations.find(op=>op.kind === "PAYOUT");
     const refunds = order.moneyOperations.filter(op=>op.kind === "REFUND");
     return {
-      id:order.id,code:order.code,status:order.status,total:order.total,paid,refunded,
+      id:order.id,code:order.code,providerId:order.providerId,status:order.status,total:order.total,paid,refunded,
       refundDue: order.status === "CANCELLED" ? paid : 0,
       settlementGateway: order.payments.filter(p => p.status === "PAID").every(p => p.gateway === "mock") ? "mock" : "other",
       payable:order.status === "COMPLETED" && paid === order.total && payout?.status !== "SUCCEEDED" ? paid : 0,
       payoutStatus:payout?.status ?? "NOT_REQUESTED",
+      payout:payout?.payoutAttempt?{requestedMinor:payout.amountMinor,collectionFeeMinor:payout.payoutAttempt.collectionFeeMinor,transferFeeMinor:payout.payoutAttempt.transferFeeMinor,bankNetMinor:payout.payoutAttempt.bankNetMinor,policy:payout.payoutAttempt.policy,recipientId:payout.payoutAttempt.recipientId}:null,
       refundStatus:refunds.find(op=>op.status !== "SUCCEEDED")?.status ?? (refunded > 0 ? "SUCCEEDED" : "NOT_REQUESTED"),
       operations:order.moneyOperations.map(op=>({id:op.id,kind:op.kind,status:op.status,amountMinor:op.amountMinor,
         gatewayRef:op.gatewayRef,gateway:op.gateway,error:op.error,createdAt:op.createdAt.toISOString(),

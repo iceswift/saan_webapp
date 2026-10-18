@@ -13,6 +13,7 @@ import { formatBaht, formatDateTime } from "@/lib/format";
 import { FinanceControls } from "./finance-controls";
 import { RefundCaseControls } from "./refund-case-controls";
 import { refundCaseTestEnabled } from "@/server/refund-case-service";
+import { payoutTestEnabled } from "@/server/omise-payout-service";
 
 export const metadata: Metadata = { title: "การเงินและรายการค้าง" };
 
@@ -67,7 +68,8 @@ export default async function AdminFinancePage() {
                 </ul>
               </details>
             ) : null}
-            <FinanceControls order={order} gateway={payments.name} />
+            {order.payout?<p className="mt-3 text-sm text-muted-foreground">จ่ายร้านทดสอบ · หักค่ารับชำระ {formatBaht(order.payout.collectionFeeMinor/100)} · ยอดขอโอน {formatBaht(order.payout.requestedMinor/100)} · ค่าโอน {order.payout.transferFeeMinor===null?"รอยืนยัน":formatBaht(order.payout.transferFeeMinor/100)} · ร้านรับสุทธิ {order.payout.bankNetMinor===null?"รอยืนยัน":formatBaht(order.payout.bankNetMinor/100)}{order.payoutStatus!=="SUCCEEDED"?" (ยังไม่ยืนยันจ่ายสำเร็จ)":""}</p>:null}
+            <FinanceControls order={order} gateway={payments.name} sandboxPayout={payoutTestEnabled() && order.providerId===process.env.OMISE_PAYOUT_TEST_PROVIDER_ID && payments.name==="omise_test"} />
             {refundCaseTestEnabled() ? order.operations.filter(operation => operation.kind === "REFUND" && operation.status === "ACTION_REQUIRED" && operation.gateway === "omise_test").map(operation =>
               <RefundCaseControls key={operation.id} operationId={operation.id} amountMinor={operation.amountMinor} refundCase={operation.refundCase} />,
             ) : null}

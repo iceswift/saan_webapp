@@ -8,6 +8,13 @@ import { payoutOrderFunds, reconcileSettlement, refundOrderFunds } from "../sett
 import { reconcileCustomerPaymentOperation } from "../payment-service";
 import { fail, type ActionResult } from "@/lib/result";
 import { changeRefundCase, type RefundCaseInput } from "../refund-case-service";
+import { startTestPayout, reconcileTestPayout } from "../omise-payout-service";
+
+export async function sendOmiseTestPayout(input:{orderId:string;policy:string}):Promise<ActionResult>{
+  const user=await getCurrentUser();if(!user)return NOT_LOGGED_IN;if(user.role!=="ADMIN")return NOT_ALLOWED;
+  const parsed=parseInput(z.object({orderId:idSchema,policy:z.string().max(100)}),input);if(!parsed.ok)return parsed;
+  const result=await startTestPayout(parsed.data.orderId,user.id,parsed.data.policy);refreshAll();return result;
+}
 
 export async function updateRefundCase(input: RefundCaseInput): Promise<ActionResult> {
   const user = await getCurrentUser();
@@ -53,7 +60,8 @@ export async function reconcileMoneyOperation(input: {operationId:string}): Prom
   try {
     const op = await db.moneyOperation.findUnique({where:{id:parsed.data.operationId}});
     if (!op) return fail("ไม่พบรายการเงิน");
-    const result = op.kind === "REFUND" || op.kind === "PAYOUT"
+    const attempt = op.kind === "PAYOUT" ? await db.payoutAttempt.findUnique({where:{operationId:op.id}}) : null;
+    const result = attempt ? await reconcileTestPayout(op.id) : op.kind === "REFUND" || op.kind === "PAYOUT"
       ? await reconcileSettlement(op.id) : await reconcileCustomerPaymentOperation(op.id);
     refreshAll();
     return result;

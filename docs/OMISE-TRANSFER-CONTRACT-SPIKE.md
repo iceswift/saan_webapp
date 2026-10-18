@@ -48,3 +48,9 @@ Dashboard independently displayed PAID, the same transfer identity, requested TH
 - A transfer created or sent is not paid. Use verified provider paid evidence and preserve pending/unknown outcomes.
 - This proves only one synthetic happy path. Provider idemp_key duplicate/mismatched-amount behavior, retention/scope, lookup without a transfer ID and lost-POST recovery remain NOT RUN. Current reservation files prevent local redispatch; they do not establish provider idempotency.
 - No production app, migration, gateway capability, actual refund or Saan shop-payout ledger was changed for this standalone probe. Order payout remains disabled. Next engineering milestone is a tested provider transfer boundary plus durable attempts/account mapping and fund reservation; it must pass failure/retry checks before registering a payout gateway.
+
+## Duplicate-request contract observed
+
+Further explicit sandbox probes repeated the original POST with the same documented idemp_key, recipient, THB 100 amount, fail_fast flag and metadata. Provider returned HTTP 200 with NEW identity `trsf_test_69durfim1wwnpiqxyw7`. A separate same-key THB 101 request returned another new identity `trsf_test_69durh7l53y0xs7qt5l`. Both are pending/unpaid. Independent GET list returned all three original/duplicate/mismatched-amount records. Therefore this account/API observation does not provide duplicate prevention through idemp_key; neither new record is evidence of an application retry.
+
+The payout implementation consequently uses a durable one-shot dispatch reservation, never repeats POST after uncertainty, and searches metadata/read-only provider objects to recover the original result. Duplicate matching metadata requires manual review. Full implementation/rollout rules: OMISE-PAYOUT-SANDBOX.md.

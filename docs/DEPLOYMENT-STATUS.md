@@ -2,6 +2,12 @@
 
 ## Current payment sandbox release — 18 October 2026
 
+Current image: **saan:payout-d8927aa6a651**, config digest `sha256:9e2739e8552eaca843d0e12ad417a8800fa2da6b4f29006f0f6d4eaa6612a3ae`. Integrated synthetic-shop payouts deployed and verified through the browser, actual Omise test API, automatic worker reconciliation and app/worker replacement. Migration `20261018040000_payout_attempts` applied. 58 SQLite integration tests, 45 PostgreSQL tests and 4 transfer-client tests passed; TypeScript, targeted lint and production build passed. The shared money-mutation pause blocks new payouts while allowing reconciliation.
+
+The completed THB 1,000 order has exactly one successful payout: collection cost 17.66, requested transfer 982.34, transfer cost 20, shop net 962.34. These are sandbox observations, not agreed commercial fees. The separate THB 30 refund remains outstanding despite its completed synthetic case workflow. Latest home-only backup: `/home/ice/saan/backups/20261018T131258Z-2391775`. Protected image-only rollback config: `deployment.env.before-payout-final-d8927aa6a651`. Localhost and private HTTPS health passed after rollout. Live payouts, real refunds and public webhook ingress remain disabled. See [OMISE-PAYOUT-SANDBOX.md](OMISE-PAYOUT-SANDBOX.md).
+
+### Previous refund-case release
+
 Current image: **saan:cases-8eb0b14cf2d5**. Refund-case sandbox workflow deployed and browser verified, including eight audited transitions, destination review reset, customer progress and restart persistence. 50 SQLite integration tests and 37 PostgreSQL payment/refund/runtime tests passed. Migration 20261018030000_refund_cases applied. Post-test home-only backup: /home/ice/saan/backups/20261018T120351Z-2368994. Full instructions in REFUND-CASE-SANDBOX.md. Synthetic case completion does not change financial refunds or send money.
 
 ### Previous refund-obligation release

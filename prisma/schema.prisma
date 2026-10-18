@@ -243,9 +243,32 @@ model MoneyOperation {
   updatedAt      DateTime @updatedAt
   completedAt    DateTime?
   refundCase     RefundCase?
+  payoutAttempt  PayoutAttempt?
 
   @@index([orderId, kind])
   @@index([status, createdAt])
+}
+
+// One lock shared by payout reservations and newly recorded refund obligations.
+model PaymentPool {
+  id        String @id
+  accountId String @default("")
+  revision  Int @default(0)
+}
+
+model PayoutAttempt {
+  id              String @id @default(cuid())
+  operationId     String @unique
+  operation       MoneyOperation @relation(fields: [operationId], references: [id], onDelete: Restrict)
+  accountId       String
+  recipientId     String
+  destinationHash String
+  grossMinor      Int
+  collectionFeeMinor Int
+  policy          String
+  transferFeeMinor Int?
+  bankNetMinor    Int?
+  createdAt       DateTime @default(now())
 }
 
 // Sandbox operational rehearsal only. Never an external money-movement receipt.

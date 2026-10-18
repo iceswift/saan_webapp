@@ -93,3 +93,35 @@ Remaining: agree a supported operational refund route with the provider before l
 - Screenshots, ignored local artifacts: `output/staging/refund-case-admin-completed.png`, `refund-case-customer-completed.png`, `refund-case-customer-light.png`.
 
 See [refund case sandbox runbook](REFUND-CASE-SANDBOX.md). Remaining live requirements include actual private destination/evidence collection, independent bank confirmation, partial-amount ledger and reviewer policy. Synthetic TEST_COMPLETED is never evidence of an actual refund.
+
+## Integrated order payout verification — 18 October 2026
+
+Initial integration image `saan:payout-cc8e1a622ecd` applied additive migration `20261018040000_payout_attempts` after home-only backup `/home/ice/saan/backups/20261018T130432Z-2386181`. Payout configuration binds only `staging-provider` to fictitious test-bank recipient `recp_test_69duo9opicxsa4c50q6`; live mode remains rejected.
+
+Actual provider duplicate probes are recorded in OMISE-TRANSFER-CONTRACT-SPIKE.md: same idemp_key/amount and same key/different amount created new transfer identities. App implementation therefore commits one durable dispatch reservation and never repeats an uncertain POST. Standalone probes remain separate from order accounting.
+
+Browser flow on existing synthetic completed order `QA-OMISE-1810`:
+
+1. Pressed payout without policy acceptance: inline error appeared and checkbox received focus.
+2. Accepted the explicit sandbox cost policy; submission was rejected. Independent client preflight verified account, recipient and original charges: collection net 98,234 satang, transferable 93,145 and customer-refund reserve 3,000. Database confirmed zero payout operations, so rejection did not dispatch or leave a phantom payout.
+3. Created one separately labelled standalone sandbox funding charge `saan-payout-liquidity-20261018`, THB 400, ID `chrg_test_69duwlfciqmi7hdcdcm`. Marked paid in Omise Testing; independent GET confirmed paid/successful. This is synthetic account liquidity, not an order/customer payment or a real bank transfer.
+4. Submitted once from admin finance. Created operation `cmvdubgmg0001pj01uj0q09i7`, original transfer `trsf_test_69duwyjhh67hd1451kl`, state PENDING. Payout snapshot: gross 100,000 satang, collection costs 1,766, transfer requested 98,234, actual transfer fee 2,000, bank net 96,234. The zero-commission/shop-cost policy is test-only, explicitly acknowledged, not a commercial agreement.
+5. Simulated provider sent: independent GET returned sent=true, paid=false; Saan stayed PENDING with no success event. Restarted app and worker; same operation/reference/state survived.
+6. Simulated provider paid on that exact transfer. Without pressing the Saan reconciliation control or invoking its internal endpoint, the scheduled worker finalized SUCCEEDED and created exactly one payout-success event. Original two paid installments, total THB 1,000 and linked shrine were unchanged. Original cancelled-order THB 30 refund remained open and unrefunded.
+7. Actual synthetic shop login showed the order's THB 962.34 net, THB 17.66 collection cost and THB 20 transfer cost. Combined paid summary THB 1,962.34 includes an earlier THB 1,000 mock payout. Checked both themes and restored the original dark theme and admin session.
+
+Local SQLite integration suites passed 58 tests; PostgreSQL payment/refund/payout/runtime suites passed 45, including native failure injection after provider acceptance. Four transfer-client fixtures passed. TypeScript, targeted ESLint and production build passed. Fixture failure/recovery tests are separate from actual happy-path provider/browser evidence.
+
+Final review added pause-switch enforcement on new payouts and clarified provider gross/net explanatory text; the final image and restart evidence are recorded below after rollout. Screenshots (ignored local): `output/staging/omise-order-payout-completed.png`, `omise-shop-payout-net.png`, `omise-shop-payout-net-light.png`.
+
+Implementation, pending limitations and restore rules: OMISE-PAYOUT-SANDBOX.md. Real onboarding, fee/tax policy, marketplace acceptance and live activation remain separate gates.
+
+
+### Final payout rollout verification
+
+- Final image `saan:payout-d8927aa6a651`, config digest `sha256:9e2739e8552eaca843d0e12ad417a8800fa2da6b4f29006f0f6d4eaa6612a3ae` includes the shared mutation-pause guard and clarified shop gross/net copy.
+- All 45 PostgreSQL tests passed against the final image; no pending migrations. App and worker replaced, proxy restarted, both HTTPS and localhost health returned ok.
+- Independent post-restart database audit retained exactly one successful payout, original transfer ID, 2 original payments, linked shrine and fee snapshots. Provider GET confirmed sent=true, paid=true, livemode=false, net 96234 satang.
+- Separate refund case retained version 7 / 8 audit events / TEST_COMPLETED while its financial obligation remained ACTION_REQUIRED, due THB 30, refunded THB 0.
+- Admin browser retained successful payout and fee breakdown. Screenshot: ignored `output/staging/omise-order-payout-final.png`.
+- Post-flow/pre-final-image backup `/home/ice/saan/backups/20261018T131258Z-2391775` remains on the home server only. No additional financial mutations occurred during final rollout.
