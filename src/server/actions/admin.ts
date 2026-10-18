@@ -4,7 +4,6 @@ import { z } from "zod";
 import { db } from "../db";
 import { getCurrentUser } from "../auth";
 import {
-  addEvent,
   idSchema,
   NOT_ALLOWED,
   NOT_LOGGED_IN,
@@ -12,9 +11,9 @@ import {
   parseInput,
   refreshAll,
 } from "../action-utils";
-import { fail, ok, type ActionResult } from "@/lib/result";
+import { ok, type ActionResult } from "@/lib/result";
 import { PROVIDER_STATUS } from "@/lib/constants";
-import { formatBaht } from "@/lib/format";
+import { refundOrder } from "./finance";
 
 /** อนุมัติหรือปฏิเสธผู้ให้บริการ */
 export async function setProviderStatus(input: {
@@ -48,39 +47,7 @@ export async function setProviderStatus(input: {
   return ok();
 }
 
-/**
- * บันทึกว่าคืนมัดจำของคำสั่งที่ยกเลิกแล้ว
- * ระบบยังไม่ได้โอนเงินคืนเอง ผู้ดูแลระบบต้องโอนคืนลูกค้าก่อนกดบันทึก
- */
+/** Legacy action uses the same authorized, idempotent refund flow. */
 export async function markRefunded(input: { orderId: string }): Promise<ActionResult> {
-  const user = await getCurrentUser();
-  if (!user) return NOT_LOGGED_IN;
-  if (user.role !== "ADMIN") return NOT_ALLOWED;
-  const parsed = parseInput(z.object({ orderId: idSchema }), input);
-  if (!parsed.ok) return parsed;
-
-  const order = await db.order.findUnique({
-    where: { id: parsed.data.orderId },
-    include: { payments: true },
-  });
-  if (!order) return NOT_ALLOWED;
-  if (order.status !== "CANCELLED") return fail("คืนมัดจำได้เฉพาะคำสั่งที่ยกเลิกแล้ว");
-  const paid = order.payments.filter((p) => p.status === "PAID");
-  if (paid.length === 0) return fail("คำสั่งนี้ไม่มียอดที่ต้องคืน");
-  const amount = paid.reduce((sum, p) => sum + p.amount, 0);
-
-  await db.$transaction(async (tx) => {
-    await tx.payment.updateMany({
-      where: { id: { in: paid.map((p) => p.id) } },
-      data: { status: "REFUNDED", refundedAt: new Date() },
-    });
-    await addEvent(tx, order.id, "คืนมัดจำแล้ว", "ADMIN", { note: `คืนเงิน ${formatBaht(amount)}` });
-    await notify(tx, order.userId, "ORDER", "คืนมัดจำเรียบร้อยแล้ว", {
-      body: `คำสั่งเลขที่ ${order.code} คืนเงิน ${formatBaht(amount)}`,
-      href: `/orders/${order.id}`,
-    });
-  });
-
-  refreshAll();
-  return ok();
+  return refundOrder(input);
 }

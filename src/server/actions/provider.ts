@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Provider } from "@prisma/client";
 import { db } from "../db";
 import { getCurrentUser } from "../auth";
+import { confirmProviderOrder } from "../provider-order-service";
 import {
   addEvent,
   geoSchema,
@@ -24,7 +25,7 @@ import {
   PROVIDER_KIND_CODES,
   SHRINE_KIND_CODES,
 } from "@/lib/constants";
-import { formatBaht, formatDateTime } from "@/lib/format";
+import { formatBaht } from "@/lib/format";
 
 const NOT_PROVIDER = fail("กรุณาสมัครเป็นผู้ให้บริการก่อน");
 const NOT_VERIFIED = fail("บัญชีผู้ให้บริการยังไม่ผ่านการตรวจสอบ");
@@ -281,27 +282,16 @@ export async function confirmOrder(input: {
     input,
   );
   if (!parsed.ok) return parsed;
-  const found = await myOrder(parsed.data.orderId);
-  if (found.error) return found.error;
-  const { order } = found;
-  if (order.status !== "AWAITING_PROVIDER") return fail("คำสั่งนี้ยืนยันไม่ได้ในสถานะปัจจุบัน");
-
-  const scheduledAt = new Date(parsed.data.scheduledAt);
-  if (scheduledAt <= new Date()) return fail("วันนัดต้องเป็นเวลาในอนาคต");
-
-  await db.$transaction(async (tx) => {
-    await tx.order.update({ where: { id: order.id }, data: { status: "CONFIRMED", scheduledAt } });
-    await addEvent(tx, order.id, "ร้านยืนยันคำสั่ง", "PROVIDER", {
-      note: `นัดหมาย ${formatDateTime(scheduledAt)}`,
-    });
-    await notify(tx, order.userId, "ORDER", "ร้านยืนยันคำสั่งแล้ว", {
-      body: `นัดหมาย ${formatDateTime(scheduledAt)}`,
-      href: `/orders/${order.id}`,
-    });
+  const provider = await myProvider();
+  if (!provider) return NOT_PROVIDER;
+  if (provider.status !== "VERIFIED") return NOT_VERIFIED;
+  const result = await confirmProviderOrder({
+    orderId: parsed.data.orderId,
+    userId: provider.userId,
+    scheduledAt: new Date(parsed.data.scheduledAt),
   });
-
-  refreshAll();
-  return ok();
+  if (result.ok) refreshAll();
+  return result;
 }
 
 /** ร้านปฏิเสธงานก่อนยืนยัน ระบบบันทึกว่าต้องคืนมัดจำ */
@@ -319,8 +309,12 @@ export async function declineOrder(input: {
   const { order } = found;
   if (order.status !== "AWAITING_PROVIDER") return fail("คำสั่งนี้ปฏิเสธไม่ได้ในสถานะปัจจุบัน");
 
-  await db.$transaction(async (tx) => {
-    await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
+  const declined = await db.$transaction(async (tx) => {
+    const result = await tx.order.updateMany({
+      where: { id: order.id, providerId: order.providerId, status: "AWAITING_PROVIDER" },
+      data: { status: "CANCELLED" },
+    });
+    if (result.count === 0) return false;
     await addEvent(tx, order.id, "ร้านไม่สามารถรับงานนี้ได้", "PROVIDER", {
       note: `${parsed.data.reason} ต้องคืนมัดจำ ${formatBaht(order.deposit)} ให้ลูกค้า`,
     });
@@ -328,7 +322,9 @@ export async function declineOrder(input: {
       body: "ทีมงานจะติดต่อเพื่อคืนมัดจำ",
       href: `/orders/${order.id}`,
     });
+    return true;
   });
+  if (!declined) return fail("คำสั่งนี้ปฏิเสธไม่ได้ในสถานะปัจจุบัน");
 
   refreshAll();
   return ok();
@@ -356,14 +352,24 @@ export async function addOrderEvent(input: {
   const { order } = found;
   if (order.status !== "CONFIRMED") return fail("รายงานความคืบหน้าได้หลังยืนยันคำสั่งและก่อนส่งงาน");
 
-  await addEvent(db, order.id, parsed.data.title, "PROVIDER", {
-    note: parsed.data.note,
-    photoUrl: parsed.data.photoUrl,
+  const added = await db.$transaction(async (tx) => {
+    // Acquire the order write lock before adding progress, so completion cannot race this status check.
+    const result = await tx.order.updateMany({
+      where: { id: order.id, providerId: order.providerId, status: "CONFIRMED" },
+      data: { status: "CONFIRMED" },
+    });
+    if (result.count === 0) return false;
+    await addEvent(tx, order.id, parsed.data.title, "PROVIDER", {
+      note: parsed.data.note,
+      photoUrl: parsed.data.photoUrl,
+    });
+    await notify(tx, order.userId, "ORDER", parsed.data.title, {
+      body: `ความคืบหน้าของคำสั่งเลขที่ ${order.code}`,
+      href: `/orders/${order.id}`,
+    });
+    return true;
   });
-  await notify(db, order.userId, "ORDER", parsed.data.title, {
-    body: `ความคืบหน้าของคำสั่งเลขที่ ${order.code}`,
-    href: `/orders/${order.id}`,
-  });
+  if (!added) return fail("รายงานความคืบหน้าได้หลังยืนยันคำสั่งและก่อนส่งงาน");
 
   refreshAll();
   return ok();
@@ -384,8 +390,12 @@ export async function markOrderDone(input: {
   const { order } = found;
   if (order.status !== "CONFIRMED") return fail("ส่งงานได้หลังยืนยันคำสั่งแล้วเท่านั้น");
 
-  await db.$transaction(async (tx) => {
-    await tx.order.update({ where: { id: order.id }, data: { status: "DONE" } });
+  const completed = await db.$transaction(async (tx) => {
+    const result = await tx.order.updateMany({
+      where: { id: order.id, providerId: order.providerId, status: "CONFIRMED" },
+      data: { status: "DONE" },
+    });
+    if (result.count === 0) return false;
     await addEvent(tx, order.id, "ร้านแจ้งว่างานเสร็จ", "PROVIDER", {
       note: "รอลูกค้าตรวจรับงาน",
       photoUrl: parsed.data.photoUrl,
@@ -394,7 +404,9 @@ export async function markOrderDone(input: {
       body: "กรุณาตรวจงานและยืนยันรับงาน",
       href: `/orders/${order.id}`,
     });
+    return true;
   });
+  if (!completed) return fail("ส่งงานได้หลังยืนยันคำสั่งแล้วเท่านั้น");
 
   refreshAll();
   return ok();

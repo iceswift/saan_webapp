@@ -55,7 +55,7 @@ export function AreaRow({
   }
 
   const chips = (
-    <div className="flex flex-wrap gap-2">
+    <div role="group" aria-label="พื้นที่ติดตั้ง" className="flex flex-wrap gap-2">
       {areas.map((code) => (
         <Chip key={code} href={productHref(productId, params, code)} active={code === area}>
           {AREAS[code]}
@@ -102,7 +102,7 @@ export function OrderCta({
   className?: string;
 }) {
   return (
-    <LinkButton href={checkoutHref(productId, areas, params)} variant="gold" className={className}>
+    <LinkButton href={checkoutHref(productId, areas, params)} variant="gold" size="xl" className={className}>
       สั่งตั้งศาล · {formatBaht(price)}
     </LinkButton>
   );

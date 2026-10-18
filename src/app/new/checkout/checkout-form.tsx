@@ -41,6 +41,7 @@ const FORM_ID = "checkout-form";
 
 type Errors = {
   date?: string;
+  backupDate?: string;
   address?: string;
   area?: string;
   place?: string;
@@ -146,7 +147,13 @@ export function CheckoutForm({
   const area = matchedSaved?.area ?? chosenArea;
   const areaFixed = Boolean(matchedSaved) || providerAreas.length === 1;
   const canSave = trimmedAddress.length > 0 && !matchedSaved && area !== null;
-  const dateDone = date !== "";
+  function dateProblem(value: string): string | undefined {
+    if (value < minDate) return "กรุณาเลือกวันพรุ่งนี้เป็นต้นไป";
+    if (blockedDates.includes(value)) return "ร้านไม่ว่างวันนี้ กรุณาเลือกวันอื่น";
+    return undefined;
+  }
+
+  const dateDone = date !== "" && !dateProblem(date) && (!backupDate || !dateProblem(backupDate));
   const locationDone = trimmedAddress.length >= 5 && area !== null && place !== null;
 
   function clearError(key: keyof Errors) {
@@ -168,8 +175,10 @@ export function CheckoutForm({
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (pending || navigating) return;
     const next: Errors = {};
-    if (!date) next.date = "กรุณาเลือกวันที่ต้องการ";
+    next.date = date ? dateProblem(date) : "กรุณาเลือกวันที่ต้องการ";
+    if (backupDate) next.backupDate = dateProblem(backupDate);
     if (trimmedAddress.length < 5) next.address = "กรุณากรอกที่อยู่ที่จะตั้งศาล";
     if (!area) next.area = "กรุณาเลือกพื้นที่";
     if (!place) next.place = "กรุณาเลือกประเภทสถานที่";
@@ -195,9 +204,7 @@ export function CheckoutForm({
       if (!res.ok) {
         if (res.error.includes("รัศมี")) {
           setGeoError(res.error);
-          requestAnimationFrame(() =>
-            document.getElementById("geo-section")?.scrollIntoView({ behavior: "smooth", block: "center" }),
-          );
+          requestAnimationFrame(() => focusFirstInvalid(formRef.current));
         } else {
           toast.error(res.error);
         }
@@ -233,6 +240,9 @@ export function CheckoutForm({
       }
     >
       <PageHeader title="ยืนยันคำสั่งซื้อ" backHref={backHref} backLabel={backLabel} />
+      <p className="mb-6 max-w-xl text-base text-muted-foreground">
+        สร้างคำสั่งซื้อก่อน แล้วจ่ายมัดจำในขั้นตอนถัดไป
+      </p>
 
       <TwoColumn
         className="lg:mt-6"
@@ -265,17 +275,19 @@ export function CheckoutForm({
                 </FlashOnChange>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 surface-quiet p-4">
+              <dl className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
                 <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-base font-medium">
+                  <dt className="text-base font-medium">
                     จ่ายมัดจำ {Math.round(DEPOSIT_RATE * 100)}%
-                  </span>
-                  <FlashOnChange value={deposit} className="-mx-2 px-2 py-0.5">
-                    <PriceTicker amount={deposit} size="md" emphasis />
-                  </FlashOnChange>
+                  </dt>
+                  <dd>
+                    <FlashOnChange value={deposit} className="-mx-2 px-2 py-0.5">
+                      <PriceTicker amount={deposit} size="md" emphasis />
+                    </FlashOnChange>
+                  </dd>
                 </div>
                 <SummaryLine label="ส่วนที่เหลือ จ่ายเมื่อตรวจรับงาน" value={formatBaht(remaining)} />
-              </div>
+              </dl>
 
               <Button
                 type="submit"
@@ -367,9 +379,15 @@ export function CheckoutForm({
                     value={backupDate}
                     min={minDate}
                     disabledDates={blockedDates}
-                    onChange={setBackupDate}
+                    onChange={(value) => {
+                      setBackupDate(value);
+                      clearError("backupDate");
+                    }}
                     placeholder="เลือกวันสำรอง"
+                    aria-invalid={Boolean(errors.backupDate)}
+                    aria-describedby="backup-date-hint"
                   />
+                  <FieldHint id="backup-date-hint" error={errors.backupDate} />
                 </div>
               </div>
               {blockedDates.length > 0 ? (
@@ -415,15 +433,25 @@ export function CheckoutForm({
                 placeholder="บ้านเลขที่ ซอย ถนน ตำบลหรือแขวง อำเภอหรือเขต"
                 value={address}
                 onChange={(e) => {
-                  setAddress(e.target.value);
+                  const nextAddress = e.target.value;
+                  const saved = savedAddresses.find((a) => a.address.trim() === nextAddress.trim());
+                  // A changed address must not carry the previous home's coordinates.
+                  if (nextAddress.trim() !== trimmedAddress) {
+                    setGeo(saved?.location ?? null);
+                    setGeoError(null);
+                  }
+                  if (saved) setChosenArea(saved.area);
+                  else if (matchedSaved) setChosenArea(matchedSaved.area);
+                  setAddress(nextAddress);
                   clearError("address");
+                  clearError("area");
                 }}
                 aria-invalid={Boolean(errors.address)}
                 aria-describedby="address-hint"
               />
               <FieldHint id="address-hint" error={errors.address} />
 
-              <div id="geo-section" className="mt-4">
+              <div id="geo-section" tabIndex={-1} aria-invalid={Boolean(geoError)} aria-describedby="geo-hint" className="mt-4">
                 <ExpandableMap hasPin={Boolean(geo)}>
                   <LocationPicker
                     value={geo}

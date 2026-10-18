@@ -1,0 +1,262 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import test, { type TestContext } from "node:test";
+import { db } from "../src/server/db";
+import { cancelCustomerOrder, reconcileCustomerPaymentOperation, runCustomerPayment } from "../src/server/payment-service";
+import type { PaymentGateway, GatewayRequest, GatewayResult } from "../src/server/payment-gateway";
+
+// This suite must never run against the application database.
+assert.match(process.env.DATABASE_URL ?? "", /money-test\.db(?:\?.*)?$/);
+
+async function fixture(t: TestContext, status = "AWAITING_DEPOSIT", paid = 0) {
+  const seed = randomUUID();
+  const customer = await db.user.create({ data: { phone: `test-customer-${seed}`, name: "ทดสอบ" } });
+  const shopUser = await db.user.create({ data: { phone: `test-shop-${seed}` } });
+  const provider = await db.provider.create({ data: { userId: shopUser.id, name: "ร้านทดสอบ", kind: "SHOP", phone: "0800000000", areas: '["BKK"]', status: "VERIFIED" } });
+  const order = await db.order.create({
+    data: {
+      code: `TEST-${seed}`, userId: customer.id, providerId: provider.id, type: "INSTALL", status,
+      area: "BKK", address: "ที่อยู่สำหรับทดสอบ", total: 1000, deposit: 300,
+      lat: 13.75, lng: 100.5, items: { create: { name: "ศาลทดสอบ", price: 1000 } },
+      ...(paid ? { payments: { create: { kind: "DEPOSIT", amount: paid, method: "PROMPTPAY", status: "PAID", gateway: "legacy", gatewayRef: seed } } } : {}),
+    },
+  });
+  t.after(async () => {
+    await db.moneyOperation.deleteMany({ where: { orderId: order.id } });
+    await db.order.delete({ where: { id: order.id } });
+    await db.provider.delete({ where: { id: provider.id } });
+    await db.user.deleteMany({ where: { id: { in: [customer.id, shopUser.id] } } });
+  });
+  return { order, customer, provider, input: { orderId: order.id, userId: customer.id, method: "PROMPTPAY" as const, kind: "PAYMENT_DEPOSIT" as const } };
+}
+
+function gateway(execute: (input: GatewayRequest) => Promise<GatewayResult>, retrieve?: PaymentGateway["retrieve"]): PaymentGateway {
+  return { name: "integration-test", execute, retrieve: retrieve ?? (async () => ({ status: "UNKNOWN", reference: "" })) };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+test("a paid then cancelled order cannot report a new successful payment",async(t)=>{
+  const f=await fixture(t);
+  let calls=0;
+  const adapter=gateway(async()=>{calls++;return {status:"SUCCEEDED",reference:"paid-before-cancel"};});
+  assert.equal((await runCustomerPayment(f.input,adapter)).ok,true);
+  assert.equal((await cancelCustomerOrder(f.order.id,f.customer.id)).ok,true);
+  assert.equal((await runCustomerPayment(f.input,adapter)).ok,false);
+  assert.equal(calls,1);
+});
+
+test("negative stale retrieval cannot release cancellation while submission is in flight",async(t)=>{
+  const f=await fixture(t);
+  const began=deferred<void>();
+  const release=deferred<GatewayResult>();
+  const adapter=gateway(async()=>{began.resolve();return release.promise;},async()=>({status:"FAILED",reference:""}));
+  const submitting=runCustomerPayment(f.input,adapter);
+  await began.promise;
+  const op=await db.moneyOperation.findFirstOrThrow({where:{orderId:f.order.id}});
+  await db.moneyOperation.update({where:{id:op.id},data:{updatedAt:new Date(Date.now()-61_000)}});
+  assert.equal((await reconcileCustomerPaymentOperation(op.id,adapter)).ok,false);
+  assert.equal((await cancelCustomerOrder(f.order.id,f.customer.id)).ok,false);
+  release.resolve({status:"SUCCEEDED",reference:"late-success"});
+  assert.equal((await submitting).ok,true);
+  assert.equal(await db.payment.count({where:{orderId:f.order.id,status:"PAID"}}),1);
+});
+
+test("concurrent duplicate deposits execute once and finalize once", async (t) => {
+  const f = await fixture(t);
+  const began = deferred<void>();
+  const release = deferred<GatewayResult>();
+  let calls = 0;
+  const adapter = gateway(async (input) => {
+    calls += 1;
+    assert.equal(input.amountMinor, 30_000);
+    assert.equal(input.idempotencyKey, `${f.order.id}:DEPOSIT`);
+    began.resolve();
+    return release.promise;
+  });
+  const first = runCustomerPayment(f.input, adapter);
+  await began.promise;
+  const duplicate = await runCustomerPayment(f.input, adapter);
+  assert.equal(duplicate.ok, false);
+  release.resolve({ status: "SUCCEEDED", reference: "deposit-once" });
+  assert.equal((await first).ok, true);
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, true);
+  assert.equal(calls, 1);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
+  assert.equal(await db.orderEvent.count({ where: { orderId: f.order.id, title: "จ่ายมัดจำแล้ว" } }), 1);
+  assert.equal(await db.moneyOperation.count({ where: { orderId: f.order.id, status: "SUCCEEDED" } }), 1);
+});
+
+test("cancellation cannot pass a reserved in-flight deposit", async (t) => {
+  const f = await fixture(t);
+  const began = deferred<void>();
+  const release = deferred<GatewayResult>();
+  const first = runCustomerPayment(f.input, gateway(async () => { began.resolve(); return release.promise; }));
+  await began.promise;
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, false);
+  release.resolve({ status: "SUCCEEDED", reference: "pay-wins" });
+  assert.equal((await first).ok, true);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "AWAITING_PROVIDER");
+});
+
+test("cancellation first prevents all subsequent charges", async (t) => {
+  const f = await fixture(t);
+  let calls = 0;
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, true);
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, true);
+  assert.equal((await runCustomerPayment(f.input, gateway(async () => { calls++; return { status: "SUCCEEDED", reference: "never" }; }))).ok, false);
+  assert.equal(calls, 0);
+  assert.equal(await db.orderEvent.count({ where: { orderId: f.order.id } }), 1);
+});
+
+test("balance completion creates one payment and one shrine with coordinates", async (t) => {
+  const f = await fixture(t, "DONE", 300);
+  let calls = 0;
+  const adapter = gateway(async (input) => { calls++; assert.equal(input.amountMinor, 70_000); return { status: "SUCCEEDED", reference: "balance-once" }; });
+  const input = { ...f.input, kind: "PAYMENT_BALANCE" as const };
+  const results = await Promise.all([runCustomerPayment(input, adapter), runCustomerPayment(input, adapter)]);
+  assert.ok(results.some((result) => result.ok));
+  assert.equal((await runCustomerPayment(input, adapter)).ok, true);
+  assert.equal(calls, 1);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, kind: "BALANCE" } }), 1);
+  const order = await db.order.findUniqueOrThrow({ where: { id: f.order.id }, include: { shrine: true } });
+  assert.equal(order.status, "COMPLETED");
+  assert.equal(order.shrine?.lat, 13.75);
+  assert.equal(order.shrine?.lng, 100.5);
+  assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 1);
+  assert.equal(await db.orderEvent.count({ where: { orderId: f.order.id, title: "ลูกค้าตรวจรับงานแล้ว" } }), 1);
+});
+
+test("legacy fully paid completion is idempotent without gateway call", async (t) => {
+  const f = await fixture(t, "DONE", 1000);
+  let calls = 0;
+  const adapter = gateway(async () => { calls++; return { status: "SUCCEEDED", reference: "never" }; });
+  const input = { ...f.input, kind: "PAYMENT_BALANCE" as const };
+  assert.equal((await runCustomerPayment(input, adapter)).ok, true);
+  assert.equal((await runCustomerPayment(input, adapter)).ok, true);
+  assert.equal(calls, 0);
+  assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 1);
+  assert.equal(await db.moneyOperation.count({ where: { orderId: f.order.id } }), 0);
+});
+
+test("timeout stays UNKNOWN and reconciliation retrieves without recharging", async (t) => {
+  const f = await fixture(t);
+  let calls = 0;
+  let retrievals = 0;
+  const adapter = gateway(async () => { calls++; throw new Error("network timeout"); }, async () => { retrievals++; return { status: "SUCCEEDED", reference: "reconciled" }; });
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  const operation = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:DEPOSIT` } });
+  assert.equal(operation.status, "UNKNOWN");
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, false);
+  assert.equal(calls, 1);
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, true);
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, true);
+  assert.equal(calls, 1);
+  assert.equal(retrievals, 1);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
+});
+
+test("fresh PROCESSING cannot be reconciled while execute is in flight", async (t) => {
+  const f = await fixture(t);
+  const began = deferred<void>();
+  const release = deferred<GatewayResult>();
+  let retrievals = 0;
+  const adapter = gateway(async () => { began.resolve(); return release.promise; }, async () => { retrievals++; return { status: "SUCCEEDED", reference: "early" }; });
+  const first = runCustomerPayment(f.input, adapter);
+  await began.promise;
+  const operation = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:DEPOSIT` } });
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, false);
+  assert.equal(retrievals, 0);
+  release.resolve({ status: "SUCCEEDED", reference: "eventual" });
+  assert.equal((await first).ok, true);
+});
+
+test("FAILED is terminal and permits cancellation without later reconciliation", async (t) => {
+  const f = await fixture(t);
+  let calls = 0;
+  let retrievals = 0;
+  const adapter = gateway(async () => { calls++; return { status: "FAILED", reference: "declined" }; }, async () => { retrievals++; return { status: "SUCCEEDED", reference: "never" }; });
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  const operation = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:DEPOSIT` } });
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, true);
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, false);
+  assert.equal(calls, 1);
+  assert.equal(retrievals, 0);
+});
+
+test("PENDING blocks a new charge and cancellation until retrieval confirms success", async (t) => {
+  const f = await fixture(t);
+  let calls = 0;
+  const adapter = gateway(async () => { calls++; return { status: "PENDING", reference: "pending-capture" }; }, async () => ({ status: "SUCCEEDED", reference: "pending-capture" }));
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, false);
+  const operation = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:DEPOSIT` } });
+  assert.equal(operation.status, "PENDING");
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, true);
+  assert.equal(calls, 1);
+});
+
+test("stale PROCESSING recovers through retrieval without another execution", async (t) => {
+  const f = await fixture(t);
+  const operation = await db.moneyOperation.create({ data: {
+    orderId: f.order.id, key: `${f.order.id}:DEPOSIT`, kind: "PAYMENT_DEPOSIT", amountMinor: 30_000,
+    method: "PROMPTPAY", gateway: "integration-test", requestedBy: f.customer.id,
+    status: "PROCESSING", updatedAt: new Date(Date.now() - 120_000),
+  } });
+  let executions = 0;
+  let retrievals = 0;
+  const adapter = gateway(async () => { executions++; return { status: "SUCCEEDED", reference: "never" }; }, async () => { retrievals++; return { status: "SUCCEEDED", reference: "recovered" }; });
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, true);
+  assert.equal(executions, 0);
+  assert.equal(retrievals, 1);
+});
+
+test("captured payment with local write failure preserves reference and reconciles once", async (t) => {
+  const f = await fixture(t);
+  let executions = 0;
+  const adapter = gateway(async () => { executions++; return { status: "SUCCEEDED", reference: "integration-local-failure" }; }, async () => ({ status: "SUCCEEDED", reference: "integration-local-failure" }));
+  await db.$executeRawUnsafe(`CREATE TRIGGER integration_payment_failure BEFORE INSERT ON Payment WHEN NEW.gatewayRef = 'integration-local-failure' BEGIN SELECT RAISE(FAIL, 'injected local failure'); END`);
+  try {
+    assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  } finally {
+    await db.$executeRawUnsafe("DROP TRIGGER integration_payment_failure");
+  }
+  const operation = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:DEPOSIT` } });
+  assert.equal(operation.status, "UNKNOWN");
+  assert.equal(operation.gatewayRef, "integration-local-failure");
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 0);
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, true);
+  assert.equal((await reconcileCustomerPaymentOperation(operation.id, adapter)).ok, true);
+  assert.equal(executions, 1);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
+});
+
+test("unauthorized customer cannot pay or cancel another customer's order", async (t) => {
+  const f = await fixture(t);
+  let calls = 0;
+  const adapter = gateway(async () => { calls++; return { status: "SUCCEEDED", reference: "never" }; });
+  assert.equal((await runCustomerPayment({ ...f.input, userId: "another-user" }, adapter)).ok, false);
+  assert.equal((await cancelCustomerOrder(f.order.id, "another-user")).ok, false);
+  assert.equal(calls, 0);
+  assert.equal(await db.moneyOperation.count({ where: { orderId: f.order.id } }), 0);
+});
+
+test("legacy overpayment is blocked for manual inspection", async (t) => {
+  const f = await fixture(t, "DONE", 1100);
+  let calls = 0;
+  const adapter = gateway(async () => { calls++; return { status: "SUCCEEDED", reference: "never" }; });
+  assert.equal((await runCustomerPayment({ ...f.input, kind: "PAYMENT_BALANCE" }, adapter)).ok, false);
+  assert.equal(calls, 0);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "DONE");
+  assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 0);
+});
+
+test.after(async () => { await db.$disconnect(); });

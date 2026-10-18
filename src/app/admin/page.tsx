@@ -107,7 +107,8 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
   return (
     <AppShell width="full" side={<AdminNav current={view} queueCount={queueCount} />}>
-      <PageHeader title="ผู้ดูแลระบบ" backHref="/account" backLabel="บัญชี" />
+      <PageHeader title="ผู้ดูแลระบบ" backHref="/account" backLabel="บัญชี"
+        action={<Link href="/admin/finance" className="inline-flex min-h-11 items-center text-base font-medium underline underline-offset-4">การเงินและรายการค้าง</Link>} />
 
       <Rise className="lg:hidden">
         <nav aria-label="ทางลัดในหน้า">
@@ -156,7 +157,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                   รอคืนมัดจำ <span className="numeric text-muted-foreground">{refunds.length}</span>
                 </h3>
                 <p className="mb-3 text-sm text-muted-foreground">
-                  ระบบยังไม่โอนเงินคืนอัตโนมัติ ให้โอนคืนลูกค้าก่อนกดบันทึก
+                  ตรวจสอบและดำเนินการคืนเงินผ่านหน้าการเงิน ระบบปัจจุบันเป็นโหมดทดสอบ
                 </p>
                 <RefundList refunds={refunds} />
                 <RefundTable refunds={refunds} />

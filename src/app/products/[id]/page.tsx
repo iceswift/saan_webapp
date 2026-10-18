@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ViewTransition } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { ChevronDown, ShieldCheck } from "lucide-react";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
 import { ListGroup, ListRow } from "@/components/list-group";
 import { SidePanel, TwoColumn } from "@/components/page-layout";
@@ -203,7 +203,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
                 className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-x-5 py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)]"
               >
                 <dt className="text-base text-muted-foreground">{fact.label}</dt>
-                <dd className="text-base leading-snug font-medium">{fact.value}</dd>
+                <dd className="text-base leading-relaxed font-medium">{fact.value}</dd>
               </div>
             ))}
           </dl>
@@ -216,27 +216,9 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           </Reveal>
         ) : null}
 
-        {moreFromShop.length > 0 ? (
-          <Reveal as="section">
-            <SectionTitle>ดีไซน์อื่นจากร้านนี้</SectionTitle>
-            <ul className="-mx-5 flex snap-x gap-3 overflow-x-auto scroll-px-5 px-5 pb-1 sm:-mx-8 sm:scroll-px-8 sm:px-8 lg:mx-0 lg:scroll-px-0 lg:gap-4 lg:px-0">
-              {moreFromShop.map((p) => (
-                <li key={p.id} className="w-44 shrink-0 snap-start lg:w-56">
-                  <ProductCard product={p} near={nearParam} />
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        ) : null}
-
-        <section>
-          <SectionTitle>หลังสั่งแล้วเกิดอะไรขึ้น</SectionTitle>
-          <Stepper steps={[...ORDER_FLOW_STEPS]} current={0} orientation="vertical" info />
-        </section>
-
-        <section>
-          <SectionTitle>ร้านที่ขายศาลนี้</SectionTitle>
-          <ListGroup>
+        <Reveal as="section">
+          <SectionTitle>ร้านผู้ให้บริการ</SectionTitle>
+          <ListGroup bare>
             <ListRow
               href={`/shops/${provider.id}`}
               thumb={
@@ -258,7 +240,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
               }
             />
           </ListGroup>
-        </section>
+        </Reveal>
 
         {shopPoint ? (
           <section id="shop-map" className="mt-3 scroll-mt-[calc(var(--site-header-h)+1rem)]">
@@ -279,18 +261,18 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         ) : null}
 
         {product.packages.length > 0 ? (
-          <section>
-            <SectionTitle>บริการเสริมจากร้านนี้</SectionTitle>
-            <ListGroup>
+          <Reveal as="section">
+            <SectionTitle description="เลือกเพิ่มเติมได้ในขั้นตอนสั่งซื้อ">บริการเสริม</SectionTitle>
+            <ListGroup bare>
               {product.packages.map((pkg) => (
                 <PackageRow key={pkg.id} pkg={pkg} />
               ))}
             </ListGroup>
-          </section>
+          </Reveal>
         ) : null}
 
         {reviews.length > 0 ? (
-          <section>
+          <Reveal as="section">
             <SectionTitle
               action={
                 <Link
@@ -313,7 +295,35 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
                 <ReviewItem key={`${review.createdAt}-${index}`} review={review} />
               ))}
             </ul>
-          </section>
+          </Reveal>
+        ) : null}
+
+        <Reveal className="mt-8 border-y border-border lg:mt-10">
+          <details className="group/flow">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 text-base font-medium [&::-webkit-details-marker]:hidden">
+              หลังสั่งซื้อมีขั้นตอนอะไรบ้าง
+              <ChevronDown
+                aria-hidden="true"
+                className="size-5 shrink-0 text-muted-foreground transition-transform duration-(--dur-base) ease-soft group-open/flow:rotate-180"
+              />
+            </summary>
+            <div className="pt-2 pb-5">
+              <Stepper steps={[...ORDER_FLOW_STEPS]} current={0} orientation="vertical" info />
+            </div>
+          </details>
+        </Reveal>
+
+        {moreFromShop.length > 0 ? (
+          <Reveal as="section">
+            <SectionTitle>ดีไซน์อื่นจากร้านนี้</SectionTitle>
+            <ul className="-mx-5 flex snap-x gap-3 overflow-x-auto scroll-px-5 px-5 pb-1 sm:-mx-8 sm:scroll-px-8 sm:px-8 lg:mx-0 lg:scroll-px-0 lg:gap-4 lg:px-0">
+              {moreFromShop.map((p) => (
+                <li key={p.id} className="w-44 shrink-0 snap-start lg:w-56">
+                  <ProductCard product={p} near={nearParam} />
+                </li>
+              ))}
+            </ul>
+          </Reveal>
         ) : null}
       </TwoColumn>
 

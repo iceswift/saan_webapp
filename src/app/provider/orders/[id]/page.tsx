@@ -26,7 +26,7 @@ import { formatBaht, formatPhone, formatShortDate } from "@/lib/format";
 import type { OrderDetail } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/server/auth";
-import { getMyProvider, getOrder } from "@/server/queries";
+import { getMyProvider, getOrder, listBlockedDates } from "@/server/queries";
 import { AdminNav } from "@/app/admin/admin-nav";
 import { loadAdminQueueCount } from "@/app/admin/nav-data";
 import { shopPending, formatShortDateTime } from "@/app/orders/display";
@@ -100,6 +100,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/provider/o
   const cancelled = order.status === "CANCELLED";
   const showActions = isProvider && (order.status === "AWAITING_PROVIDER" || order.status === "CONFIRMED");
   const depositPaid = order.payments.some((p) => p.kind === "DEPOSIT" && p.status === "PAID");
+  const blockedDates = showActions ? await listBlockedDates(order.provider.id) : [];
 
   // เมนูด้านข้างบนเดสก์ท็อป: ผู้ดูแลระบบที่เปิดดูงานนี้ได้เมนูหลังบ้าน ร้านได้เมนูร้าน
   let nav: React.ReactNode;
@@ -306,6 +307,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/provider/o
                     orderId={order.id}
                     status={order.status}
                     preferredDates={order.preferredDates}
+                    blockedDates={blockedDates}
                   />
                 </section>
               ) : null}

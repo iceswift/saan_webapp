@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowDownUp,
-  Check,
-  MapPin,
-  SlidersHorizontal,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Check, SlidersHorizontal, X } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { BottomSheet, BottomSheetClose } from "@/components/bottom-sheet";
 import { Chip, ChipRow, chipClass } from "@/components/chip";
@@ -23,7 +16,7 @@ import { AREAS, AREA_CODES, SHRINE_KINDS, SHRINE_KIND_CODES } from "@/lib/consta
 import { formatBaht } from "@/lib/format";
 import { isInThailand } from "@/lib/geo";
 import { cn } from "@/lib/utils";
-import { firstValue, KIND_VISUALS, pickCode } from "@/app/new/options";
+import { firstValue, pickCode } from "@/app/new/options";
 import { SavedRow } from "@/app/products/saved-products";
 import { listProducts } from "@/server/queries";
 import { NearMe } from "./near-me";
@@ -77,7 +70,7 @@ function browseHref(filters: Filters): string {
   return query ? `/browse?${query}` : "/browse";
 }
 
-type FilterOption = { label: string; href: string; active: boolean; icon?: LucideIcon };
+type FilterOption = { label: string; href: string; active: boolean };
 
 /** กลุ่มตัวกรองแนวตั้งในแผงตัวกรองด้านซ้ายของเดสก์ท็อป (มือถือใช้ชิปประเภทศาล + แผ่น "ตัวกรอง") */
 function FilterGroup({
@@ -92,28 +85,24 @@ function FilterGroup({
   return (
     <div className={className}>
       <p className="mb-2 text-base font-medium">{label}</p>
-      <ul className="flex flex-col gap-0.5">
-        {options.map((o) => {
-          const Icon = o.icon;
-          return (
-            <li key={o.label}>
-              <Link
-                href={o.href}
-                aria-current={o.active ? "true" : undefined}
-                className={cn(
-                  "flex min-h-10 items-center gap-3 rounded-full px-3 py-1.5 text-base transition-colors",
-                  o.active
-                    ? "bg-muted font-medium text-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {Icon ? <Icon className="size-5 shrink-0" strokeWidth={1.6} aria-hidden="true" /> : null}
-                <span className="min-w-0 flex-1">{o.label}</span>
-                {o.active ? <Check className="size-4 shrink-0" strokeWidth={2.4} aria-hidden="true" /> : null}
-              </Link>
-            </li>
-          );
-        })}
+      <ul aria-label={label} className="flex flex-col gap-0.5">
+        {options.map((o) => (
+          <li key={o.label}>
+            <Link
+              href={o.href}
+              aria-current={o.active ? "true" : undefined}
+              className={cn(
+                "flex min-h-11 items-center gap-3 rounded-full px-3 py-1.5 text-base transition-colors duration-[var(--dur-fast)]",
+                o.active
+                  ? "bg-muted font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <span className="min-w-0 flex-1">{o.label}</span>
+              {o.active ? <Check className="size-4 shrink-0" strokeWidth={2.4} aria-hidden="true" /> : null}
+            </Link>
+          </li>
+        ))}
       </ul>
     </div>
   );
@@ -169,7 +158,6 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
       label: SHRINE_KINDS[code],
       href: browseHref({ ...filters, kind: code }),
       active: kind === code,
-      icon: KIND_VISUALS[code].icon,
     })),
   ];
   const areaOptions: FilterOption[] = [
@@ -178,7 +166,6 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
       label: AREAS[code],
       href: browseHref({ ...filters, area: code }),
       active: area === code,
-      icon: MapPin,
     })),
   ];
   const sortOptions: FilterOption[] = (
@@ -187,7 +174,6 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
     label: option.label,
     href: browseHref({ ...filters, sort: option.value }),
     active: activeSort === option.value,
-    icon: ArrowDownUp,
   }));
 
   const maxOptions: FilterOption[] = [
@@ -261,14 +247,14 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
                 >
                   <div style={{ "--i": 0 } as React.CSSProperties}>
                     <p className="mb-2 text-base font-medium">ตำแหน่ง</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div role="group" aria-label="ตำแหน่ง" className="flex flex-wrap gap-2">
                       <NearMe active={Boolean(near)} />
                     </div>
                   </div>
-                  <SheetGroup label="พื้นที่" options={areaOptions} index={0} />
-                  <SheetGroup label="ราคา" options={maxOptions} index={1} />
-                  <SheetGroup label="เรียงตาม" options={sortOptions} index={2} />
-                  <div style={{ "--i": 3 } as React.CSSProperties} className="flex flex-col gap-2">
+                  <SheetGroup label="พื้นที่" options={areaOptions} index={1} />
+                  <SheetGroup label="ราคา" options={maxOptions} index={2} />
+                  <SheetGroup label="เรียงตาม" options={sortOptions} index={3} />
+                  <div style={{ "--i": 4 } as React.CSSProperties} className="flex flex-col gap-2">
                     <BottomSheetClose className={cn(buttonVariants({ variant: "default", size: "xl" }), "w-full")}>
                       ดูผลลัพธ์ {products.length} รายการ
                     </BottomSheetClose>
@@ -288,17 +274,19 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
 
               {/* เดสก์ท็อป: แผงตัวกรองด้านซ้ายเหมือนเดิม */}
               <div className="hidden lg:block">
-                <h2 className="mb-3 flex items-center gap-2 font-display text-xl font-medium">
-                  <SlidersHorizontal className="size-5" aria-hidden="true" />
-                  ตัวกรอง
-                </h2>
-                <FilterGroup label="ประเภทศาล" options={kindOptions.map((o) => o)} />
+                <h2 className="mb-5 font-display text-xl font-medium">ตัวกรอง</h2>
+                <FilterGroup label="ประเภทศาล" options={kindOptions} />
                 <FilterGroup
                   label="พื้นที่"
                   options={areaOptions}
                   className="mt-5 border-t border-border pt-5"
                 />
-                <div className="mt-5 border-t border-border pt-5">
+                <FilterGroup
+                  label="ราคา"
+                  options={maxOptions}
+                  className="mt-5 border-t border-border pt-5"
+                />
+                <div role="group" aria-label="ตำแหน่ง" className="mt-5 border-t border-border pt-5">
                   <p className="mb-2 text-base font-medium">ตำแหน่ง</p>
                   <NearMe variant="row" active={Boolean(near)} />
                 </div>

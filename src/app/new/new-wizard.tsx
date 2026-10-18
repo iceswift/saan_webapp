@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
@@ -49,12 +49,21 @@ const BACK_CLASS =
   "inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-[transform,background-color] hover:bg-muted active:scale-95 lg:hidden";
 
 const DESKTOP_BACK_CLASS =
-  "hidden min-h-9 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex";
+  "hidden min-h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex";
 
 export function NewWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState<Answers>({});
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
+
+  useEffect(() => {
+    if (previousStep.current !== step) {
+      headingRef.current?.focus({ preventScroll: true });
+      previousStep.current = step;
+    }
+  }, [step]);
 
   function goToProducts(final: Answers & { area: AreaCode }) {
     if (!final.place) {
@@ -88,7 +97,6 @@ export function NewWizard() {
     }));
   } else if (step === 2) {
     title = "ต้องการศาลแบบไหน";
-    helper = "ถ้ายังไม่แน่ใจ ร้านจะช่วยแนะนำก่อนยืนยัน";
     choices = [
       ...SHRINE_KIND_CODES.map((code) => ({
         key: code,
@@ -111,7 +119,7 @@ export function NewWizard() {
       },
     ];
   } else if (step === 3) {
-    title = "งบสำหรับตัวศาลประมาณเท่าไร";
+    title = "ตั้งงบสำหรับตัวศาลเท่าไร";
     helper = "ยังไม่รวมค่าพิธีและเครื่องสังเวย";
     choices = BUDGET_OPTIONS.map((o) => ({
       key: o.value === null ? UNSURE : String(o.value),
@@ -124,6 +132,7 @@ export function NewWizard() {
     }));
   } else {
     title = "ศาลจะตั้งอยู่ในพื้นที่ใด";
+    helper = "เลือกพื้นที่เพื่อดูศาลที่ให้บริการ";
     choices = AREA_CODES.map((code) => ({
       key: code,
       label: AREAS[code],
@@ -167,12 +176,17 @@ export function NewWizard() {
       </div>
 
       <StepSlide step={step} className="mt-8 lg:mt-10">
-        <h1 className="font-display text-[1.75rem] leading-[1.35] font-normal text-balance lg:text-[2.25rem] lg:leading-[1.3]">
+        <h1
+          ref={headingRef}
+          id="wizard-question"
+          tabIndex={-1}
+          className="font-display text-[1.75rem] leading-[1.35] font-normal text-balance outline-none lg:text-[2.25rem] lg:leading-[1.3]"
+        >
           {title}
         </h1>
         {helper ? <p className="mt-2 text-base text-muted-foreground">{helper}</p> : null}
 
-        <div className="mt-6 flex flex-col gap-3 lg:mt-8">
+        <div role="group" aria-labelledby="wizard-question" className="mt-6 flex flex-col gap-3 lg:mt-8">
           {choices.map((choice) => (
             <ChoiceCard
               key={choice.key}
@@ -195,7 +209,7 @@ export function NewWizard() {
         </div>
 
         {step === 1 ? (
-          <p className="mt-6 text-sm text-muted-foreground">ขั้นตอนนี้ยังไม่มีการจ่ายเงิน</p>
+          <p className="mt-6 text-sm text-muted-foreground">เลือกคำตอบเพื่อไปต่อ ยังไม่มีการจ่ายเงิน</p>
         ) : null}
       </StepSlide>
     </AppShell>

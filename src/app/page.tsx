@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Wordmark } from "@/components/brand";
-import { CountUp } from "@/components/count-up";
 import { FlowSteps } from "@/components/flow-steps";
 import { HeroArt } from "@/components/hero-art";
 import { HERO_SEEN_COOKIE, HeroIntro } from "@/components/hero-intro";
@@ -30,25 +29,25 @@ import { listMyOrders, listMyShrines, listProducts } from "@/server/queries";
 const SERVICES: { title: string; description: string; href: string; art: ServiceArtName }[] = [
   {
     title: "ตั้งศาลใหม่",
-    description: "เลือกศาล พิธี และของไหว้ ให้ร้านที่ตรวจสอบแล้วมาติดตั้งให้",
+    description: "เลือกศาลและพิธี พร้อมติดตั้ง",
     href: "/new",
     art: "install",
   },
   {
     title: "ถอน ย้าย รับศาลเก่า",
-    description: "ถอนศาล ย้ายตำแหน่ง หรือส่งศาลเก่าไปวัดอย่างเหมาะสม",
+    description: "ถอนหรือย้าย พร้อมจัดการศาลเก่า",
     href: "/request/new?type=REMOVE",
     art: "move",
   },
   {
     title: "ซ่อมและบูรณะ",
-    description: "รับใบเสนอราคาจากหลายร้านสำหรับศาลที่ชำรุด",
+    description: "ส่งรูปให้ร้านประเมินราคา",
     href: "/request/new?type=REPAIR",
     art: "repair",
   },
   {
     title: "สมุดบน",
-    description: "จดสิ่งที่บนไว้ และตั้งเตือนเมื่อถึงเวลาแก้บน",
+    description: "บันทึกสิ่งที่บน พร้อมวันเตือน",
     href: "/vows",
     art: "vow",
   },
@@ -212,7 +211,7 @@ async function HomeContent() {
                 สวัสดี {user.name}
               </p>
             ) : null}
-            <h1 className="mt-2 font-display text-[2.25rem] leading-[1.2] font-normal text-balance sm:text-5xl lg:mt-4 lg:text-[3rem] lg:leading-[1.15] xl:text-[4rem] xl:leading-[1.12]">
+            <h1 className="mt-2 font-display text-[1.75rem] leading-[1.3] font-normal text-balance sm:text-4xl lg:mt-4 lg:text-5xl lg:leading-[1.3]">
               <span className="hero-line" style={{ "--h": 60 } as React.CSSProperties}>
                 <span>ดูแลเรื่องศาล</span>
               </span>
@@ -224,7 +223,7 @@ async function HomeContent() {
               className="hero-fade mt-4 max-w-md text-base text-muted-foreground lg:mt-6 lg:max-w-lg lg:text-lg"
               style={{ "--h": 270 } as React.CSSProperties}
             >
-              ค้นหาศาล ช่างฝีมือ พิธีกรรม และร้านค้าที่ผ่านการตรวจสอบ พร้อมราคาที่เห็นชัดก่อนตัดสินใจ
+              เลือกศาลและบริการจากร้านที่ผ่านการตรวจสอบ เห็นราคาก่อนตัดสินใจ
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-9">
               <div className="hero-fade" style={{ "--h": 340 } as React.CSSProperties}>
@@ -232,7 +231,7 @@ async function HomeContent() {
                   {primary.title}
                   <ArrowRight
                     aria-hidden="true"
-                    className="transition-transform duration-200 ease-soft group-hover/cta:translate-x-1"
+                    className="transition-transform duration-(--dur-fast) ease-soft group-hover/cta:translate-x-1 group-focus-visible/cta:translate-x-1 motion-reduce:transform-none motion-reduce:transition-none"
                   />
                 </LinkButton>
               </div>
@@ -243,23 +242,13 @@ async function HomeContent() {
               </div>
             </div>
             {showCounts ? (
-              <dl
-                className="hero-fade mt-8 flex gap-x-10 border-t border-border pt-5 lg:mt-12"
+              <p
+                className="hero-fade mt-6 flex flex-wrap gap-x-5 gap-y-1 border-t border-border pt-4 text-sm text-muted-foreground lg:mt-8"
                 style={{ "--h": 440 } as React.CSSProperties}
               >
-                <div className="flex flex-col-reverse">
-                  <dt className="text-sm text-muted-foreground">ร้านที่ผ่านการตรวจสอบ</dt>
-                  <dd className="numeric font-display text-[1.75rem] leading-snug font-normal">
-                    <CountUp value={shopCount} duration={700} /> <span className="text-base text-muted-foreground">ร้าน</span>
-                  </dd>
-                </div>
-                <div className="flex flex-col-reverse">
-                  <dt className="text-sm text-muted-foreground">ศาลที่เปิดขายตอนนี้</dt>
-                  <dd className="numeric font-display text-[1.75rem] leading-snug font-normal">
-                    <CountUp value={products.length} duration={700} /> <span className="text-base text-muted-foreground">แบบ</span>
-                  </dd>
-                </div>
-              </dl>
+                <span>ร้านที่ผ่านการตรวจสอบ <span className="numeric text-foreground">{shopCount}</span> ร้าน</span>
+                <span>เลือกดูศาล <span className="numeric text-foreground">{products.length}</span> แบบ</span>
+              </p>
             ) : null}
           </div>
           {/* ภาพหลัก: ฉากศาลในกรอบซุ้มโค้ง (รูปทรงเดียวกับโลโก้) เป็นภาพวาดล้วน ไม่ใช่รูปถ่ายสินค้า */}
@@ -285,27 +274,23 @@ async function HomeContent() {
             <Reveal as="li" key={service.href} i={index} className="border-t border-border">
               <Link
                 href={service.href}
-                className="group/row -mx-2 flex items-center gap-4 rounded-2xl px-2 py-4 transition-colors hover:bg-muted lg:gap-6 lg:py-5"
+                className="group/row -mx-2 flex items-center gap-4 rounded-2xl px-2 py-5 transition-colors duration-(--dur-fast) hover:bg-muted focus-visible:bg-muted motion-reduce:transition-none lg:gap-6 lg:py-6"
               >
                 <span className="numeric w-6 shrink-0 text-sm text-muted-foreground lg:w-8 lg:text-base">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-display text-lg leading-snug font-medium lg:text-xl">
+                  <span className="block font-display text-lg leading-normal font-medium lg:text-xl">
                     {service.title}
                   </span>
-                  <span className="mt-0.5 block text-base text-muted-foreground">{service.description}</span>
+                  <span className="mt-1 block text-base text-muted-foreground">{service.description}</span>
                 </span>
                 <span className="size-20 shrink-0 overflow-hidden rounded-lg bg-muted lg:size-24">
                   <ServiceArt
                     name={service.art}
-                    className="size-full p-1 transition-transform duration-500 ease-soft group-hover/row:scale-110"
+                    className="size-full p-1 transition-transform duration-(--dur-base) ease-soft group-hover/row:scale-105 group-focus-visible/row:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                   />
                 </span>
-                <ArrowRight
-                  aria-hidden="true"
-                  className="hidden size-5 shrink-0 text-muted-foreground transition-transform duration-200 ease-soft group-hover/row:translate-x-1 group-hover/row:text-foreground sm:block"
-                />
               </Link>
             </Reveal>
           ))}

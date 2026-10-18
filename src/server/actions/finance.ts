@@ -1,0 +1,53 @@
+"use server";
+
+import { z } from "zod";
+import { getCurrentUser } from "../auth";
+import { idSchema, NOT_ALLOWED, NOT_LOGGED_IN, parseInput, refreshAll } from "../action-utils";
+import { db } from "../db";
+import { payoutOrderFunds, reconcileSettlement, refundOrderFunds } from "../settlement-service";
+import { reconcileCustomerPaymentOperation } from "../payment-service";
+import { fail, type ActionResult } from "@/lib/result";
+
+async function adminOperation(input: unknown, operation: "refund" | "payout"): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return NOT_LOGGED_IN;
+  if (user.role !== "ADMIN") return NOT_ALLOWED;
+  const parsed = parseInput(z.object({orderId:idSchema}),input);
+  if (!parsed.ok) return parsed;
+  try {
+    const result = operation === "refund"
+      ? await refundOrderFunds(parsed.data.orderId,user.id)
+      : await payoutOrderFunds(parsed.data.orderId,user.id);
+    refreshAll();
+    return result;
+  } catch {
+    refreshAll();
+    return fail("ยังยืนยันผลรายการไม่ได้ กรุณาตรวจสอบรายการเดิมก่อนทำซ้ำ");
+  }
+}
+
+export async function refundOrder(input: {orderId:string}): Promise<ActionResult> {
+  return adminOperation(input,"refund");
+}
+
+export async function payoutOrder(input: {orderId:string}): Promise<ActionResult> {
+  return adminOperation(input,"payout");
+}
+
+export async function reconcileMoneyOperation(input: {operationId:string}): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return NOT_LOGGED_IN;
+  if (user.role !== "ADMIN") return NOT_ALLOWED;
+  const parsed = parseInput(z.object({operationId:idSchema}),input);
+  if (!parsed.ok) return parsed;
+  try {
+    const op = await db.moneyOperation.findUnique({where:{id:parsed.data.operationId}});
+    if (!op) return fail("ไม่พบรายการเงิน");
+    const result = op.kind === "REFUND" || op.kind === "PAYOUT"
+      ? await reconcileSettlement(op.id) : await reconcileCustomerPaymentOperation(op.id);
+    refreshAll();
+    return result;
+  } catch {
+    return fail("ตรวจสอบผลยังไม่สำเร็จ กรุณาลองตรวจสอบอีกครั้งภายหลัง");
+  }
+}

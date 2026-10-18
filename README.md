@@ -68,16 +68,18 @@ npm run dev
 - ให้ทนายตรวจข้อกำหนดและนโยบายความเป็นส่วนตัว (`src/app/legal/`)
 - ใส่ช่องทางติดต่อทีมงานที่ `SUPPORT` ใน `src/lib/constants.ts`
 - ยืนยันอัตรามัดจำ (`DEPOSIT_RATE` ใน `src/lib/constants.ts` ตอนนี้ตั้งไว้ 30%)
-- การคืนมัดจำยังต้องโอนเองแล้วกดบันทึกในหน้าผู้ดูแลระบบ
+- เชื่อมการคืนเงินและจ่ายร้านกับผู้ให้บริการจริง ตอนนี้ `/admin/finance` เป็นการจำลองผ่านบันทึกรายการเงินที่ป้องกันการทำซ้ำ
 
 ## ส่วนที่ยังเป็นตัวจำลอง
 
 จุดเชื่อมต่อทั้งหมดอยู่ใน `src/server/integrations.ts` และ `src/server/storage.ts`
 
-- **ชำระเงิน** ตอบว่าจ่ายสำเร็จทันที ไม่มีเงินเคลื่อนไหวจริง
+- **ชำระเงิน** โหมดพัฒนาจำลองรับมัดจำ รับยอดคงเหลือ คืนเงิน และจ่ายร้าน ไม่มีเงินเคลื่อนไหวจริง รอบ production จะปิดรับรายการจนกว่าจะเพิ่มตัวเชื่อมผู้ให้บริการจริง
 - **SMS** พิมพ์รหัส OTP ลง log ของเซิร์ฟเวอร์และแสดงบนหน้าจอ
 - **ที่เก็บรูป** เก็บในโฟลเดอร์ `storage/uploads` ของเครื่อง
 - **ฐานข้อมูล** SQLite ไฟล์เดียว เปลี่ยนเป็น PostgreSQL ได้ที่ `prisma/schema.prisma`
+
+รายละเอียดสถานะเงิน การป้องกันรายการซ้ำ การตรวจสอบรายการค้าง และขอบเขตที่ต้องต่อเมื่อเลือกผู้ให้บริการ อยู่ที่ [docs/PAYMENTS.md](docs/PAYMENTS.md)
 
 ## โครงสร้าง
 
@@ -95,5 +97,11 @@ npm run dev
 ```bash
 npm run typecheck
 npm run lint
+npm run test:integration
 npm run build
 ```
+
+บน checkout ใหม่ ให้รัน `npx next typegen` ก่อน `npm run typecheck` เพื่อสร้างชนิดข้อมูลเส้นทาง
+ชุดทดสอบสร้างฐานข้อมูลแยกที่ `storage/tests/ci/money-test.db` และแทนที่ `DATABASE_URL` เฉพาะในโปรเซสทดสอบ จึงไม่ใช้ข้อมูลแอปหรือ seed
+GitHub Actions (`.github/workflows/ci.yml`) รัน type generation, TypeScript, ESLint และ integration tests ทุก push และ pull request ด้วย Node.js 22
+ขั้นตอนนี้ยังไม่ deploy และไม่ได้ทดสอบ production build
