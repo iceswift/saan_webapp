@@ -1,7 +1,8 @@
 import "server-only";
 import { mockGateway, unconfiguredGateway, type PaymentGateway } from "./payment-gateway";
 import { durableMockGateway } from "./durable-mock-gateway";
-import { isStagingTestMode, shouldUseMockPayments } from "./runtime-policy";
+import { isStagingTestMode, shouldUseMockPayments, shouldUseOmiseTestPayments } from "./runtime-policy";
+import { omiseTestGateway } from "./omise-test-gateway";
 export type { PaymentGateway } from "./payment-gateway";
 
 // จุดเชื่อมต่อบริการภายนอก ตอนนี้เป็นตัวจำลองทั้งหมด
@@ -18,8 +19,9 @@ const consoleSms: SmsSender = {
 };
 
 export const sms: SmsSender = consoleSms;
-export const payments: PaymentGateway = shouldUseMockPayments()
+export const payments: PaymentGateway = shouldUseOmiseTestPayments() ? omiseTestGateway : shouldUseMockPayments()
   ? (isStagingTestMode() ? durableMockGateway : mockGateway) : unconfiguredGateway;
 
 /** true เมื่อยังใช้ตัวจำลอง หน้าจอใช้แสดงป้ายเตือนว่าเป็นโหมดทดสอบ */
-export const IS_MOCK_PAYMENT = payments.name === "mock";
+export const IS_MOCK_PAYMENT = payments.name === "mock" || payments.name === "omise_test";
+export const IS_OMISE_TEST_PAYMENT = payments.name === "omise_test";

@@ -7,6 +7,9 @@ import { addEvent, notify, NOT_ALLOWED } from "./action-utils";
 import { db } from "./db";
 import { payments } from "./integrations";
 import type { PaymentGateway } from "./payment-gateway";
+import type { PendingPayment } from "../lib/payment-result";
+
+type CustomerPaymentResult = ActionResult<PendingPayment | undefined>;
 
 type CustomerPaymentKind = "PAYMENT_DEPOSIT" | "PAYMENT_BALANCE";
 type PaymentInput = { orderId: string; userId: string; method: PaymentMethod; kind: CustomerPaymentKind };
@@ -53,7 +56,11 @@ async function finishOrder(tx: Prisma.TransactionClient, order: PaymentOrder, am
  * FAILED is final here; PENDING/UNKNOWN/abandoned PROCESSING require explicit
  * reconciliation using gateway.retrieve, never another automatic charge.
  */
-export async function runCustomerPayment(input: PaymentInput, gateway: PaymentGateway = payments): Promise<ActionResult> {
+export async function runCustomerPayment(input: PaymentInput, gateway: PaymentGateway = payments): Promise<CustomerPaymentResult> {
+  if (gateway.name === "omise_test" && process.env.PAYMENT_MUTATIONS_DISABLED === "true") {
+    return fail("ระบบหยุดสร้างรายการชำระเงินชั่วคราว กรุณาติดต่อทีมงาน");
+  }
+  if (gateway.name === "omise_test" && input.method !== "PROMPTPAY") return fail("โหมดนี้รองรับ PromptPay เท่านั้น");
   const expected = input.kind === "PAYMENT_DEPOSIT" ? "AWAITING_DEPOSIT" : "DONE";
   const paymentKind = input.kind === "PAYMENT_DEPOSIT" ? "DEPOSIT" : "BALANCE";
   const key = `${input.orderId}:${paymentKind}`;
@@ -79,6 +86,8 @@ export async function runCustomerPayment(input: PaymentInput, gateway: PaymentGa
         return { result: fail(input.kind === "PAYMENT_DEPOSIT" ? "คำสั่งนี้จ่ายมัดจำแล้วหรือถูกยกเลิก" : "ร้านยังไม่ได้แจ้งว่างานเสร็จ") };
       }
       if (existing && existing.status !== "CREATED") {
+        if (existing.gateway === "omise_test" && gateway.name === existing.gateway && existing.gatewayRef &&
+            ["PENDING", "UNKNOWN"].includes(existing.status)) return { resume: existing.id };
         return { result: fail(existing.status === "FAILED" ? PAYMENT_FAILED : PAYMENT_IN_PROGRESS) };
       }
       const paid = paidAmount(order);
@@ -91,6 +100,9 @@ export async function runCustomerPayment(input: PaymentInput, gateway: PaymentGa
       const amountMinor = amount * 100;
       if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0 || amountMinor > 2_147_483_647) {
         return { result: fail("ยอดชำระไม่ถูกต้อง กรุณาติดต่อทีมงาน") };
+      }
+      if (gateway.name === "omise_test" && (amountMinor < 2000 || amountMinor > 15000000)) {
+        return { result: fail("PromptPay รองรับยอดชำระตั้งแต่ 20 ถึง 150,000 บาท กรุณาติดต่อทีมงาน") };
       }
       const operation = existing ?? await tx.moneyOperation.create({
         data: { key, orderId: order.id, kind: input.kind, amountMinor, gateway: gateway.name, requestedBy: input.userId, method: input.method },
@@ -110,8 +122,10 @@ export async function runCustomerPayment(input: PaymentInput, gateway: PaymentGa
     return fail("มีรายการอื่นกำลังดำเนินการ กรุณาลองอีกครั้ง");
   }
   if ("result" in reservation && reservation.result) return reservation.result;
+  if ("resume" in reservation && reservation.resume) return checkCustomerPayment(reservation.resume, input.userId, gateway);
 
   const { operation, reference } = reservation;
+  if (!operation || !reference) return fail(PAYMENT_IN_PROGRESS);
   let outcome;
   try {
     outcome = await gateway.execute({
@@ -128,13 +142,16 @@ export async function runCustomerPayment(input: PaymentInput, gateway: PaymentGa
   }
   if (outcome.status !== "SUCCEEDED") {
     try {
-      await db.moneyOperation.updateMany({
+      const saved = await db.moneyOperation.updateMany({
         where: { id: operation.id, status: "PROCESSING" },
         data: { status: outcome.status, gatewayRef: outcome.reference, error: outcome.error ?? "" },
       });
+      if (saved.count !== 1) return fail(PAYMENT_IN_PROGRESS);
     } catch {
       // Leave PROCESSING durable if persistence fails; it must not be charged again.
+      return fail(PAYMENT_IN_PROGRESS);
     }
+    if (outcome.status === "PENDING" && outcome.nextAction) return ok(outcome.nextAction);
     return fail(outcome.status === "FAILED" ? PAYMENT_FAILED : PAYMENT_IN_PROGRESS);
   }
   return finalizeCustomerPayment(operation.id, outcome.reference);
@@ -209,6 +226,7 @@ export async function reconcileCustomerPaymentOperation(operationId: string, gat
       idempotencyKey: operation.key,
       reference: `${operation.order.code}-${operation.kind === "PAYMENT_DEPOSIT" ? "DEPOSIT" : "BALANCE"}`,
       method: operation.method,
+      ...(operation.gateway === "omise_test" ? { gatewayReference: operation.gatewayRef } : {}),
     });
   } catch {
     return fail(PAYMENT_IN_PROGRESS);
@@ -219,6 +237,30 @@ export async function reconcileCustomerPaymentOperation(operationId: string, gat
     data: { status: outcome.status === "FAILED" ? "UNKNOWN" : outcome.status, gatewayRef: outcome.reference, error: outcome.error ?? "" },
   });
   return fail(outcome.status === "FAILED" ? PAYMENT_FAILED : PAYMENT_IN_PROGRESS);
+}
+
+/** Authenticated customer retrieval. This never submits a new provider operation. */
+export async function checkCustomerPayment(operationId: string, userId: string,
+  gateway: PaymentGateway = payments): Promise<CustomerPaymentResult> {
+  const operation = await db.moneyOperation.findUnique({ where: { id: operationId }, include: { order: true } });
+  if (!operation || operation.order.userId !== userId || operation.gateway !== "omise_test" ||
+      gateway.name !== operation.gateway || !["PAYMENT_DEPOSIT", "PAYMENT_BALANCE"].includes(operation.kind)) return NOT_ALLOWED;
+  if (operation.status === "SUCCEEDED") return ok();
+  if (!["PENDING", "UNKNOWN"].includes(operation.status) || !operation.gatewayRef) return fail(PAYMENT_IN_PROGRESS);
+  // One conditional database claim limits repeat checks across tabs/replicas.
+  const claim = await db.moneyOperation.updateMany({ where: { id: operation.id,
+    status: { in: ["PENDING", "UNKNOWN"] }, updatedAt: { lt: new Date(Date.now() - 3000) } },
+    data: { updatedAt: new Date() } });
+  if (!claim.count) return fail("กรุณารอสักครู่ก่อนตรวจสอบอีกครั้ง");
+  try {
+    const result = await gateway.retrieve({ kind: operation.kind as CustomerPaymentKind,
+      amountMinor: operation.amountMinor, currency: "THB", idempotencyKey: operation.key,
+      reference: operation.key, method: "PROMPTPAY", gatewayReference: operation.gatewayRef });
+    if (result.status === "SUCCEEDED") return finalizeCustomerPayment(operation.id, result.reference);
+    if (result.status === "PENDING" && result.nextAction) return ok(result.nextAction);
+    // Keep uncertain/expired charges reserved; no automatic replacement charge in this increment.
+    return fail(result.error ?? PAYMENT_IN_PROGRESS);
+  } catch { return fail(PAYMENT_IN_PROGRESS); }
 }
 async function txSafeUnknown(id: string, error: string, gatewayRef?: string) {
   try {

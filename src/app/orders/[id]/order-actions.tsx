@@ -15,6 +15,7 @@ import { InlineConfirm } from "@/app/request/inline-confirm";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { PendingPayment } from "@/lib/payment-result";
 import { cancelOrder, confirmCompletion, payDeposit, submitReview } from "@/server/actions/orders";
 
 const METHODS: PaymentMethod[] = ["PROMPTPAY", "CARD"];
@@ -24,13 +25,15 @@ const RATING_WORDS = ["", "ยังไม่ประทับใจ", "พอ�
 function PaymentMethodPicker({
   value,
   onChange,
+  promptPayOnly = false,
 }: {
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
+  promptPayOnly?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2" role="group" aria-label="วิธีชำระเงิน">
-      {METHODS.map((method) => {
+      {(promptPayOnly ? METHODS.filter((method) => method === "PROMPTPAY") : METHODS).map((method) => {
         const on = value === method;
         return (
           <button
@@ -66,16 +69,30 @@ function AmountBlock({ label, amount }: { label: string; amount: number }) {
   );
 }
 
+function PendingQr({ payment }: { payment: PendingPayment }) {
+  return <section className="flex flex-col gap-3" aria-label="คิวอาร์โค้ดชำระเงินทดสอบ">
+    <p role="status" className="text-base">รอชำระเงินทดสอบ</p>
+    {/* Provider-validated HTTPS document; do not optimize or forward API credentials. */}
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src={payment.qrUrl} alt="คิวอาร์โค้ด PromptPay สำหรับรายการทดสอบ" width={256} height={256} className="mx-auto size-64 rounded-lg" />
+    <p className="text-sm text-muted-foreground">โหมดทดสอบ ไม่ต้องสแกนหรือโอนเงินจริง ให้เปลี่ยนสถานะใน Omise Test Dashboard แล้วกดตรวจสอบ</p>
+    <p className="text-sm text-muted-foreground">หมดอายุ {new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(new Date(payment.expiresAt))}</p>
+  </section>;
+}
+
 /** ลูกค้าจ่ายมัดจำเพื่อให้ร้านยืนยันคำสั่ง */
 export function PayDepositPanel({
   orderId,
   amount,
   isMock,
+  omiseTest = false,
 }: {
   orderId: string;
   amount: number;
   isMock: boolean;
+  omiseTest?: boolean;
 }) {
+  const [qr, setQr] = useState<PendingPayment>();
   const [method, setMethod] = useState<PaymentMethod>("PROMPTPAY");
   const [pending, startTransition] = useTransition();
   const { celebrate } = useOrderLive();
@@ -87,6 +104,8 @@ export function PayDepositPanel({
         toast.error(res.error);
         return;
       }
+      if (res.data?.status === "PENDING") { setQr(res.data); return; }
+      setQr(undefined);
       celebrate({
         key: "deposit",
         title: "ชำระมัดจำแล้ว",
@@ -100,9 +119,9 @@ export function PayDepositPanel({
   return (
     <div className="flex flex-col gap-5">
       <AmountBlock label="ยอดมัดจำที่ต้องจ่าย" amount={amount} />
-      <PaymentMethodPicker value={method} onChange={setMethod} />
+      {qr ? <PendingQr payment={qr} /> : <PaymentMethodPicker value={method} onChange={setMethod} promptPayOnly={omiseTest} />}
       <Button type="button" variant="gold" size="xl" className="w-full" loading={pending} onClick={pay}>
-        จ่ายมัดจำ {formatBaht(amount)}
+        {qr ? "ตรวจสอบการชำระเงิน" : `จ่ายมัดจำ ${formatBaht(amount)}`}
       </Button>
       <TrustNote items={["deposit", "cancel"]} testMode={isMock} />
     </div>
@@ -114,11 +133,14 @@ export function CompleteOrderPanel({
   orderId,
   balance,
   isMock,
+  omiseTest = false,
 }: {
   orderId: string;
   balance: number;
   isMock: boolean;
+  omiseTest?: boolean;
 }) {
+  const [qr, setQr] = useState<PendingPayment>();
   const [method, setMethod] = useState<PaymentMethod>("PROMPTPAY");
   const [pending, startTransition] = useTransition();
   const { celebrate } = useOrderLive();
@@ -130,6 +152,8 @@ export function CompleteOrderPanel({
         toast.error(res.error);
         return;
       }
+      if (res.data?.status === "PENDING") { setQr(res.data); return; }
+      setQr(undefined);
       celebrate({
         key: "complete",
         title: "ตรวจรับงานแล้ว",
@@ -146,11 +170,11 @@ export function CompleteOrderPanel({
       {balance > 0 ? (
         <>
           <AmountBlock label="ยอดที่เหลือ" amount={balance} />
-          <PaymentMethodPicker value={method} onChange={setMethod} />
+          {qr ? <PendingQr payment={qr} /> : <PaymentMethodPicker value={method} onChange={setMethod} promptPayOnly={omiseTest} />}
         </>
       ) : null}
       <Button type="button" variant="gold" size="xl" className="w-full" loading={pending} onClick={complete}>
-        {balance > 0 ? `ตรวจรับงานและจ่าย ${formatBaht(balance)}` : "ตรวจรับงาน"}
+        {qr ? "ตรวจสอบการชำระเงิน" : balance > 0 ? `ตรวจรับงานและจ่าย ${formatBaht(balance)}` : "ตรวจรับงาน"}
       </Button>
       <TrustNote items={["deposit"]} testMode={isMock && balance > 0} />
     </div>

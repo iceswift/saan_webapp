@@ -1,5 +1,9 @@
 # Deployment status
 
+## Current payment sandbox release — 18 October 2026
+
+Private staging now runs `saan:omise-8da4a3579150` with Omise test-mode PromptPay collection and a separate reconciliation worker. Public webhook ingress remains disabled. Additive webhook migration applied after server-local backup `/home/ice/saan/backups/20261018T073229Z-2287485`; rotated test credentials are protected and not in the image/source. See [QA-OMISE-STAGING-2026-10-18.md](QA-OMISE-STAGING-2026-10-18.md) and [OMISE-SANDBOX-RUNBOOK.md](OMISE-SANDBOX-RUNBOOK.md). Earlier releases below are historical. No live payment/refund/payout activation.
+
 Updated 2026-10-18. See OPERATIONS.md for architecture and runbook.
 
 ## Current private test release

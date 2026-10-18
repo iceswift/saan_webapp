@@ -363,6 +363,22 @@ model MockGatewayReceipt {
   createdAt   DateTime @default(now())
 }
 
+// Minimal authenticated webhook inbox. ISO UTC strings keep lease comparisons portable.
+model ProviderWebhookEvent {
+  id            String @id
+  chargeId      String
+  payloadHash   String
+  receivedAt    String
+  nextAttemptAt String
+  leaseUntil    String @default("")
+  leaseToken    String @default("")
+  attempts      Int @default(0)
+  processedAt   String?
+  error         String @default("")
+
+  @@index([processedAt, nextAttemptAt])
+}
+
 model CareLog {
   id        String   @id @default(cuid())
   shrineId  String

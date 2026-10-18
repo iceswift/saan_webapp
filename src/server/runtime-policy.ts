@@ -1,5 +1,11 @@
 type Environment = Record<string, string | undefined>;
 
+export function shouldUseOmiseTestPayments(env: Environment = process.env): boolean {
+  if (env.PAYMENT_PROVIDER !== "omise_test" || env.APP_ENV === "production") return false;
+  if (env.APP_ENV === "staging") return isStagingTestMode(env);
+  return env.NODE_ENV !== "production";
+}
+
 export function stagingPhones(env: Environment = process.env): string[] {
   return (env.STAGING_TEST_PHONES ?? "").split(",").map((p) => p.trim()).filter((p) => /^0\d{9}$/.test(p));
 }

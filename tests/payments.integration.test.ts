@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import test, { type TestContext } from "node:test";
 import { db } from "../src/server/db";
-import { cancelCustomerOrder, reconcileCustomerPaymentOperation, runCustomerPayment } from "../src/server/payment-service";
+import { cancelCustomerOrder, checkCustomerPayment, reconcileCustomerPaymentOperation, runCustomerPayment } from "../src/server/payment-service";
 import type { PaymentGateway, GatewayRequest, GatewayResult } from "../src/server/payment-gateway";
+import { reconcileOmiseBatch, storeOmiseEvent } from "../src/server/omise-webhook-inbox";
 
 // This suite must never run against the application database.
-assert.match(process.env.DATABASE_URL ?? "", /money-test\.db(?:\?.*)?$/);
+const testDatabaseUrl = process.env.DATABASE_URL ?? "";
+const postgres = /^postgres(?:ql)?:/.test(testDatabaseUrl);
+if (postgres) assert.equal(new URL(testDatabaseUrl).pathname, "/saan_test");
+else assert.match(testDatabaseUrl, /money-test\.db(?:\?.*)?$/);
 
 async function fixture(t: TestContext, status = "AWAITING_DEPOSIT", paid = 0) {
   const seed = randomUUID();
@@ -222,11 +227,19 @@ test("captured payment with local write failure preserves reference and reconcil
   const f = await fixture(t);
   let executions = 0;
   const adapter = gateway(async () => { executions++; return { status: "SUCCEEDED", reference: "integration-local-failure" }; }, async () => ({ status: "SUCCEEDED", reference: "integration-local-failure" }));
-  await db.$executeRawUnsafe(`CREATE TRIGGER integration_payment_failure BEFORE INSERT ON Payment WHEN NEW.gatewayRef = 'integration-local-failure' BEGIN SELECT RAISE(FAIL, 'injected local failure'); END`);
+  if (postgres) {
+    await db.$executeRawUnsafe(`CREATE OR REPLACE FUNCTION integration_payment_failure_fn() RETURNS trigger AS $$ BEGIN IF NEW."gatewayRef" = 'integration-local-failure' THEN RAISE EXCEPTION 'injected local failure'; END IF; RETURN NEW; END; $$ LANGUAGE plpgsql`);
+    await db.$executeRawUnsafe(`CREATE TRIGGER integration_payment_failure BEFORE INSERT ON "Payment" FOR EACH ROW EXECUTE FUNCTION integration_payment_failure_fn()`);
+  } else {
+    await db.$executeRawUnsafe(`CREATE TRIGGER integration_payment_failure BEFORE INSERT ON Payment WHEN NEW.gatewayRef = 'integration-local-failure' BEGIN SELECT RAISE(FAIL, 'injected local failure'); END`);
+  }
   try {
     assert.equal((await runCustomerPayment(f.input, adapter)).ok, false);
   } finally {
-    await db.$executeRawUnsafe("DROP TRIGGER integration_payment_failure");
+    if (postgres) {
+      await db.$executeRawUnsafe('DROP TRIGGER integration_payment_failure ON "Payment"');
+      await db.$executeRawUnsafe("DROP FUNCTION integration_payment_failure_fn()");
+    } else await db.$executeRawUnsafe("DROP TRIGGER integration_payment_failure");
   }
   const operation = await db.moneyOperation.findUniqueOrThrow({ where: { key: `${f.order.id}:DEPOSIT` } });
   assert.equal(operation.status, "UNKNOWN");
@@ -257,6 +270,74 @@ test("legacy overpayment is blocked for manual inspection", async (t) => {
   assert.equal(calls, 0);
   assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "DONE");
   assert.equal(await db.shrine.count({ where: { userId: f.customer.id } }), 0);
+});
+
+test("asynchronous QR reserves once, resumes the same charge, and only completes on retrieval", async (t) => {
+  const f = await fixture(t);
+  let creates = 0;
+  let reads = 0;
+  let paid = false;
+  const nextAction = { status: "PENDING" as const, qrUrl: "https://api.omise.co/test-qr", expiresAt: new Date(Date.now() + 900000).toISOString() };
+  const adapter: PaymentGateway = { name: "omise_test",
+    execute: async () => { creates++; return { status: "PENDING", reference: "chrg_test_fixture", nextAction }; },
+    retrieve: async (input) => {
+      reads++;
+      assert.equal(input.gatewayReference, "chrg_test_fixture");
+      return paid ? { status: "SUCCEEDED", reference: "chrg_test_fixture" } :
+        { status: "PENDING", reference: "chrg_test_fixture", nextAction };
+    } };
+  const first = await runCustomerPayment(f.input, adapter);
+  assert.ok(first.ok && first.data?.status === "PENDING");
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 0);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "AWAITING_DEPOSIT");
+  const op = await db.moneyOperation.findFirstOrThrow({ where: { orderId: f.order.id } });
+  assert.equal((await checkCustomerPayment(op.id, "other-customer", adapter)).ok, false);
+  assert.equal(reads, 0);
+  await db.moneyOperation.update({ where: { id: op.id }, data: { updatedAt: new Date(Date.now() - 4000) } });
+  const resumed = await runCustomerPayment(f.input, adapter);
+  assert.ok(resumed.ok && resumed.data?.status === "PENDING");
+  assert.equal(creates, 1);
+  paid = true;
+  await db.moneyOperation.update({ where: { id: op.id }, data: { updatedAt: new Date(Date.now() - 4000) } });
+  const completed = await runCustomerPayment(f.input, adapter);
+  assert.ok(completed.ok && completed.data === undefined);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "AWAITING_PROVIDER");
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, status: "PAID" } }), 1);
+  assert.equal((await runCustomerPayment(f.input, adapter)).ok, true);
+  assert.equal(creates, 1);
+});
+
+test("durable inbox deduplicates, resumes after lease expiry, retrieves provider truth and finalizes once", async (t) => {
+  const sql = await readFile("prisma/postgresql/migrations/20261018020000_webhook_inbox/migration.sql", "utf8");
+  for (const statement of sql.split(";").map((v) => v.trim()).filter(Boolean)) {
+    await db.$executeRawUnsafe(statement.replace("CREATE TABLE ", "CREATE TABLE IF NOT EXISTS ")
+      .replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS "));
+  }
+  const f = await fixture(t);
+  const id = `evnt_test_${randomUUID().replaceAll("-", "")}`;
+  const chargeId = `chrg_test_${randomUUID().replaceAll("-", "")}`;
+  t.after(async () => { await db.$executeRaw`DELETE FROM "ProviderWebhookEvent" WHERE "id" = ${id}`; });
+  const adapter: PaymentGateway = { name: "omise_test",
+    execute: async () => ({ status: "PENDING", reference: chargeId,
+      nextAction: { status: "PENDING", qrUrl: "https://api.omise.co/test", expiresAt: new Date().toISOString() } }),
+    retrieve: async () => ({ status: "SUCCEEDED", reference: chargeId }),
+  };
+  await runCustomerPayment(f.input, adapter);
+  const body = Buffer.from(JSON.stringify({ object: "event", id, livemode: false, key: "charge.complete",
+    data: { object: "charge", id: chargeId, livemode: false, status: "failed" } }));
+  // Payload's status deliberately disagrees: only the independent GET is authoritative.
+  assert.equal(await storeOmiseEvent(body), "STORED");
+  assert.equal(await storeOmiseEvent(body), "STORED");
+  const rows = await db.$queryRaw<{ id: string }[]>`SELECT "id" FROM "ProviderWebhookEvent" WHERE "id" = ${id}`;
+  assert.equal(rows.length, 1);
+  await db.$executeRaw`UPDATE "ProviderWebhookEvent" SET "leaseUntil" = ${new Date(Date.now() + 60000).toISOString()} WHERE "id" = ${id}`;
+  assert.equal((await reconcileOmiseBatch(adapter)).processed, 0);
+  await db.$executeRaw`UPDATE "ProviderWebhookEvent" SET "leaseUntil" = '' WHERE "id" = ${id}`;
+  assert.equal((await reconcileOmiseBatch(adapter)).processed, 1);
+  assert.equal((await reconcileOmiseBatch(adapter)).processed, 0);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id } }), 1);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "AWAITING_PROVIDER");
+  await assert.rejects(storeOmiseEvent(Buffer.from(body.toString().replace('"failed"', '"pending"'))));
 });
 
 test.after(async () => { await db.$disconnect(); });

@@ -10,11 +10,13 @@ export type GatewayRequest = {
   reference: string;
   method?: PaymentMethod;
   originalReference?: string;
+  gatewayReference?: string;
 };
 export type GatewayResult = {
   status: "SUCCEEDED" | "PENDING" | "FAILED" | "UNKNOWN";
   reference: string;
   error?: string;
+  nextAction?: import("../lib/payment-result").PendingPayment;
 };
 /** A real adapter must verify provider responses/webhooks and enforce this key remotely.
  * execute must never interpret a browser redirect or a network timeout as payment success.

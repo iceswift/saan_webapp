@@ -6,7 +6,9 @@ import { mockGateway, unconfiguredGateway, type PaymentGateway } from "../src/se
 import { payoutOrderFunds, refundOrderFunds, reconcileSettlement } from "../src/server/settlement-service";
 import { listFinanceOrders } from "../src/server/finance";
 
-assert.match(process.env.DATABASE_URL ?? "", /money-test\.db$/);
+const testDatabaseUrl = process.env.DATABASE_URL ?? "";
+if (/^postgres(?:ql)?:/.test(testDatabaseUrl)) assert.equal(new URL(testDatabaseUrl).pathname, "/saan_test");
+else assert.match(testDatabaseUrl, /money-test\.db$/);
 after(()=>db.$disconnect());
 
 async function fixture(status = "CANCELLED", paid = 300) {

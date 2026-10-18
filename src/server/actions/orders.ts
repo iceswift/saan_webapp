@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { getCurrentUser } from "../auth";
 import { cancelCustomerOrder, runCustomerPayment } from "../payment-service";
+import type { PendingPayment } from "@/lib/payment-result";
 import { createOrderReview } from "../review-service";
 import {
   geoSchema,
@@ -141,7 +142,7 @@ export async function createInstallOrder(input: {
 export async function payDeposit(input: {
   orderId: string;
   method: PaymentMethod;
-}): Promise<ActionResult> {
+}): Promise<ActionResult<PendingPayment | undefined>> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
   const parsed = parseInput(z.object({ orderId: idSchema, method: methodSchema }), input);
@@ -172,7 +173,7 @@ export async function cancelOrder(input: { orderId: string }): Promise<ActionRes
 export async function confirmCompletion(input: {
   orderId: string;
   method: PaymentMethod;
-}): Promise<ActionResult> {
+}): Promise<ActionResult<PendingPayment | undefined>> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
   const parsed = parseInput(z.object({ orderId: idSchema, method: methodSchema }), input);

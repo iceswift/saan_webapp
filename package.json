@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "payment:omise:spike": "node --conditions=react-server --import tsx scripts/omise-contract-spike.ts",
+    "test:payment-provider": "node --conditions=react-server --import tsx --test tests/omise-test-client.test.ts tests/omise-test-gateway.test.ts tests/omise-webhook-signature.test.ts tests/payment-endpoints.test.ts",
+    "test:payments:postgres": "node scripts/run-payment-postgres-tests.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

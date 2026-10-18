@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatBaht } from "@/lib/format";
 import type { OrderDetail } from "@/lib/types";
 import { requireUser } from "@/server/auth";
-import { IS_MOCK_PAYMENT } from "@/server/integrations";
+import { IS_MOCK_PAYMENT, IS_OMISE_TEST_PAYMENT } from "@/server/integrations";
 import { getOrder } from "@/server/queries";
 import { customerPending, formatShortDateTime, formatWhen, ORDER_FLOW_STEPS, orderStepIndex } from "../display";
 import {
@@ -217,7 +217,7 @@ function NextAction({ order }: { order: OrderDetail }) {
     case "AWAITING_DEPOSIT":
       return (
         <div className="flex flex-col gap-3">
-          <PayDepositPanel orderId={order.id} amount={order.deposit} isMock={IS_MOCK_PAYMENT} />
+          <PayDepositPanel orderId={order.id} amount={order.deposit} isMock={IS_MOCK_PAYMENT} omiseTest={IS_OMISE_TEST_PAYMENT} />
           <div className="border-t border-border pt-3">
             <CancelOrderControl orderId={order.id} hasDeposit={false} />
           </div>
@@ -226,7 +226,7 @@ function NextAction({ order }: { order: OrderDetail }) {
     case "AWAITING_PROVIDER":
       return <CancelOrderControl orderId={order.id} hasDeposit />;
     case "DONE":
-      return <CompleteOrderPanel orderId={order.id} balance={order.balance} isMock={IS_MOCK_PAYMENT} />;
+      return <CompleteOrderPanel orderId={order.id} balance={order.balance} isMock={IS_MOCK_PAYMENT} omiseTest={IS_OMISE_TEST_PAYMENT} />;
     case "COMPLETED":
       return order.review === null ? <ReviewForm orderId={order.id} /> : null;
     default:

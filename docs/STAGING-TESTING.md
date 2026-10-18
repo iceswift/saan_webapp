@@ -1,6 +1,6 @@
 # Private staging tests
 
-This mode is for synthetic data inside the private tailnet only. It does not send SMS, contact a payment provider, or move money. Never expose it publicly or reuse real users' phone numbers.
+This mode is for synthetic data inside the private tailnet only. It does not send SMS or move real money. The original mock configuration below does not contact a provider; the current opt-in Omise sandbox does contact Omise's test API. Never expose the test login/app publicly or reuse real users' phone numbers. Current Omise activation, worker and recovery instructions: [OMISE-SANDBOX-RUNBOOK.md](OMISE-SANDBOX-RUNBOOK.md).
 
 Enable all four runtime values deliberately in the protected deployment environment:
 

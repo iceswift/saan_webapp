@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canUseTestLogin, isStagingTestMode, shouldUseMockPayments } from "../src/server/runtime-policy";
+import { canUseTestLogin, isStagingTestMode, shouldUseMockPayments, shouldUseOmiseTestPayments } from "../src/server/runtime-policy";
+
+test("Omise sandbox requires explicit selection and cannot enable public production", () => {
+  assert.equal(shouldUseOmiseTestPayments({ NODE_ENV: "development", PAYMENT_PROVIDER: "omise_test" }), true);
+  assert.equal(shouldUseOmiseTestPayments({ NODE_ENV: "production", PAYMENT_PROVIDER: "omise_test" }), false);
+  assert.equal(shouldUseOmiseTestPayments({ APP_ENV: "production", PAYMENT_PROVIDER: "omise_test" }), false);
+  assert.equal(shouldUseOmiseTestPayments({ APP_ENV: "staging", PAYMENT_PROVIDER: "omise_test" }), false);
+  assert.equal(shouldUseOmiseTestPayments({ NODE_ENV: "production", APP_ENV: "staging", PAYMENT_PROVIDER: "omise_test",
+    STAGING_TEST_MODE: "true", STAGING_TEST_PHONES: "0800000002" }), true);
+});
 
 test("production never enables test login or simulated payments", () => {
   for (const env of [

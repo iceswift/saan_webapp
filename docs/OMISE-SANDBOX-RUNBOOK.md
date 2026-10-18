@@ -1,0 +1,55 @@
+# Omise sandbox operation
+
+Updated 18 October 2026. **Deployed and enabled in private home-server staging.** The rotated key and Omise test account were verified; the reconciliation worker is running. Public webhooks remain disabled. No live collections, refunds or bank payouts are enabled. Evidence: [staging QA](QA-OMISE-STAGING-2026-10-18.md).
+
+## Delivered
+
+- Customer QR/check/resume UI, durable charge reservation and atomic payment/order finalization after provider retrieval.
+- `/api/webhooks/omise`: raw-body HMAC, replay window, rotation, 1 MiB streaming limit and durable deduplicated inbox. No raw event bodies or secrets are stored.
+- `/api/internal/payment-reconcile`: separate bearer authentication and explicit enablement; retrieves existing provider objects only.
+- Restartable `scripts/payment-worker.mjs`: database inbox leases and bounded polling for missing callbacks.
+- Additive `ProviderWebhookEvent` migration and optional Compose worker/webhook-only proxy profiles.
+- `PAYMENT_MUTATIONS_DISABLED=true`: prevents new Omise submissions while reconciliation remains available.
+
+There is still one reservation per deposit/balance. Expired/uncertain requests cannot automatically generate a replacement; multi-attempt and multi-account routing remain future work. Never reset a reservation merely to retry an uncertain provider request.
+
+## Verification evidence
+
+- Actual sandbox account/capability reads, QR creation, expiry, echoed reference and independent successful payment retrieval: [contract evidence](OMISE-CONTRACT-SPIKE.md).
+- Payment/settlement/runtime suites: 28 tests passed on isolated SQLite and the same 28 on home-server **saan_test** PostgreSQL. PostgreSQL fault injection replaces the SQLite trigger rather than skipping its test.
+- Source-only PostgreSQL QA used `/tmp/payment-qa-20261018` inside the existing container; deployed application files were not replaced. No database backup was copied off the server.
+- Provider/signature/endpoint tests: `npm run test:payment-provider`.
+- Deployed browser deposit journey passed: QR → user Mark as paid → scheduled worker finalization → one Payment → app/worker restart persistence. Public callback delivery and the complete shop/balance journey remain unverified. Fixture tests do not establish those checks.
+
+## Activation sequence
+
+1. Rotate the test key exposed in screenshots, then update protected local/server configuration. Do not send secrets through chat, shell command history or Git. Reconcile historical records before changing provider accounts.
+2. Back up using the existing home-server workflow; keep backups there as instructed. Build a new immutable application image through normal deployment procedures.
+3. Apply migration `20261018020000_webhook_inbox` through the existing reviewed migration workflow. Never reset staging data. Canonical/generated PostgreSQL schemas are synchronized.
+4. Set `PAYMENT_PROVIDER=omise_test`, test key and pinned `OMISE_API_VERSION`; retain `APP_ENV=staging`, `STAGING_TEST_MODE=true` and the synthetic-phone allowlist. Configure a separate random `PAYMENT_WORKER_SECRET` of at least 32 characters.
+5. Initially retain `PAYMENT_MUTATIONS_DISABLED=true` and `OMISE_WEBHOOK_ENABLED=false`. Enable `PAYMENT_RECONCILIATION_ENABLED=true` after migration/config verification, then start optional Compose profile `payments`.
+6. Deliberately allow mutations for a synthetic browser journey. Create an order, obtain QR, reload/resume the same charge, use Omise Testing → Mark as paid, then verify exactly one Payment/order transition. Do not scan a test QR with a real banking app.
+
+The owner rotated the key; the replacement was sent over SSH stdin into the mode-0600 deployment environment. It is excluded from images, source archives, Git and this document. Do not restore the exposed credential during rollback.
+
+## Public webhook ingress
+
+Current Tailscale HTTPS is private; Omise cannot call it. Polling supports private sandbox validation first.
+
+Optional profile `omise-webhook` provides separate nginx on **127.0.0.1:3102**, permitting only POST `/api/webhooks/omise`. Other paths return 404. It does not expose admin/internal-worker routes or change webcam 443/Saan 8443.
+
+A public TLS domain/tunnel to that listener remains to be selected/configured. Do not tunnel the entire private app on 3100. Configure the test endpoint and Base64 signing secret in Omise, then enable `OMISE_WEBHOOK_ENABLED`. Signing secrets are separate from API keys; `OMISE_WEBHOOK_PREVIOUS_SECRET` supports rotation.
+
+Delivery acceptance: event stored before 2xx; duplicates finalize once; invalid signatures 401; oversized bodies 413; malformed signed JSON 400; storage failure 503. Verify worker restart, callback replay and missing-callback recovery through independent provider GET.
+
+## Recovery and monitoring
+
+Pause charges with `PAYMENT_MUTATIONS_DISABLED=true`. Stop worker for coordinated restore. A database restore does not rewind Omise: reconcile external truth and missing references before resuming. Never blindly replay restored CREATED operations.
+
+Admin finance unresolved operations remain the exception queue. Inspect inbox rows with `processedAt IS NULL`, old `receivedAt`, `attempts` and `error` for mapping/persistence failures. Restrict access and establish retention before public rollout. Missing references require investigation, never a new key or invented paid result.
+
+Rollback retains history and reconciliation access; never delete successful payments or route Omise records through mock. Existing mock operations retain their own adapter identity.
+
+## Remaining financial gates
+
+The adapter rejects REFUND/PAYOUT. Resolve PromptPay's refund limitation and agree marketplace/milestone terms, recipients, commission, fees and payout policy before those real flows. [Full plan](OMISE-PAYMENT-PLAN.md). Tested sandbox collection is not a live marketplace payment system.
