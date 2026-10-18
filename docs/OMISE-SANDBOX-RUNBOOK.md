@@ -65,3 +65,7 @@ Rollback to the previous collection image can use protected `deployment.env.befo
 ## Research handoff — external reimbursement
 
 See [refund/settlement design](OMISE-REFUND-SETTLEMENT-DESIGN.md) for the discovered PromptPay exception in the readable public channel terms, the unavailable currently linked terms version, and the separate external-case lifecycle. Unsupported Refund API does not imply a blanket prohibition on other reimbursement methods. This research has not activated that flow, changed the sandbox cases or sent any provider message. Account-specific confirmation questions are prepared in [Thai](OMISE-PROVIDER-QUESTIONS-TH.md).
+
+## Refund case rehearsal
+
+Private staging now also rehearses admin refund cases behind `REFUND_CASE_TEST_MODE=true`. This is separate from the disabled Omise refund adapter: TEST_COMPLETED does not close the financial obligation or mark a payment refunded. Full instructions, rollback and remaining live work: [REFUND-CASE-SANDBOX.md](REFUND-CASE-SANDBOX.md). Migration `20261018030000_refund_cases` is additive. Defaults remain off outside deliberately enabled private testing.

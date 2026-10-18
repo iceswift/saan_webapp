@@ -50,3 +50,7 @@ Keep this behind separate workflow/configuration gates. Do not change current hi
 Acceptance tests include: wrong customer/shop, changed destination, duplicate approval, two concurrent cases over the same entitlement, total partial refunds exceeding payment, forged/duplicate evidence, sent but unverified, bank outcome unknown, worker restart and refund versus payout allocation races.
 
 See [provider inquiry draft](OMISE-PROVIDER-QUESTIONS-TH.md). No message was sent, no bank destination was created and no live money movement was initiated during this research.
+
+## Implemented sandbox milestone
+
+The synthetic full-amount case lifecycle is now implemented and deployed separately from external money movement. See [REFUND-CASE-SANDBOX.md](REFUND-CASE-SANDBOX.md) and staging QA. Destination/evidence identifiers are synthetic only; completion leaves financial obligations open. Partial refunds, actual bank evidence and live execution remain future work.

@@ -14,6 +14,8 @@ import { requireUser } from "@/server/auth";
 import { IS_MOCK_PAYMENT, IS_OMISE_TEST_PAYMENT } from "@/server/integrations";
 import { getOrder } from "@/server/queries";
 import { cancelledPaymentDetail } from "./cancelled-payment-detail";
+import { customerRefundCases } from "@/server/refund-case-service";
+import { REFUND_CASE_LABELS } from "@/lib/refund-case";
 import { customerPending, formatShortDateTime, formatWhen, ORDER_FLOW_STEPS, orderStepIndex } from "../display";
 import {
   CancelOrderControl,
@@ -80,6 +82,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
 
   const stepIndex = orderStepIndex(order.status);
   const status = describe(order);
+  const refundCases = order.status === "CANCELLED" ? await customerRefundCases(order.id, user.id) : [];
   const hasAction =
     order.status === "AWAITING_DEPOSIT" ||
     order.status === "DONE" ||
@@ -189,6 +192,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
           </section>
 
           <OrderItems order={order} />
+          {refundCases.length ? <section>
+            <SectionTitle>ติดตามเคสคืนเงินทดสอบ</SectionTitle>
+            <p className="text-sm text-muted-foreground">เป็นการทดสอบขั้นตอนเท่านั้น ยังไม่มีการคืนเงินจริง ยอดชำระเดิมยังคงเดิม</p>
+            <ul className="mt-3 divide-y divide-border">{refundCases.map(entry => <li key={entry.id} className="py-3 text-base">{formatBaht(entry.amountMinor / 100)} · {REFUND_CASE_LABELS[entry.status] ?? "รอตรวจสอบ"}</li>)}</ul>
+          </section> : null}
 
           <OrderChat
             orderId={order.id}

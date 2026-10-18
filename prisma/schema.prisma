@@ -242,9 +242,41 @@ model MoneyOperation {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   completedAt    DateTime?
+  refundCase     RefundCase?
 
   @@index([orderId, kind])
   @@index([status, createdAt])
+}
+
+// Sandbox operational rehearsal only. Never an external money-movement receipt.
+model RefundCase {
+  id                  String   @id @default(cuid())
+  operationId         String   @unique
+  operation           MoneyOperation @relation(fields: [operationId], references: [id], onDelete: Restrict)
+  amountMinor         Int
+  status              String   @default("NEEDS_DETAILS")
+  version             Int      @default(0)
+  destination         String   @default("") // Synthetic TEST-DEST identifier only; no bank data.
+  transferReference   String?  @unique
+  evidence            String   @default("")
+  verification        String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  events              RefundCaseEvent[]
+}
+
+model RefundCaseEvent {
+  id          String   @id @default(cuid())
+  caseId      String
+  refundCase  RefundCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  actorId     String
+  action      String
+  fromStatus  String
+  toStatus    String
+  note        String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([caseId, createdAt])
 }
 
 model ServiceRequest {

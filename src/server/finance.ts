@@ -1,12 +1,17 @@
 import "server-only";
 import { db } from "./db";
+export type RefundCaseView = {
+  id: string; amountMinor: number; status: string; version: number; destination: string;
+  transferReference: string | null; evidence: string; verification: string;
+  events: { id: string; actorId: string; action: string; fromStatus: string; toStatus: string; note: string; createdAt: string }[];
+};
 
 export type FinanceOrder = {
   id: string; code: string; status: string; total: number; paid: number; refunded: number;
   payable: number; payoutStatus: string; refundStatus: string;
   refundDue: number; settlementGateway: string;
   operations: { id: string; kind: string; status: string; amountMinor: number;
-    gatewayRef: string; gateway: string; error: string; createdAt: string }[];
+    gatewayRef: string; gateway: string; error: string; createdAt: string; refundCase: RefundCaseView | null }[];
 };
 
 export async function listFinanceOrders(viewer: {id: string; role: string}, providerId?: string): Promise<FinanceOrder[]> {
@@ -20,7 +25,7 @@ export async function listFinanceOrders(viewer: {id: string; role: string}, prov
     where: { ...(providerId ? {providerId} : {}), OR: [
       {status:{in:["COMPLETED","CANCELLED"]}}, {moneyOperations:{some:{}}},
     ]},
-    include:{payments:true,moneyOperations:{orderBy:{createdAt:"desc"}}},
+    include:{payments:true,moneyOperations:{orderBy:{createdAt:"desc"},include:{refundCase:{include:{events:{orderBy:{createdAt:"asc"}}}}}}},
     orderBy:{updatedAt:"desc"}, take:100,
   });
   return orders.map(order => {
@@ -36,7 +41,10 @@ export async function listFinanceOrders(viewer: {id: string; role: string}, prov
       payoutStatus:payout?.status ?? "NOT_REQUESTED",
       refundStatus:refunds.find(op=>op.status !== "SUCCEEDED")?.status ?? (refunded > 0 ? "SUCCEEDED" : "NOT_REQUESTED"),
       operations:order.moneyOperations.map(op=>({id:op.id,kind:op.kind,status:op.status,amountMinor:op.amountMinor,
-        gatewayRef:op.gatewayRef,gateway:op.gateway,error:op.error,createdAt:op.createdAt.toISOString()})),
+        gatewayRef:op.gatewayRef,gateway:op.gateway,error:op.error,createdAt:op.createdAt.toISOString(),
+        refundCase: viewer.role === "ADMIN" && op.refundCase ? { ...op.refundCase,
+          events: op.refundCase.events.map(event => ({...event,createdAt:event.createdAt.toISOString()})) } : null,
+      })),
     };
   });
 }

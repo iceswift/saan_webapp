@@ -11,6 +11,8 @@ import { listFinanceOrders } from "@/server/finance";
 import { IS_MOCK_PAYMENT, payments } from "@/server/integrations";
 import { formatBaht, formatDateTime } from "@/lib/format";
 import { FinanceControls } from "./finance-controls";
+import { RefundCaseControls } from "./refund-case-controls";
+import { refundCaseTestEnabled } from "@/server/refund-case-service";
 
 export const metadata: Metadata = { title: "การเงินและรายการค้าง" };
 
@@ -66,6 +68,9 @@ export default async function AdminFinancePage() {
               </details>
             ) : null}
             <FinanceControls order={order} gateway={payments.name} />
+            {refundCaseTestEnabled() ? order.operations.filter(operation => operation.kind === "REFUND" && operation.status === "ACTION_REQUIRED" && operation.gateway === "omise_test").map(operation =>
+              <RefundCaseControls key={operation.id} operationId={operation.id} amountMinor={operation.amountMinor} refundCase={operation.refundCase} />,
+            ) : null}
           </Reveal>
         ))}
       </div>

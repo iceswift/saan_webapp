@@ -7,6 +7,16 @@ import { db } from "../db";
 import { payoutOrderFunds, reconcileSettlement, refundOrderFunds } from "../settlement-service";
 import { reconcileCustomerPaymentOperation } from "../payment-service";
 import { fail, type ActionResult } from "@/lib/result";
+import { changeRefundCase, type RefundCaseInput } from "../refund-case-service";
+
+export async function updateRefundCase(input: RefundCaseInput): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return NOT_LOGGED_IN;
+  if (user.role !== "ADMIN") return NOT_ALLOWED;
+  const result = await changeRefundCase(user.id, input);
+  refreshAll();
+  return result;
+}
 
 async function adminOperation(input: unknown, operation: "refund" | "payout"): Promise<ActionResult> {
   const user = await getCurrentUser();
