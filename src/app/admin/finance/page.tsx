@@ -8,7 +8,7 @@ import { LinkButton } from "@/components/link-button";
 import { EmptyState } from "@/components/visuals";
 import { requireRole } from "@/server/auth";
 import { listFinanceOrders } from "@/server/finance";
-import { IS_MOCK_PAYMENT } from "@/server/integrations";
+import { IS_MOCK_PAYMENT, payments } from "@/server/integrations";
 import { formatBaht, formatDateTime } from "@/lib/format";
 import { FinanceControls } from "./finance-controls";
 
@@ -19,6 +19,7 @@ const STATES: Record<string, string> = {
   CREATED: "สร้างรายการแล้ว", SUCCEEDED: "สำเร็จ", FAILED: "ไม่สำเร็จ", NONE: "ยังไม่มีรายการ",
   PAID: "จ่ายแล้ว", REFUNDED: "คืนเงินแล้ว", NOT_REQUIRED: "ไม่มีรายการที่ต้องดำเนินการ",
   NOT_REQUESTED: "ยังไม่ส่งรายการ",
+  ACTION_REQUIRED: "ต้องตรวจสอบขั้นตอนคืนเงิน ยังไม่ได้ส่งคำสั่ง",
 };
 const KINDS: Record<string, string> = { REFUND: "คืนเงิน", PAYOUT: "จ่ายให้ร้าน", PAYMENT_DEPOSIT: "รับมัดจำ", PAYMENT_BALANCE: "รับยอดคงเหลือ" };
 
@@ -43,8 +44,8 @@ export default async function AdminFinancePage() {
               <Link href={`/provider/orders/${order.id}`} className="inline-flex min-h-11 items-center text-base font-medium underline underline-offset-4">{order.code}</Link>
               <Price amount={order.total} />
             </div>
-            <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-              {[["รับชำระสุทธิหลังคืนเงิน", order.paid], ["คืนเงินแล้ว", order.refunded], ["ยอดรอจ่ายให้ร้าน", order.payable]].map(([label, amount]) => (
+            <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[["รับชำระสุทธิหลังคืนเงิน", order.paid], ["ยอดที่ต้องคืน", order.refundDue], ["คืนเงินแล้ว", order.refunded], ["ยอดรอจ่ายให้ร้าน", order.payable]].map(([label, amount]) => (
                 <div key={label}><dt className="text-sm text-muted-foreground">{label}</dt><dd className="numeric mt-1 text-base">{formatBaht(Number(amount))}</dd></div>
               ))}
             </dl>
@@ -58,13 +59,13 @@ export default async function AdminFinancePage() {
                       <p className="text-base">{KINDS[operation.kind] ?? "รายการการเงิน"} · {formatBaht(operation.amountMinor / 100)} · {STATES[operation.status] ?? "รอตรวจสอบผล"}</p>
                       <p className="mt-1 text-sm text-muted-foreground">{formatDateTime(new Date(operation.createdAt))}</p>
                       {operation.gatewayRef ? <p className="mt-1 break-all text-sm text-muted-foreground">เลขอ้างอิง {operation.gatewayRef}</p> : null}
-                      {operation.error ? <p className="mt-1 text-sm text-destructive">รายการมีข้อผิดพลาด กรุณาตรวจสอบผลก่อนดำเนินการต่อ</p> : null}
+                      {operation.status === "ACTION_REQUIRED" ? <p className="mt-1 text-sm text-muted-foreground">PromptPay ยังไม่รองรับการคืนผ่าน Omise ต้องยืนยันวิธีดำเนินการกับผู้ให้บริการก่อน เงินยังไม่ได้คืน</p> : operation.error ? <p className="mt-1 text-sm text-destructive">รายการมีข้อผิดพลาด กรุณาตรวจสอบผลก่อนดำเนินการต่อ</p> : null}
                     </li>
                   ))}
                 </ul>
               </details>
             ) : null}
-            <FinanceControls order={order} mock={IS_MOCK_PAYMENT} />
+            <FinanceControls order={order} gateway={payments.name} />
           </Reveal>
         ))}
       </div>

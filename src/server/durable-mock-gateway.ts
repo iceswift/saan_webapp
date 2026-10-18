@@ -14,6 +14,7 @@ function fingerprint(input: GatewayRequest) {
 /** Staging-only provider receipts persist independently of local payment finalization. */
 export const durableMockGateway: PaymentGateway = {
   name: "mock",
+  capabilities: { refund: true, payout: true },
   async execute(input) {
     validateMoneyRequest(input);
     const hash = fingerprint(input);

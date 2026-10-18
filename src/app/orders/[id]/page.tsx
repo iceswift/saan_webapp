@@ -13,6 +13,7 @@ import type { OrderDetail } from "@/lib/types";
 import { requireUser } from "@/server/auth";
 import { IS_MOCK_PAYMENT, IS_OMISE_TEST_PAYMENT } from "@/server/integrations";
 import { getOrder } from "@/server/queries";
+import { cancelledPaymentDetail } from "./cancelled-payment-detail";
 import { customerPending, formatShortDateTime, formatWhen, ORDER_FLOW_STEPS, orderStepIndex } from "../display";
 import {
   CancelOrderControl,
@@ -59,15 +60,9 @@ function describe(order: OrderDetail): {
     case "COMPLETED":
       return { title: "งานเสร็จสมบูรณ์", detail: `ขอบคุณที่ใช้บริการ ${shop}`, tone: "good" };
     case "CANCELLED": {
-      const refunded = order.payments.some((p) => p.status === "REFUNDED");
-      const depositPaid = order.payments.some((p) => p.kind === "DEPOSIT" && p.status === "PAID");
       return {
         title: "คำสั่งนี้ถูกยกเลิก",
-        detail: refunded
-          ? "คืนมัดจำเรียบร้อยแล้ว"
-          : depositPaid
-            ? "ทีมงานจะติดต่อเพื่อคืนมัดจำ"
-            : "ดูเบอร์ติดต่อร้านได้ในรายละเอียด",
+        detail: cancelledPaymentDetail(order.payments),
         tone: "bad",
       };
     }

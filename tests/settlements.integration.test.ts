@@ -5,11 +5,55 @@ import { db } from "../src/server/db";
 import { mockGateway, unconfiguredGateway, type PaymentGateway } from "../src/server/payment-gateway";
 import { payoutOrderFunds, refundOrderFunds, reconcileSettlement } from "../src/server/settlement-service";
 import { listFinanceOrders } from "../src/server/finance";
+import { recordRefundObligations } from "../src/server/refund-obligations";
 
 const testDatabaseUrl = process.env.DATABASE_URL ?? "";
 if (/^postgres(?:ql)?:/.test(testDatabaseUrl)) assert.equal(new URL(testDatabaseUrl).pathname, "/saan_test");
 else assert.match(testDatabaseUrl, /money-test\.db$/);
 after(()=>db.$disconnect());
+
+test("unsupported Omise refunds remain actionable obligations; refund/reconcile/payout never contact provider", async () => {
+  const f = await fixture();
+  await db.payment.updateMany({ where: { orderId: f.order.id }, data: { gateway: "omise_test" } });
+  let calls = 0;
+  const gateway: PaymentGateway = { name: "omise_test", capabilities: { refund: false, payout: false },
+    execute: async () => { calls++; throw new Error("must not submit"); },
+    retrieve: async () => { calls++; throw new Error("must not retrieve an undispatched case"); },
+  };
+  assert.equal((await refundOrderFunds(f.order.id, "admin", gateway)).ok, false);
+  assert.equal((await refundOrderFunds(f.order.id, "admin", gateway)).ok, false);
+  const op = await db.moneyOperation.findFirstOrThrow({ where: { orderId: f.order.id, kind: "REFUND" } });
+  assert.equal(op.status, "ACTION_REQUIRED");
+  assert.equal(op.amountMinor, 30000);
+  assert.equal((await reconcileSettlement(op.id, gateway)).ok, false);
+  const completed = await fixture("COMPLETED", 1000);
+  assert.equal((await payoutOrderFunds(completed.order.id, "admin", gateway)).ok, false);
+  assert.equal(await db.moneyOperation.count({ where: { orderId: completed.order.id, kind: "PAYOUT" } }), 0);
+  assert.equal(calls, 0);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, status: "REFUNDED" } }), 0);
+  const finance = (await listFinanceOrders({ id: "admin", role: "ADMIN" }, f.provider.id)).find((item) => item.id === f.order.id);
+  assert.equal(finance?.refundDue, 300);
+  assert.equal(finance?.refunded, 0);
+  assert.equal(finance?.refundStatus, "ACTION_REQUIRED");
+});
+
+test("refund obligation insertion rolls back with cancellation and retries do not duplicate it", async () => {
+  const f = await fixture("AWAITING_PROVIDER", 300);
+  await db.payment.updateMany({ where: { orderId: f.order.id }, data: { gateway: "omise_test" } });
+  await assert.rejects(db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: f.order.id }, data: { status: "CANCELLED" } });
+    await recordRefundObligations(tx, f.order.id, f.merchant.id);
+    throw new Error("cancel rollback");
+  }), /cancel rollback/);
+  assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "AWAITING_PROVIDER");
+  assert.equal(await db.moneyOperation.count({ where: { orderId: f.order.id } }), 0);
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: f.order.id }, data: { status: "CANCELLED" } });
+    await recordRefundObligations(tx, f.order.id, f.merchant.id);
+    await recordRefundObligations(tx, f.order.id, f.merchant.id);
+  });
+  assert.equal(await db.moneyOperation.count({ where: { orderId: f.order.id, status: "ACTION_REQUIRED" } }), 1);
+});
 
 async function fixture(status = "CANCELLED", paid = 300) {
   const suffix = randomUUID();

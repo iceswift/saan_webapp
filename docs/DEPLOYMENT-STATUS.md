@@ -2,9 +2,13 @@
 
 ## Current payment sandbox release — 18 October 2026
 
+Current image: **saan:refund-a7c7fa12ae14**, image config sha256:383f5c9660f4027fee7f67bc020a507d169685e83a1fc617b11792c57059a713. Adds atomic cancellation/refund obligations (ACTION_REQUIRED, not submitted), truthful outstanding/refunded finance totals and capability guards. THB 30 sandbox cancellation passed through the browser and provider GET; completed THB 1,000 baseline preserved. 33 tests passed on each SQLite/PostgreSQL database, plus 14 provider tests and 1 wording test. Pre-release home-only backup: /home/ice/saan/backups/20261018T080654Z-2305072. No real refund/payout or public webhook enabled. Details in the cancellation section of the QA document.
+
+### Previous collection release evidence
+
 Full shop/customer order journey now verified on the same image: deposit 300 → shop acceptance/appointment/progress/delivery → balance 700 → worker-driven COMPLETED, exactly two payments and one linked shrine, retained across app/worker restart. Expanded regression suites passed 30 tests on SQLite and PostgreSQL. Latest completed-order backup: `/home/ice/saan/backups/20261018T075137Z-2298865`; full evidence is in the QA document below.
 
-Private staging now runs `saan:omise-8da4a3579150` with Omise test-mode PromptPay collection and a separate reconciliation worker. Public webhook ingress remains disabled. Additive webhook migration applied after server-local backup `/home/ice/saan/backups/20261018T073229Z-2287485`; rotated test credentials are protected and not in the image/source. See [QA-OMISE-STAGING-2026-10-18.md](QA-OMISE-STAGING-2026-10-18.md) and [OMISE-SANDBOX-RUNBOOK.md](OMISE-SANDBOX-RUNBOOK.md). Earlier releases below are historical. No live payment/refund/payout activation.
+The previous collection release ran `saan:omise-8da4a3579150` with Omise test-mode PromptPay collection and a separate reconciliation worker. Public webhook ingress remains disabled. Additive webhook migration applied after server-local backup `/home/ice/saan/backups/20261018T073229Z-2287485`; rotated test credentials are protected and not in the image/source. See [QA-OMISE-STAGING-2026-10-18.md](QA-OMISE-STAGING-2026-10-18.md) and [OMISE-SANDBOX-RUNBOOK.md](OMISE-SANDBOX-RUNBOOK.md). Earlier releases below are historical. No live payment/refund/payout activation.
 
 Updated 2026-10-18. See OPERATIONS.md for architecture and runbook.
 

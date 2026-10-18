@@ -24,6 +24,7 @@ export type GatewayResult = {
  */
 export interface PaymentGateway {
   readonly name: string;
+  readonly capabilities?: { refund: boolean; payout: boolean };
   execute(input: GatewayRequest): Promise<GatewayResult>;
   retrieve(input: GatewayRequest): Promise<GatewayResult>;
 }
@@ -40,6 +41,7 @@ const mockReceipts = new Map<string, { fingerprint: string; result: GatewayResul
 /** Process-local test receipts. Unknown receipts never imply a successful transfer. */
 export const mockGateway: PaymentGateway = {
   name: "mock",
+  capabilities: { refund: true, payout: true },
   async execute(input) {
     validateMoneyRequest(input);
     const fingerprint = JSON.stringify(input);
@@ -67,6 +69,7 @@ export const mockGateway: PaymentGateway = {
 /** Production fails closed until a reviewed provider adapter is configured. */
 export const unconfiguredGateway: PaymentGateway = {
   name: "unconfigured",
+  capabilities: { refund: false, payout: false },
   async execute() {
     return { status: "FAILED", reference: "", error: "ยังไม่ได้เชื่อมต่อผู้ให้บริการชำระเงิน" };
   },

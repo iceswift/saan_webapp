@@ -4,8 +4,9 @@ import { db } from "./db";
 export type FinanceOrder = {
   id: string; code: string; status: string; total: number; paid: number; refunded: number;
   payable: number; payoutStatus: string; refundStatus: string;
+  refundDue: number; settlementGateway: string;
   operations: { id: string; kind: string; status: string; amountMinor: number;
-    gatewayRef: string; error: string; createdAt: string }[];
+    gatewayRef: string; gateway: string; error: string; createdAt: string }[];
 };
 
 export async function listFinanceOrders(viewer: {id: string; role: string}, providerId?: string): Promise<FinanceOrder[]> {
@@ -29,11 +30,13 @@ export async function listFinanceOrders(viewer: {id: string; role: string}, prov
     const refunds = order.moneyOperations.filter(op=>op.kind === "REFUND");
     return {
       id:order.id,code:order.code,status:order.status,total:order.total,paid,refunded,
+      refundDue: order.status === "CANCELLED" ? paid : 0,
+      settlementGateway: order.payments.filter(p => p.status === "PAID").every(p => p.gateway === "mock") ? "mock" : "other",
       payable:order.status === "COMPLETED" && paid === order.total && payout?.status !== "SUCCEEDED" ? paid : 0,
       payoutStatus:payout?.status ?? "NOT_REQUESTED",
       refundStatus:refunds.find(op=>op.status !== "SUCCEEDED")?.status ?? (refunded > 0 ? "SUCCEEDED" : "NOT_REQUESTED"),
       operations:order.moneyOperations.map(op=>({id:op.id,kind:op.kind,status:op.status,amountMinor:op.amountMinor,
-        gatewayRef:op.gatewayRef,error:op.error,createdAt:op.createdAt.toISOString()})),
+        gatewayRef:op.gatewayRef,gateway:op.gateway,error:op.error,createdAt:op.createdAt.toISOString()})),
     };
   });
 }

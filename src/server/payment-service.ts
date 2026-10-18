@@ -8,6 +8,7 @@ import { db } from "./db";
 import { payments } from "./integrations";
 import type { PaymentGateway } from "./payment-gateway";
 import type { PendingPayment } from "../lib/payment-result";
+import { recordRefundObligations } from "./refund-obligations";
 
 type CustomerPaymentResult = ActionResult<PendingPayment | undefined>;
 
@@ -304,6 +305,7 @@ export async function cancelCustomerOrder(orderId: string, userId: string): Prom
         where: { id: order.id, status: order.status }, data: { status: "CANCELLED" },
       });
       if (changed.count !== 1) return fail("คำสั่งมีการเปลี่ยนแปลง กรุณาลองใหม่");
+      await recordRefundObligations(tx, order.id, userId);
       await addEvent(tx, order.id, "ลูกค้ายกเลิกคำสั่ง", "CUSTOMER", {
         note: hadDeposit ? `ต้องคืนมัดจำ ${formatBaht(order.deposit)} ให้ลูกค้า` : "",
       });

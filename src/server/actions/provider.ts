@@ -5,6 +5,7 @@ import type { Provider } from "@prisma/client";
 import { db } from "../db";
 import { getCurrentUser } from "../auth";
 import { confirmProviderOrder } from "../provider-order-service";
+import { recordRefundObligations } from "../refund-obligations";
 import {
   addEvent,
   geoSchema,
@@ -266,7 +267,7 @@ async function myOrder(orderId: string) {
   const provider = await myProvider();
   if (!provider) return { order: null, error: NOT_PROVIDER };
   if (provider.status !== "VERIFIED") return { order: null, error: NOT_VERIFIED };
-  const order = await db.order.findUnique({ where: { id: orderId } });
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { provider: { select: { userId: true } } } });
   if (!order || order.providerId !== provider.id) return { order: null, error: NOT_ALLOWED };
   return { order, error: null };
 }
@@ -318,6 +319,7 @@ export async function declineOrder(input: {
     await addEvent(tx, order.id, "ร้านไม่สามารถรับงานนี้ได้", "PROVIDER", {
       note: `${parsed.data.reason} ต้องคืนมัดจำ ${formatBaht(order.deposit)} ให้ลูกค้า`,
     });
+    await recordRefundObligations(tx, order.id, order.provider.userId);
     await notify(tx, order.userId, "ORDER", "ร้านไม่สามารถรับงานนี้ได้", {
       body: "ทีมงานจะติดต่อเพื่อคืนมัดจำ",
       href: `/orders/${order.id}`,

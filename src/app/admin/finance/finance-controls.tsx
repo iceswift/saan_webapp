@@ -7,11 +7,11 @@ import type { ActionResult } from "@/lib/result";
 import type { FinanceOrder } from "@/server/finance";
 import { payoutOrder, reconcileMoneyOperation, refundOrder } from "@/server/actions/finance";
 
-export function FinanceControls({ order, mock }: { order: FinanceOrder; mock: boolean }) {
+export function FinanceControls({ order, gateway }: { order: FinanceOrder; gateway: string }) {
   const [pending, startTransition] = useTransition();
-  if (!mock) return null;
+  const mock = gateway === "mock" && order.settlementGateway === "mock";
   const unresolved = order.operations.filter((operation) =>
-    ["PROCESSING", "PENDING", "UNKNOWN"].includes(operation.status),
+    operation.gateway === gateway && ["PROCESSING", "PENDING", "UNKNOWN"].includes(operation.status),
   );
 
   function run(action: () => Promise<ActionResult>, message: string) {
@@ -29,13 +29,13 @@ export function FinanceControls({ order, mock }: { order: FinanceOrder; mock: bo
 
   return (
     <div className="mt-4 flex flex-wrap gap-3">
-      {order.status === "CANCELLED" && order.paid > 0 ? (
+      {mock && order.status === "CANCELLED" && order.paid > 0 ? (
         <Button size="xl" variant="outline" loading={pending}
           onClick={() => run(() => refundOrder({ orderId: order.id }), "บันทึกผลการคืนเงินทดสอบแล้ว")}>
           จำลองคืนเงิน
         </Button>
       ) : null}
-      {order.status === "COMPLETED" && order.payable > 0 ? (
+      {mock && order.status === "COMPLETED" && order.payable > 0 ? (
         <Button size="xl" variant="outline" loading={pending}
           onClick={() => run(() => payoutOrder({ orderId: order.id }), "บันทึกผลการจ่ายให้ร้านทดสอบแล้ว")}>
           จำลองจ่ายให้ร้าน

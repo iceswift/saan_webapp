@@ -234,7 +234,7 @@ model MoneyOperation {
   paymentId      String?
   payment        Payment? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   amountMinor    Int
-  status         String   @default("CREATED") // CREATED | PROCESSING | PENDING | SUCCEEDED | FAILED | UNKNOWN
+  status         String   @default("CREATED") // CREATED | PROCESSING | PENDING | SUCCEEDED | FAILED | UNKNOWN | ACTION_REQUIRED (not submitted)
   gateway        String   @default("mock")
   gatewayRef     String   @default("")
   error          String   @default("")

@@ -416,4 +416,24 @@ test("concurrent balance confirmation creates one completion event, payment and 
   assert.equal((await db.order.findUniqueOrThrow({ where: { id: f.order.id } })).status, "COMPLETED");
 });
 
+test("cancelled paid Omise deposit creates one refund obligation without claiming money was returned", async (t) => {
+  const f = await fixture(t, "AWAITING_PROVIDER", 300);
+  await db.payment.updateMany({ where: { orderId: f.order.id }, data: { gateway: "omise_test" } });
+  const results = await Promise.allSettled([
+    cancelCustomerOrder(f.order.id, f.customer.id), cancelCustomerOrder(f.order.id, f.customer.id),
+  ]);
+  assert.ok(results.some((result) => result.status === "fulfilled" && result.value.ok));
+  assert.equal((await cancelCustomerOrder(f.order.id, f.customer.id)).ok, true);
+  const cases = await db.moneyOperation.findMany({ where: { orderId: f.order.id, kind: "REFUND" } });
+  assert.equal(cases.length, 1);
+  assert.equal(cases[0].status, "ACTION_REQUIRED");
+  assert.equal(cases[0].amountMinor, 30000);
+  assert.equal(cases[0].gatewayRef, "");
+  assert.equal(cases[0].completedAt, null);
+  assert.ok(cases[0].paymentId);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, status: "PAID" } }), 1);
+  assert.equal(await db.payment.count({ where: { orderId: f.order.id, status: "REFUNDED" } }), 0);
+  assert.equal(await db.orderEvent.count({ where: { orderId: f.order.id, title: "คืนเงินแล้ว" } }), 0);
+});
+
 test.after(async () => { await db.$disconnect(); });

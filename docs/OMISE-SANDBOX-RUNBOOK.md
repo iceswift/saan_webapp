@@ -53,3 +53,11 @@ Rollback retains history and reconciliation access; never delete successful paym
 ## Remaining financial gates
 
 The adapter rejects REFUND/PAYOUT. Resolve PromptPay's refund limitation and agree marketplace/milestone terms, recipients, commission, fees and payout policy before those real flows. [Full plan](OMISE-PAYMENT-PLAN.md). Tested sandbox collection is not a live marketplace payment system.
+
+## Cancelled paid PromptPay orders
+
+Current refund-obligation release: `saan:refund-a7c7fa12ae14`. Buyer cancellation/shop decline atomically creates one `REFUND` operation per paid Omise PromptPay receipt, status `ACTION_REQUIRED`; this means **not submitted**, not pending provider execution. Never reconcile it as though a refund was sent, set it SUCCEEDED manually, or use mock for an Omise receipt. `Payment.status` remains PAID until a future approved refund flow verifies an actual result. Admin finance shows the outstanding amount separately from returned funds; the original provider charge remains the source of truth.
+
+Refund/payout capability guards reject submission and retrieval for the current Omise adapter. A proposed bank-transfer workaround requires a separately agreed provider/operational procedure, recipient verification and recorded evidence before implementation. The current release sends no refund/transfer requests. See cancellation QA for the THB 30 sandbox proof and regression results.
+
+Rollback to the previous collection image can use protected `deployment.env.before-refund-a7c7fa12ae14`, retaining current data/credentials. ACTION_REQUIRED rows must be preserved; older UI may not label them meaningfully. No schema migration or database restore is required for this release. Keep original Omise receipt identities and never replay collection on rollback.

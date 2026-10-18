@@ -67,3 +67,7 @@ node --conditions=react-server --import tsx --test tests/payments.integration.te
 ```
 
 Tests cover duplicate deposit/balance/refund/payout calls, cancellation races, timeout/pending/stale-operation recovery, failed local finalization, ownership boundaries, legacy overpayments and completion, and payout eligibility. Database fixtures live only in the isolated ignored test database.
+
+### Refund obligation implementation
+
+Cancelled paid Omise PromptPay orders now create durable ACTION_REQUIRED refund obligations and display outstanding/refunded amounts separately. No Omise refund or payout request is enabled. Verified THB 30 synthetic cancellation and capability/rollback/idempotency tests; see QA-OMISE-STAGING-2026-10-18.md. Real refund handling still requires a provider-supported procedure and verified financial outcome.

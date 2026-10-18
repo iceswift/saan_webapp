@@ -21,6 +21,7 @@ function outcome(charge: TestCharge): GatewayResult {
 export function createOmiseTestGateway(getClient: () => ReturnType<typeof createOmiseTestClient> = createOmiseTestClient): PaymentGateway {
 return {
   name: "omise_test",
+  capabilities: { refund: false, payout: false },
   async execute(input) {
     if (!["PAYMENT_DEPOSIT", "PAYMENT_BALANCE"].includes(input.kind) || input.method !== "PROMPTPAY") {
       return { status: "FAILED", reference: "", error: "ช่องทางนี้ยังไม่รองรับรายการดังกล่าว" };

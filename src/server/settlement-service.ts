@@ -6,11 +6,16 @@ import type { GatewayRequest, GatewayResult, PaymentGateway } from "./payment-ga
 import { addEvent, notify } from "./action-utils";
 import { formatBaht } from "../lib/format";
 import { fail, ok, type ActionResult } from "../lib/result";
+import { recordRefundObligations } from "./refund-obligations";
 
 const unresolved = ["CREATED","PROCESSING","PENDING","UNKNOWN"];
 
 async function settle(op: MoneyOperation, gateway: PaymentGateway, reconcile = false): Promise<ActionResult> {
   if (op.status === "SUCCEEDED") return ok();
+  if ((op.kind === "REFUND" && gateway.capabilities?.refund === false) ||
+      (op.kind === "PAYOUT" && gateway.capabilities?.payout === false)) {
+    return fail("ผู้ให้บริการนี้ยังไม่รองรับขั้นตอนดังกล่าว ไม่มีการส่งคำสั่งคืนเงินหรือโอนเงิน");
+  }
   if (reconcile && (op.status === "CREATED" ||
       (op.status === "PROCESSING" && Date.now() - op.updatedAt.getTime() < 60_000))) {
     return fail("รายการนี้กำลังส่งคำขอ กรุณารอก่อนตรวจสอบผล");
@@ -74,6 +79,15 @@ export async function refundOrderFunds(orderId: string, actorId: string, gateway
   if (!order || order.status !== "CANCELLED") return fail("คืนเงินได้เฉพาะคำสั่งที่ยกเลิกแล้ว");
   const paid = order.payments.filter(p=>p.status === "PAID");
   if (!paid.length) return order.payments.some(p=>p.status === "REFUNDED") ? ok() : fail("ไม่มียอดที่ต้องคืน");
+  if (paid.some(payment => payment.gateway !== gateway.name)) return fail("ต้องคืนผ่านผู้ให้บริการของรายการชำระเดิม");
+  if (gateway.capabilities?.refund === false) {
+    await db.$transaction(async tx => {
+      const locked = await tx.order.updateMany({ where: { id: orderId, status: "CANCELLED" }, data: { status: "CANCELLED" } });
+      if (locked.count !== 1) throw new Error("Order changed");
+      await recordRefundObligations(tx, orderId, actorId);
+    });
+    return fail("บันทึกยอดที่ต้องคืนแล้ว ต้องตรวจสอบขั้นตอนกับผู้ให้บริการ ยังไม่ได้คืนเงิน");
+  }
   for (const payment of paid) {
     if (payment.gateway !== gateway.name) return fail("ต้องคืนผ่านผู้ให้บริการของรายการชำระเดิม");
     const op = await db.$transaction(async tx => {
@@ -91,6 +105,7 @@ export async function refundOrderFunds(orderId: string, actorId: string, gateway
 }
 
 export async function payoutOrderFunds(orderId: string, actorId: string, gateway: PaymentGateway = payments): Promise<ActionResult> {
+  if (gateway.capabilities?.payout === false) return fail("ยังไม่เปิดการโอนเงินให้ร้านสำหรับผู้ให้บริการนี้");
   const reserved = await db.$transaction(async tx => {
     const lock = await tx.order.updateMany({where:{id:orderId,status:"COMPLETED"},data:{status:"COMPLETED"}});
     if (!lock.count) return fail("จ่ายร้านได้หลังลูกค้าตรวจรับงานแล้วเท่านั้น");
