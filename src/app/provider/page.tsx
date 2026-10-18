@@ -77,6 +77,7 @@ export default async function ProviderPage({ searchParams }: PageProps<"/provide
       <Rise>
         <div className="-mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-muted-foreground">
           <ProviderStatusBadge status={provider.status} />
+          <Link href="/provider/finance" className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4">การเงินร้าน</Link>
           <span>{PROVIDER_KINDS[provider.kind]}</span>
           {provider.areas.length > 0 ? <span>{provider.areas.map((a) => AREAS[a]).join(" · ")}</span> : null}
           <Rating

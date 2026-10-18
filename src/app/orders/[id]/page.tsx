@@ -156,18 +156,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
               }}
               after={after}
             >
-              {/* ติดตามงาน (มือถือ): ขั้นที่กำลังรอ เวลานัด และปุ่มโทรหาร้านในที่เดียว (เดสก์ท็อปอยู่ในแผงขวา) */}
-              {upcoming.length > 0 ? (
-                <div className="flex items-center gap-3 border-t border-border pt-4 lg:hidden">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-muted-foreground">ติดตามงาน · ขั้นตอนตอนนี้</p>
-                    <p className="text-base leading-snug font-medium">{upcoming[0].title}</p>
-                  </div>
+              {/* ติดต่อร้านเมื่อกำลังรอ โดยไม่ซ้ำประโยคสถานะหรือแย่งจุดเด่นจากปุ่มชำระเงิน */}
+              {order.status === "AWAITING_PROVIDER" || order.status === "CONFIRMED" ? (
+                <div className="border-t border-border pt-4 lg:hidden">
                   <a
                     href={`tel:${order.provider.phone}`}
-                    className={cn(buttonVariants({ variant: "outline", size: "xl" }), "shrink-0 px-5")}
+                    className={cn(buttonVariants({ variant: "outline", size: "xl" }), "w-full")}
                   >
-                    <Phone />
+                    <Phone aria-hidden="true" />
                     โทรหาร้าน
                   </a>
                 </div>
@@ -222,7 +218,9 @@ function NextAction({ order }: { order: OrderDetail }) {
       return (
         <div className="flex flex-col gap-3">
           <PayDepositPanel orderId={order.id} amount={order.deposit} isMock={IS_MOCK_PAYMENT} />
-          <CancelOrderControl orderId={order.id} hasDeposit={false} />
+          <div className="border-t border-border pt-3">
+            <CancelOrderControl orderId={order.id} hasDeposit={false} />
+          </div>
         </div>
       );
     case "AWAITING_PROVIDER":

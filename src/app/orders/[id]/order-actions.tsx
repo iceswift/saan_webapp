@@ -60,7 +60,7 @@ function PaymentMethodPicker({
 function AmountBlock({ label, amount }: { label: string; amount: number }) {
   return (
     <div>
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <h2 className="text-base font-medium">{label}</h2>
       <PriceTicker amount={amount} size="xl" emphasis />
     </div>
   );
@@ -141,6 +141,8 @@ export function CompleteOrderPanel({
 
   return (
     <div className="flex flex-col gap-5">
+      <h2 className="font-display text-xl font-medium">ตรวจรับงาน</h2>
+      <p className="text-base text-muted-foreground">ตรวจสอบผลงานให้เรียบร้อยก่อนยืนยัน</p>
       {balance > 0 ? (
         <>
           <AmountBlock label="ยอดที่เหลือ" amount={balance} />
@@ -227,7 +229,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
               key={n}
               type="button"
               aria-label={`${n} ดาว`}
-              aria-pressed={rating >= n}
+              aria-pressed={rating === n}
               aria-invalid={Boolean(error) && n === 1 ? true : undefined}
               aria-describedby={ratingHint}
               onClick={() => {

@@ -172,6 +172,7 @@ model Order {
   items    OrderItem[]
   events   OrderEvent[]
   payments Payment[]
+  moneyOperations MoneyOperation[]
   review   Review?
   messages OrderMessage[]
 
@@ -217,8 +218,33 @@ model Payment {
   paidAt     DateTime?
   refundedAt DateTime?
   createdAt  DateTime  @default(now())
+  moneyOperations MoneyOperation[]
 
   @@index([orderId])
+}
+
+// Durable provider-neutral requests. Amounts are integer satang, unlike legacy Payment.amount (baht).
+model MoneyOperation {
+  id             String   @id @default(cuid())
+  key            String   @unique
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  kind           String // PAYMENT_DEPOSIT | PAYMENT_BALANCE | REFUND | PAYOUT
+  method         String   @default("")
+  paymentId      String?
+  payment        Payment? @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  amountMinor    Int
+  status         String   @default("CREATED") // CREATED | PROCESSING | PENDING | SUCCEEDED | FAILED | UNKNOWN
+  gateway        String   @default("mock")
+  gatewayRef     String   @default("")
+  error          String   @default("")
+  requestedBy    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  completedAt    DateTime?
+
+  @@index([orderId, kind])
+  @@index([status, createdAt])
 }
 
 model ServiceRequest {

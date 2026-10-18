@@ -31,14 +31,14 @@ export function ChoiceCard({
       aria-pressed={selected}
       onClick={onSelect}
       className={cn(
-        "surface flex min-h-16 w-full items-center gap-4 px-4 py-3 text-left transition-colors",
+        "surface flex min-h-16 w-full items-center gap-4 px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         selected ? "border-primary" : "hover:bg-muted",
         className,
       )}
     >
       {leading}
       <span className="min-w-0 flex-1">
-        <span className="block text-base leading-snug font-medium">{title}</span>
+        <span className="block text-base leading-relaxed font-medium">{title}</span>
         {description ? (
           <span className="mt-0.5 block text-sm text-muted-foreground">{description}</span>
         ) : null}

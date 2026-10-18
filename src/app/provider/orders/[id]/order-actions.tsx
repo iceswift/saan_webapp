@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Chip } from "@/components/chip";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
 import { ImageUpload } from "@/components/image-upload";
-import { ThaiDateTimeField } from "@/components/thai-date-field";
+import { ThaiDateField } from "@/components/thai-date-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,16 +24,18 @@ export function ProviderOrderActions({
   orderId,
   status,
   preferredDates = [],
+  blockedDates = [],
 }: {
   orderId: string;
   status: OrderStatus;
   /** วันที่ลูกค้าสะดวก (YYYY-MM-DD) ใช้เป็นทางลัดเลือกวันนัด */
   preferredDates?: string[];
+  blockedDates?: string[];
 }) {
   if (status === "AWAITING_PROVIDER") {
     return (
       <div className="flex flex-col gap-2">
-        <ConfirmForm orderId={orderId} preferredDates={preferredDates} />
+        <ConfirmForm orderId={orderId} preferredDates={preferredDates} blockedDates={blockedDates} />
         <DeclineControl orderId={orderId} />
       </div>
     );
@@ -55,21 +57,22 @@ function todayBangkok(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
 }
 
-function ConfirmForm({ orderId, preferredDates }: { orderId: string; preferredDates: string[] }) {
-  // ThaiDateTimeField ไม่ควบคุมค่า: เปลี่ยน key เพื่อใส่ค่าจากทางลัดวันที่ แล้วอ่านค่าจริงจากช่องซ่อนตอนกดยืนยัน
-  const [seed, setSeed] = useState("");
+function ConfirmForm({ orderId, preferredDates, blockedDates }: { orderId: string; preferredDates: string[]; blockedDates: string[] }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
   function confirm() {
-    const input = formRef.current?.elements.namedItem("scheduledAt") as HTMLInputElement | null;
-    const when = input?.value ?? "";
+    const when = date && time ? `${date}T${time}` : "";
     // ช่องให้ค่าเป็นเวลาไทยแบบ yyyy-mm-ddTHH:mm จึงต่อเขตเวลา +07:00 ก่อนส่ง
     const iso = `${when}:00+07:00`;
     const problem = when === ""
       ? "เลือกวันและเวลานัด"
-      : new Date(iso).getTime() <= Date.now()
+      : blockedDates.includes(date)
+        ? "ร้านปิดรับงานวันนี้ กรุณาเลือกวันอื่น"
+      : !Number.isFinite(new Date(iso).getTime()) || new Date(iso).getTime() <= Date.now()
         ? "วันนัดต้องเป็นเวลาในอนาคต"
         : undefined;
     setError(problem);
@@ -109,7 +112,8 @@ function ConfirmForm({ orderId, preferredDates }: { orderId: string; preferredDa
                 <Chip
                   key={date}
                   onClick={() => {
-                    setSeed(`${date}T09:00`);
+                    setDate(date);
+                    setTime("09:00");
                     setError(undefined);
                   }}
                 >
@@ -125,15 +129,14 @@ function ConfirmForm({ orderId, preferredDates }: { orderId: string; preferredDa
         <Label htmlFor="scheduled-at" className="mb-2 text-base font-medium">
           วันและเวลานัด
         </Label>
-        <ThaiDateTimeField
-          key={seed}
-          id="scheduled-at"
-          name="scheduledAt"
-          defaultValue={seed}
-          min={todayBangkok()}
-          aria-invalid={Boolean(error)}
-          aria-describedby="scheduled-at-hint"
-        />
+        <div className="flex gap-3">
+          <ThaiDateField id="scheduled-at" value={date} onChange={(value) => { setDate(value); setError(undefined); }}
+            min={todayBangkok()} disabledDates={blockedDates}
+            aria-invalid={Boolean(error)} aria-describedby="scheduled-at-hint" className="min-w-0 flex-1" />
+          <Input type="time" aria-label="เวลานัด" value={time}
+            onChange={(event) => { setTime(event.target.value); setError(undefined); }}
+            aria-invalid={Boolean(error)} aria-describedby="scheduled-at-hint" className="w-32 shrink-0 px-4" />
+        </div>
         <FieldHint id="scheduled-at-hint" error={error}>
           เลือกวันและเวลาที่ร้านไปทำงาน
         </FieldHint>
