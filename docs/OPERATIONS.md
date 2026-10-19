@@ -1,11 +1,11 @@
 # Saan operations and AI handoff
 
-## Architecture decisions (2026-10-18)
+## Architecture decisions (updated 2026-10-19)
 
 - Deploy a modular Next.js monolith, not microservices. A versioned Docker image runs the same code on the home server or a VDS.
 - PostgreSQL 16 is separate from the web container. Database ports are not published. SQLite remains local-development only.
 - Uploaded images have stable `/api/files/<random-key>` URLs. `UPLOAD_DIR` selects persistent storage outside the image. A future object-storage adapter must preserve these keys/URLs. This release implements filesystem storage only.
-- Database sessions and OTP records are shared. Explicit private staging uses durable simulated receipts in PostgreSQL; local-development mocks remain process-local. Keep one app instance until Next.js multi-instance configuration is reviewed. Real gateway integration remains future work.
+- Database sessions and OTP records are shared. Private staging now uses Omise test API collection and explicitly gated synthetic-shop transfers, alongside historical durable mock receipts in PostgreSQL. Local-development mocks remain process-local. Live gateway activation remains disabled. Keep one app instance until Next.js multi-instance configuration is reviewed.
 - Runtime `SITE_URL` controls canonical metadata; no home-server IP is stored in image records. TLS terminates at the private Tailscale entry point; nginx handles request size/forwarding before Next.js.
 - No public staging access or real money yet. Production rejects test login/payments by default. Explicitly gated private staging allows only designated synthetic phones and simulated payments; see STAGING-TESTING.md. No real SMS delivery. Do not expose test mode publicly.
 
@@ -21,7 +21,7 @@ The `ice` user can use Docker but cannot write `/srv` or use noninteractive sudo
 - `Dockerfile`: PostgreSQL client generated during build; runtime runs as node (UID 1000).
 - `deploy/compose.yml`: app + PostgreSQL + nginx, isolated Compose project. nginx binds loopback 3100 only. Log rotation and memory limits are configured.
 - Copy `deploy/env.example` to `deploy/deployment.env` on the server, chmod 600. Generate a random URL-safe hexadecimal `POSTGRES_PASSWORD`. Never commit or display the populated file. Changing this password later also requires changing the PostgreSQL role password.
-- `DATA_DIR` is an absolute persistent path with `uploads` writable by UID 1000; postgres owns its own data directory.
+- `DATA_DIR` is an absolute persistent path with `uploads` and private `operations` directories writable by app UID 1000; postgres owns its own data directory. Provision the operations directory before starting the app; Docker-created root-owned directories will prevent heartbeat writes.
 - Keep source checkout/releases separate from `data`, `backups`, and secrets. Do not put data below a directory removed during a release cleanup.
 
 Build a unique image tag for each commit, record the deployed commit and image ID. With the environment file present:
@@ -32,6 +32,10 @@ cd deploy
 sh compose.sh up -d db
 sh compose.sh run --rm --no-deps app node node_modules/prisma/build/index.js migrate deploy --schema prisma/postgresql/schema.prisma
 sh compose.sh up -d app proxy
+# Only when reconciliation is explicitly configured with protected credentials:
+sh compose.sh --profile payments up -d app payment-worker
+# Recreating app may change its address; refresh the existing proxy's upstream.
+sh compose.sh restart proxy
 sh compose.sh ps
 curl --fail http://127.0.0.1:3100/api/health
 ```
@@ -56,6 +60,6 @@ To move the exact image without a registry, use `docker save saan:COMMIT` on the
 
 Run PostgreSQL migration/constraint checks on a real PostgreSQL instance; schema validation alone is insufficient. SQLite service tests use a separately generated SQLite client and database. Never overwrite an active development server's generated client with PostgreSQL generation in the same checkout.
 
-Before public use: production authentication/SMS, real payment adapter, storage off-machine backup destination and retention, monitoring and alert delivery. For multiple web replicas also review Next.js cache coordination, encryption key consistency and background job claiming. Restore drills must be repeated as data/schema evolve.
+Before public use: production authentication/SMS, approved live payment and settlement arrangement, commercial/tax policy, off-machine backup destination and external alert delivery. Home-only scheduling/retention and in-app monitoring are implemented; see the current status and monitoring runbook. For multiple web replicas also review Next.js cache coordination, encryption key consistency and background job claiming. Restore drills must be repeated as data/schema evolve.
 
 Update `docs/DEPLOYMENT-STATUS.md` after every deployment or restore drill. Record evidence and remaining gaps, never call an untested step complete.

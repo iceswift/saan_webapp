@@ -112,4 +112,6 @@ PostgreSQL มี schema และ migrations แยกจาก SQLite บน�
 
 การรัน Docker, การย้ายเครื่อง, backup/restore และข้อมูลส่งต่อให้ AI อยู่ใน [docs/OPERATIONS.md](docs/OPERATIONS.md) โดยสถานะที่ตรวจสอบจริงอยู่ใน [docs/DEPLOYMENT-STATUS.md](docs/DEPLOYMENT-STATUS.md)
 
+ระบบสำรองข้อมูลอัตโนมัติและหน้าตรวจสอบสำหรับแอดมิน: [docs/OPERATIONS-MONITORING.md](docs/OPERATIONS-MONITORING.md) — ปัจจุบันสำรองบน home server เวลา 03:00 น. เก็บ 14 ชุดอัตโนมัติที่สำเร็จล่าสุด ยังไม่ส่งออกไปเครื่องอื่นหรือ Google Drive
+
 บัญชีทดสอบ การเปิดโหมดจำลองเฉพาะ staging และขั้นตอนปิดโหมดอยู่ใน [docs/STAGING-TESTING.md](docs/STAGING-TESTING.md) ผลทดสอบผ่าน HTTPS บน home server อยู่ใน [docs/QA-STAGING-2026-10-18.md](docs/QA-STAGING-2026-10-18.md)
