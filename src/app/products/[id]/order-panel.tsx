@@ -6,6 +6,7 @@ import { formatBaht } from "@/lib/format";
 /** คำตอบจากตัวช่วย /new ที่ส่งต่อมาทาง URL (ไม่มี = ผู้ใช้เข้ามาจากหน้าเลือกดูศาล) */
 export type OrderParams = {
   area?: AreaCode;
+  from?: string;
   place?: string;
   kind?: string;
   max?: string;
@@ -24,6 +25,7 @@ export function checkoutHref(productId: string, areas: AreaCode[], p: OrderParam
 
 function productHref(productId: string, p: OrderParams, area: AreaCode): string {
   const q = new URLSearchParams({ area });
+  if (p.from) q.set("from", p.from);
   if (p.place) q.set("place", p.place);
   if (p.kind) q.set("kind", p.kind);
   if (p.max) q.set("max", p.max);

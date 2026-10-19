@@ -21,6 +21,7 @@ import { ORDER_FLOW_STEPS } from "@/app/orders/display";
 import { firstValue, pickCode } from "@/app/new/options";
 import { PackageRow, RatingBreakdown, ReviewItem, monogramName } from "@/app/shops/public-parts";
 import { AREAS, AREA_CODES, DEPOSIT_RATE, SHRINE_KINDS } from "@/lib/constants";
+import { browseReturn } from "@/lib/browse-return";
 import { formatBaht } from "@/lib/format";
 import { distanceKm, formatDistance, isInThailand } from "@/lib/geo";
 import { getProduct, getPublicProvider } from "@/server/queries";
@@ -66,7 +67,9 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
 
   // คำตอบจากตัวช่วย /new ที่ส่งต่อมาทาง URL ใช้เฉพาะพื้นที่ที่ร้านให้บริการจริง
   const areaParam = pickCode(firstValue(sp.area), AREA_CODES);
+  const returnToBrowse = browseReturn(firstValue(sp.from));
   const orderParams: OrderParams = {
+    from: returnToBrowse,
     area: areaParam && provider.areas.includes(areaParam) ? areaParam : undefined,
     place: firstValue(sp.place),
     kind: firstValue(sp.kind),
@@ -103,7 +106,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         />
       }
     >
-      <PageHeader title={product.name} backHref="/browse" backLabel="เลือกดูศาล" />
+      <PageHeader title={product.name} backHref={returnToBrowse ?? "/browse"} backLabel={returnToBrowse ? "กลับไปผลการค้นหา" : "เลือกดูศาล"} />
 
       <TwoColumn
         asideOn="hide"
@@ -175,6 +178,25 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           </div>
         </Rise>
 
+        <nav aria-label="ข้อมูลสินค้า" className="mt-6 flex flex-wrap gap-2 border-y border-border py-3">
+          {[
+            ...(product.description ? [["product-description", "รายละเอียดศาล"]] : []),
+            ["product-cost", "ราคาและสิ่งที่ควรรู้"],
+            ...(product.packages.length ? [["product-extras", "บริการเสริม"]] : []),
+            ["product-shop", "ร้านผู้ให้บริการ"],
+            ...(reviews.length ? [["product-reviews", "รีวิวร้าน"]] : []),
+          ].map(([id, label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-muted">{label}</a>)}
+        </nav>
+
+        <section id="product-cost" className="mt-6 scroll-mt-[calc(var(--site-header-h)+1rem)]">
+          <SectionTitle>ราคาและสิ่งที่ควรรู้</SectionTitle>
+          <ListGroup bare>
+            <ListRow title="ค่าตัวศาล" meta="ราคานี้ยังไม่รวมพิธีและบริการเสริม" trailing={<Price amount={product.price} />} />
+            <ListRow title="บริการเสริมเลือกได้" meta={product.packages.length ? "ดูรายการและราคาแยกด้านล่าง แล้วเลือกในขั้นตอนจอง" : "ร้านนี้ยังไม่มีรายการบริการเสริมให้เลือกในระบบ"} trailing={null} />
+            <ListRow title="ยืนยันรายละเอียดก่อนสั่ง" meta="สอบถามขนาด วัสดุ สิ่งที่รวมในราคา และค่าเดินทางหรือขนส่งกับร้าน" trailing={null} />
+          </ListGroup>
+        </section>
+
         <Rise i={3}>
           <dl className="mt-6 divide-y divide-border border-y border-border lg:mt-8">
             {[
@@ -210,13 +232,13 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         </Rise>
 
         {product.description ? (
-          <Reveal as="section">
+          <section id="product-description" className="scroll-mt-[calc(var(--site-header-h)+1rem)]"><Reveal>
             <SectionTitle>เกี่ยวกับศาลนี้</SectionTitle>
             <p className="max-w-3xl text-base leading-relaxed whitespace-pre-line">{product.description}</p>
-          </Reveal>
+          </Reveal></section>
         ) : null}
 
-        <Reveal as="section">
+        <section id="product-shop" className="scroll-mt-[calc(var(--site-header-h)+1rem)]"><Reveal>
           <SectionTitle>ร้านผู้ให้บริการ</SectionTitle>
           <ListGroup bare>
             <ListRow
@@ -240,7 +262,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
               }
             />
           </ListGroup>
-        </Reveal>
+        </Reveal></section>
 
         {shopPoint ? (
           <section id="shop-map" className="mt-3 scroll-mt-[calc(var(--site-header-h)+1rem)]">
@@ -261,18 +283,18 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
         ) : null}
 
         {product.packages.length > 0 ? (
-          <Reveal as="section">
+          <section id="product-extras" className="scroll-mt-[calc(var(--site-header-h)+1rem)]"><Reveal>
             <SectionTitle description="เลือกเพิ่มเติมได้ในขั้นตอนสั่งซื้อ">บริการเสริม</SectionTitle>
             <ListGroup bare>
               {product.packages.map((pkg) => (
                 <PackageRow key={pkg.id} pkg={pkg} />
               ))}
             </ListGroup>
-          </Reveal>
+          </Reveal></section>
         ) : null}
 
         {reviews.length > 0 ? (
-          <Reveal as="section">
+          <section id="product-reviews" className="scroll-mt-[calc(var(--site-header-h)+1rem)]"><Reveal>
             <SectionTitle
               action={
                 <Link
@@ -295,7 +317,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
                 <ReviewItem key={`${review.createdAt}-${index}`} review={review} />
               ))}
             </ul>
-          </Reveal>
+          </Reveal></section>
         ) : null}
 
         <Reveal className="mt-8 border-y border-border lg:mt-10">

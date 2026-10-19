@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { firstValue, pickCode } from "@/app/new/options";
 import { SavedRow } from "@/app/products/saved-products";
 import { listProducts } from "@/server/queries";
+import { BudgetForm } from "./budget-form";
 import { NearMe } from "./near-me";
 
 export const metadata: Metadata = { title: "เลือกดูศาล" };
@@ -149,6 +150,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
     listProducts({ sort: "newest" }),
   ]);
   const filters: Filters = { q, kind, area, max, sort, near: nearParam };
+  const browseQuery = browseHref(filters).split("?")[1] ?? "";
   const activeSort = sort ?? (near ? "nearest" : "price_asc");
   const hasFilter = Boolean(q || kind || area || max || near);
 
@@ -252,7 +254,8 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
                     </div>
                   </div>
                   <SheetGroup label="พื้นที่" options={areaOptions} index={1} />
-                  <SheetGroup label="ราคา" options={maxOptions} index={2} />
+                  <SheetGroup label="ราคาเฉพาะตัวศาล" options={maxOptions} index={2} />
+                  <BudgetForm query={browseQuery} current={max} id="budget-phone" />
                   <SheetGroup label="เรียงตาม" options={sortOptions} index={3} />
                   <div style={{ "--i": 4 } as React.CSSProperties} className="flex flex-col gap-2">
                     <BottomSheetClose className={cn(buttonVariants({ variant: "default", size: "xl" }), "w-full")}>
@@ -282,10 +285,11 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
                   className="mt-5 border-t border-border pt-5"
                 />
                 <FilterGroup
-                  label="ราคา"
+                  label="ราคาเฉพาะตัวศาล"
                   options={maxOptions}
                   className="mt-5 border-t border-border pt-5"
                 />
+                <BudgetForm query={browseQuery} current={max} id="budget-desktop" />
                 <div role="group" aria-label="ตำแหน่ง" className="mt-5 border-t border-border pt-5">
                   <p className="mb-2 text-base font-medium">ตำแหน่ง</p>
                   <NearMe variant="row" active={Boolean(near)} />
@@ -316,13 +320,13 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
             <p className="w-full text-sm text-muted-foreground">แสดงเฉพาะร้านที่ให้บริการถึงที่ของคุณ</p>
           ) : null}
           {activeFilters.length > 0 ? (
-            <ul className="hidden flex-wrap items-center gap-2 lg:flex">
+            <ul className="flex w-full flex-wrap items-center gap-2">
               {activeFilters.map((f) => (
                 <li key={f.label}>
                   <Link
                     href={f.href}
                     aria-label={`เอาตัวกรอง ${f.label} ออก`}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-foreground/20 pr-2.5 pl-4 text-base font-medium transition-colors hover:bg-muted"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-foreground/20 pr-2.5 pl-4 text-base font-medium transition-colors hover:bg-muted"
                   >
                     {f.label}
                     <X className="size-4" aria-hidden="true" />
@@ -353,11 +357,12 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
           </ChipRow>
         </div>
 
+        <p className="mb-5 text-sm text-muted-foreground">ราคาในรายการเป็นค่าตัวศาล ยังไม่รวมพิธีและบริการเสริม</p>
         {products.length === 0 ? (
           <EmptyState
             art="search"
             title="ไม่พบศาลที่ตรงกับเงื่อนไข"
-            description="ลองเปลี่ยนคำค้นหรือเลือกตัวกรองอื่น"
+            description="ลองเอาตัวกรองด้านบนออกทีละตัว เพื่อคงเงื่อนไขอื่นที่คุณเลือกไว้"
             action={
               <LinkButton href="/browse" variant="outline">
                 ล้างตัวกรอง
@@ -368,7 +373,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
           <CardGrid cols="products-side">
             {products.map((product) => (
               <Reveal as="li" key={product.id}>
-                <ProductCard product={product} near={nearParam} />
+                <ProductCard product={product} href={`/products/${product.id}?${new URLSearchParams({ ...(area ? { area } : {}), ...(nearParam ? { near: nearParam } : {}), from: browseHref(filters) })}`} />
               </Reveal>
             ))}
           </CardGrid>
