@@ -1,6 +1,14 @@
 # Deployment status
 
-## Current catalogue/product release — 20 October 2026
+## Current personal-list release — 20 October 2026
+
+- Source `8ff56ce`, handoff `d4c65ad`; image `saan:account-c62905be64aa`, config digest `sha256:fbd4c563bba4a47759e47176d7c19406029f5d0f15277fd8456824d9c7e69c46`. Vow search/status chips/grouped rows, consistent account recent orders and owner-scoped unread notifications. See [PERSONAL-LISTS.md](PERSONAL-LISTS.md).
+- Image-only rollout; rollback configuration `deployment.env.before-account-c62905be64aa`. No schema, payment, credential, notification-channel or backup-destination changes. App healthy; loopback/private HTTPS and worker heartbeat passed.
+- TypeScript, targeted ESLint and Docker production build passed. The older-unread/owner-isolation regression passed in isolated SQLite money-test.db and PostgreSQL saan_test on the final image. It creates 51 recent read records, one older unread and another owner's record, verifies no cross-account read or accidental marking, and cleans up its fixtures. Existing storage tracing warnings remain.
+- Browser checked private vow search `Saan 1910`, preserved search when selecting GRANTED, truthful filtered-empty state, reset to full own list, grouped vow row, account's recent orders and consistent unread count (4), and unread notification date grouping. No existing notifications were marked read and no app records were created or changed for QA.
+- Vow layout inspected in light/dark; original dark appearance restored. Proof: ignored `output/staging/vows-list-light.png`, `vows-list-dark.png`, `account-lists.png`, `notifications-unread.png`. Dedicated phone-width QA, truly new-account empty screens and reminder-day boundary UI remain unverified in this pass.
+
+## Historical catalogue/product release — 20 October 2026
 
 - Source `e0dc934`, documentation `377d5d8`; image `saan:catalog-5592117f4589`, config digest `sha256:87a4be55cc294c349e0a3987ac8346ced097a9b557dd952f65db62e94ec60018`. Custom browse budget, all-size removal chips, local search-return context and product price checklist/section navigation. See [CATALOG-EXPERIENCE.md](CATALOG-EXPERIENCE.md).
 - Image-only rollout, previous config retained as `deployment.env.before-catalog-5592117f4589`; no schema, credential, payment or backup-destination changes. App healthy; loopback/private HTTPS and worker heartbeat passed.
