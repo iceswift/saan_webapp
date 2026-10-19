@@ -1,5 +1,15 @@
 # Deployment status
 
+## Current customer design pass — 20 October 2026
+
+- Source `5e3e176`; image `saan:design-e94359bd8b30`, config digest `sha256:249eb9fe3492082d782dbe7ddd8c5c218fc1a2b53e8a67f0a18db262dfc6ab32`. Home agenda prioritization, private vow preview and customer order tabs. Scope: [DESIGN-REFRESH.md](DESIGN-REFRESH.md).
+- Image-only rollout; no schema migration, credential change or payment activation. Rollback environment: `deployment.env.before-design-e94359bd8b30`. App healthy, worker started, loopback and private HTTPS health both returned ok. Existing home-only backup summary remained successful (2026-10-19T15:43:02Z); no backup copied off the server.
+- TypeScript, targeted ESLint, two agenda tests and Docker production build passed. Existing storage tracing warnings and 12 npm high-severity audit findings remain; dependency remediation was outside this UI pass.
+- Browser checked on the existing synthetic customer order SN-459182: all three tabs, arrow-key focus plus Enter activation, message history, site/payment details and preservation of an unsent draft across tabs. Draft cleared without sending. Light/dark screenshots inspected; original system theme restored. Home private vow shortcut opened the expected owner record. Screenshot proof: ignored `output/staging/design-order-tabs.png` and `design-order-tabs-dark.png`. Dedicated phone-width validation remains for the next design pass.
+- Read-only financial audits unchanged: completed Omise payout SUCCEEDED, two payments, one linked shrine and one completion event; outstanding refund remains THB 30, refunded THB 0, case TEST_COMPLETED version 7 with eight audit events.
+
+Previous release evidence follows.
+
 ## Current vow-location release — 19 October 2026
 
 - Image **saan:vow-9ef4a8d52ba5**, config digest `sha256:87514aaecc5f6538332dcf44e72d10a0433f6eafac512093f237acccce017329`. Adds optional private map pins to vow creation and existing vow details, editing/removal, and user-initiated Google Maps directions. Runbook: [VOW-LOCATIONS.md](VOW-LOCATIONS.md).
