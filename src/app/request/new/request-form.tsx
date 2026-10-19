@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
+import { ProgressBar } from "@/components/progress-bar";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
 import { ExpandableMap } from "@/components/map/expandable-map";
 import { LocationPicker } from "@/components/map/location-picker";
@@ -17,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { AREAS, REQUEST_TYPES, SHRINE_KINDS, type AreaCode, type RequestType } from "@/lib/constants";
 import type { LatLng } from "@/lib/geo";
 import type { AddressDTO, ShrineDTO } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { createRequest } from "@/server/actions/customer";
 import { OptionCard } from "../option-card";
 
@@ -32,7 +32,7 @@ const TYPES: RequestType[] = ["REPAIR", "REMOVE"];
 type Errors = { description?: string; area?: string; address?: string };
 
 export function RequestForm({
-  type,
+  type: initialType,
   shrines,
   addresses,
 }: {
@@ -41,6 +41,16 @@ export function RequestForm({
   addresses: AddressDTO[];
 }) {
   const router = useRouter();
+  const [type, setType] = useState(initialType);
+  const [step, setStep] = useState(1);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(step);
+  useEffect(() => {
+    if (previousStep.current !== step) {
+      headingRef.current?.focus();
+      previousStep.current = step;
+    }
+  }, [step]);
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -78,15 +88,18 @@ export function RequestForm({
 
   function submit(e?: React.FormEvent) {
     e?.preventDefault();
+    if (pending) return;
     const next: Errors = {};
-    if (description.trim().length < 10) next.description = "อธิบายงานที่ต้องการอย่างน้อย 10 ตัวอักษร";
-    if (!area) next.area = "กรุณาเลือกพื้นที่";
-    if (address.trim().length < 5) next.address = "กรุณากรอกที่อยู่";
+    if ((step === 1 || step === 3) && description.trim().length < 10) next.description = "อธิบายงานที่ต้องการอย่างน้อย 10 ตัวอักษร";
+    if ((step === 2 || step === 3) && !area) next.area = "กรุณาเลือกพื้นที่";
+    if ((step === 2 || step === 3) && address.trim().length < 5) next.address = "กรุณากรอกที่อยู่";
     setErrors(next);
     if (Object.keys(next).length > 0) {
+      if (step === 3) setStep(next.description ? 1 : 2);
       requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
+    if (step < 3) { setStep(current => current + 1); return; }
     startTransition(async () => {
       const res = await createRequest({
         type,
@@ -105,17 +118,18 @@ export function RequestForm({
     });
   }
 
+  const actionLabel = step === 3 ? "ยืนยันส่งคำขอ" : step === 2 ? "ตรวจทานคำขอ" : "ถัดไป";
+  const navigation = <div className="flex w-full gap-3">
+    {step > 1 ? <Button type="button" variant="outline" size="xl" disabled={pending} onClick={() => { setErrors({}); setStep(current => current - 1); }}>ย้อนกลับ</Button> : null}
+    <Button type="submit" form="request-form" variant="gold" size="xl" className="flex-1" loading={pending}>{actionLabel}</Button>
+  </div>;
   const promise = "ส่งคำขอแล้วยังไม่ต้องจ่ายเงิน คุณเปรียบเทียบใบเสนอราคาและเลือกร้านเมื่อพร้อม";
 
   return (
     <AppShell
       width="full"
       desktopFooter="hide"
-      footer={
-        <Button type="submit" form="request-form" variant="gold" size="xl" className="w-full" loading={pending}>
-          ส่งคำขอ
-        </Button>
-      }
+      footer={navigation}
     >
       <PageHeader title="ขอใบเสนอราคา" backHref="/" backLabel="หน้าแรก" />
 
@@ -124,38 +138,21 @@ export function RequestForm({
         aside={
           <SidePanel>
             <p className="text-base">{promise}</p>
-            <Button
-              type="submit"
-              form="request-form"
-              variant="gold"
-              size="xl"
-              className="mt-5 hidden w-full lg:inline-flex"
-              loading={pending}
-            >
-              ส่งคำขอ
-            </Button>
+            <div className="mt-5 hidden lg:block">{navigation}</div>
           </SidePanel>
         }
       >
+        <ProgressBar value={step} max={3} label={["รายละเอียดงาน", "สถานที่", "ตรวจทาน"][step - 1]} className="mb-6" />
+        <h2 ref={headingRef} tabIndex={-1} className="mb-5 font-display text-xl font-medium outline-none">{["บอกงานที่ต้องการ", "เลือกสถานที่ให้ร้านเข้างาน", "ตรวจทานก่อนส่ง"][step - 1]}</h2>
         <form id="request-form" ref={formRef} onSubmit={submit} noValidate className="flex flex-col">
+          <div hidden={step !== 1} className="step-slide" data-dir="next">
           <fieldset>
             <legend className="sr-only">ประเภทงาน</legend>
             <div className="grid grid-cols-2 gap-3">
               {TYPES.map((code) => (
-                <Link
-                  key={code}
-                  href={`/request/new?type=${code}`}
-                  replace
-                  scroll={false}
-                  aria-current={type === code ? "true" : undefined}
-                  className={cn(
-                    "surface flex min-h-18 items-center gap-3 p-3 text-base font-medium transition-colors hover:bg-muted",
-                    type === code && "border-primary",
-                  )}
-                >
-                  <ThumbArt service={TYPE_ART[code]} size="sm" />
-                  <span className="min-w-0 flex-1 leading-snug">{REQUEST_TYPES[code]}</span>
-                </Link>
+                <OptionCard key={code} selected={type === code}
+                  onSelect={() => setType(code)} title={REQUEST_TYPES[code]}
+                  leading={<ThumbArt service={TYPE_ART[code]} size="sm" />} />
               ))}
             </div>
           </fieldset>
@@ -185,7 +182,31 @@ export function RequestForm({
             เล่าสภาพศาลและสิ่งที่อยากให้ทำ
           </FieldHint>
 
-          <SectionTitle className="mt-8 lg:mt-10">สถานที่</SectionTitle>
+          </div>
+          <div hidden={step !== 2} className="step-slide" data-dir="next">
+          {shrines.length > 0 ? (
+            <>
+              <SectionTitle className="mt-8 lg:mt-10">เกี่ยวกับศาลไหน</SectionTitle>
+              <fieldset>
+                <legend className="sr-only">เกี่ยวกับศาลไหน</legend>
+                <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2">
+                  {shrines.map((shrine) => (
+                    <OptionCard
+                      key={shrine.id}
+                      selected={shrineId === shrine.id}
+                      onSelect={() => pickShrine(shrine)}
+                      leading={<ThumbArt kind={shrine.kind} src={shrine.photoUrl} size="sm" />}
+                      title={shrine.name}
+                      description={SHRINE_KINDS[shrine.kind]}
+                    />
+                  ))}
+                  <OptionCard selected={shrineId === null} onSelect={() => setShrineId(null)} title="ไม่ระบุ" />
+                </div>
+              </fieldset>
+            </>
+          ) : null}
+
+          <SectionTitle className="sr-only">สถานที่</SectionTitle>
           {addresses.length > 0 ? (
             <div className="mb-6 flex flex-col gap-3 lg:grid lg:grid-cols-2">
               {addresses.map((saved) => (
@@ -250,27 +271,24 @@ export function RequestForm({
             <LocationPicker value={geo} onChange={setGeo} />
           </ExpandableMap>
 
-          {shrines.length > 0 ? (
-            <>
-              <SectionTitle className="mt-8 lg:mt-10">เกี่ยวกับศาลไหน</SectionTitle>
-              <fieldset>
-                <legend className="sr-only">เกี่ยวกับศาลไหน</legend>
-                <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2">
-                  {shrines.map((shrine) => (
-                    <OptionCard
-                      key={shrine.id}
-                      selected={shrineId === shrine.id}
-                      onSelect={() => pickShrine(shrine)}
-                      leading={<ThumbArt kind={shrine.kind} src={shrine.photoUrl} size="sm" />}
-                      title={shrine.name}
-                      description={SHRINE_KINDS[shrine.kind]}
-                    />
-                  ))}
-                  <OptionCard selected={shrineId === null} onSelect={() => setShrineId(null)} title="ไม่ระบุ" />
-                </div>
-              </fieldset>
-            </>
-          ) : null}
+          </div>
+          {step === 3 ? <section aria-label="สรุปคำขอ" className="step-slide space-y-5" data-dir="next">
+            <dl className="divide-y divide-border border-y border-border">
+              {[
+                ["ประเภทงาน", REQUEST_TYPES[type]],
+                ["รายละเอียด", description],
+                ["พื้นที่", area ? AREAS[area] : ""],
+                ["ที่อยู่", address],
+                ["ศาลที่เกี่ยวข้อง", shrines.find(shrine => shrine.id === shrineId)?.name ?? "ไม่ระบุ"],
+                ["รูปประกอบ", photoUrls.length ? `${photoUrls.length} รูป` : "ไม่ได้แนบรูป"],
+                ["พิกัด", geo ? "ปักหมุดแล้ว" : "ไม่ได้ปักหมุด"],
+              ].map(([label, value]) => <div key={label} className="py-4">
+                <dt className="text-sm text-muted-foreground">{label}</dt>
+                <dd className="mt-1 whitespace-pre-wrap break-words text-base">{value}</dd>
+              </div>)}
+            </dl>
+            <p className="text-sm text-muted-foreground">ตรวจที่อยู่และรายละเอียดให้ถูกต้อง หากต้องการแก้ไข กดย้อนกลับ ข้อมูลที่กรอกจะยังอยู่</p>
+          </section> : null}
 
           <p className="mt-8 text-base text-muted-foreground lg:hidden">{promise}</p>
         </form>

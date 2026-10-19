@@ -7,6 +7,8 @@ import { ChevronLeft } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { ProgressBar } from "@/components/progress-bar";
 import { StepSlide } from "@/components/step-slide";
+import { Button } from "@/components/ui/button";
+import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
 import { KindArt } from "@/components/visuals";
 import {
   AREAS,
@@ -57,6 +59,8 @@ export function NewWizard() {
   const [answers, setAnswers] = useState<Answers>({});
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousStep = useRef(step);
+  const choicesRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
     if (previousStep.current !== step) {
@@ -77,6 +81,7 @@ export function NewWizard() {
   }
 
   function back() {
+    setError(undefined);
     setStep((s) => Math.max(1, s - 1));
   }
 
@@ -92,7 +97,7 @@ export function NewWizard() {
       selected: answers.place === code,
       onSelect: () => {
         setAnswers((a) => ({ ...a, place: code }));
-        setStep(2);
+        setError(undefined);
       },
     }));
   } else if (step === 2) {
@@ -105,7 +110,7 @@ export function NewWizard() {
         selected: answers.kind === code,
         onSelect: () => {
           setAnswers((a) => ({ ...a, kind: code }));
-          setStep(3);
+          setError(undefined);
         },
       })),
       {
@@ -114,7 +119,7 @@ export function NewWizard() {
         selected: answers.kind === null,
         onSelect: () => {
           setAnswers((a) => ({ ...a, kind: null }));
-          setStep(3);
+          setError(undefined);
         },
       },
     ];
@@ -127,7 +132,7 @@ export function NewWizard() {
       selected: answers.budget === o.value,
       onSelect: () => {
         setAnswers((a) => ({ ...a, budget: o.value }));
-        setStep(4);
+        setError(undefined);
       },
     }));
   } else {
@@ -139,13 +144,29 @@ export function NewWizard() {
       selected: answers.area === code,
       onSelect: () => {
         setAnswers((a) => ({ ...a, area: code }));
-        goToProducts({ ...answers, area: code });
+        setError(undefined);
       },
     }));
   }
 
+  function next() {
+    const selected = [answers.place, answers.kind, answers.budget, answers.area][step - 1];
+    if (selected === undefined) {
+      setError("กรุณาเลือกคำตอบก่อนดำเนินการต่อ");
+      requestAnimationFrame(() => focusFirstInvalid(choicesRef.current));
+      return;
+    }
+    setError(undefined);
+    if (step === TOTAL_STEPS && answers.area) goToProducts({ ...answers, area: answers.area });
+    else setStep(current => current + 1);
+  }
+
+  const nextButton = <Button variant="gold" size="xl" className="w-full" onClick={next}>
+    {step === TOTAL_STEPS ? "ดูศาลที่ตรงกับคุณ" : "ถัดไป"}
+  </Button>;
+
   return (
-    <AppShell width="narrow">
+    <AppShell width="narrow" desktopFooter="hide" footer={nextButton}>
       <div className="flex items-center gap-3 lg:-ml-2 lg:flex-col lg:items-stretch lg:gap-4">
         {step === 1 ? (
           <Link href="/" aria-label="ย้อนกลับ" className={BACK_CLASS}>
@@ -186,7 +207,7 @@ export function NewWizard() {
         </h1>
         {helper ? <p className="mt-2 text-base text-muted-foreground">{helper}</p> : null}
 
-        <div role="group" aria-labelledby="wizard-question" className="mt-6 flex flex-col gap-3 lg:mt-8">
+        <div ref={choicesRef}><fieldset aria-labelledby="wizard-question" aria-invalid={Boolean(error)} aria-describedby="wizard-hint" tabIndex={-1} className="mt-6 flex flex-col gap-3 lg:mt-8">
           {choices.map((choice) => (
             <ChoiceCard
               key={choice.key}
@@ -206,11 +227,11 @@ export function NewWizard() {
               className={choice.kind ? "min-h-20" : "min-h-16"}
             />
           ))}
-        </div>
+        </fieldset>
 
-        {step === 1 ? (
-          <p className="mt-6 text-sm text-muted-foreground">เลือกคำตอบเพื่อไปต่อ ยังไม่มีการจ่ายเงิน</p>
-        ) : null}
+        <FieldHint id="wizard-hint" error={error}>เลือกคำตอบแล้วกด{step === TOTAL_STEPS ? "ดูศาลที่ตรงกับคุณ" : "ถัดไป"} ยังไม่มีการจ่ายเงิน</FieldHint>
+        </div>
+        <div className="mt-6 hidden lg:block">{nextButton}</div>
       </StepSlide>
     </AppShell>
   );
