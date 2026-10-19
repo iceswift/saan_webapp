@@ -24,6 +24,7 @@ import {
   ReviewForm,
 } from "./order-actions";
 import { OrderChat } from "./order-chat";
+import { AppointmentTools } from "./appointment-tools";
 import {
   MoneyRows,
   OrderDetails,
@@ -167,6 +168,13 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
                 </div>
               ) : null}
             </LiveStatusLine>
+            {order.scheduledAt && ["CONFIRMED", "DONE", "COMPLETED"].includes(order.status) ? <AppointmentTools orderId={order.id} summary={[
+              `${order.title} · ${order.code}`,
+              `นัด ${formatWhen(order.scheduledAt)}`,
+              `ร้าน ${order.provider.name}`,
+              `สถานที่ ${order.address}`,
+              "โปรดตรวจวันนัดล่าสุดใน Saan หากมีการเลื่อนหรือยกเลิก",
+            ].join("\n")} /> : null}
           </Rise>
 
           {hasAction || order.status === "AWAITING_PROVIDER" ? (

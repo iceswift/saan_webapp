@@ -1,6 +1,16 @@
 # Deployment status
 
-## Current operations release — 19 October 2026
+## Current appointment-tools release — 19 October 2026
+
+- Image `saan:appointment-ceb8db6d9b8f`, config digest `sha256:ad117f0d79a5a6c471b07bdfddf2c77b6ac85117b3bc4d2f85a1be1a6f45aff9`. Adds customer calendar download and copyable appointment summary, documented in [APPOINTMENT-TOOLS.md](APPOINTMENT-TOOLS.md). Existing operations/backup/payment safeguards retained. No new dependencies or migrations.
+- Three calendar tests, TypeScript, targeted ESLint and production build passed. Tests cover UTC conversion, Thai UTF-8 folding, escaped text, stable event UID and invalid dates.
+- Deployed-route checks passed: owner 200, anonymous 401, other synthetic shop 404, cancelled appointment 409; calendar time matches the stored UTC appointment, line byte limits pass and response is private/no-store. Temporary synthetic test sessions were removed after verification.
+- Customer browser verified on completed scheduled order SN-459182: calendar download and summary-copy success, both themes. Private order-page ownership also rejected access to another test account’s order. Native calendar import across real device apps remains unverified. Screenshots are in ignored `output/staging/appointment-tools-{light,dark}.png`.
+- After app/worker replacement, health passed; original Omise payout and refund obligation audits remained unchanged. No real financial action or external share was performed.
+- Pre-deployment home-only backup `/home/ice/saan/backups/scheduled/20261019T150455Z-2782128` completed with verified checksums and app/worker restart. Image-only rollback configuration: `deployment.env.before-appointment-ceb8db6d9b8f`. Backup schedule, destinations, flags and credentials unchanged.
+
+
+## Historical operations release — 19 October 2026
 
 - Current image **saan:operations-1e62e28a6058**, config digest `sha256:66fad6f85bf56407eb07f59b5b77e4f500d73206a3f6af712a31fddff81ee097`. Includes payout reconciliation fairness from 359b4a5 and the new admin monitor. Production build, TypeScript, targeted ESLint and 46 final-image PostgreSQL tests passed. Existing 59 SQLite fairness regressions passed in the preceding source follow-up; this release also passed 14 provider/endpoint tests, the health-state unit test and isolated Linux backup-retention/failure checks. No new database migration.
 - `/admin/operations` browser verified in both themes with healthy worker/backup timestamps and the outstanding THB 30 refund. Finance page links to it. Anonymous streamed response redirects to login without financial order data; unauthenticated worker POST returns 401. No external notifications configured.
