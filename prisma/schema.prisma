@@ -357,6 +357,8 @@ model Vow {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   place     String
+  lat       Float?
+  lng       Float?
   wish      String   @default("")
   promise   String
   status    String   @default("WAITING") // WAITING | GRANTED | FULFILLED

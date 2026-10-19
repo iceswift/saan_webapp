@@ -16,6 +16,7 @@ import {
 } from "../action-utils";
 import { fail, ok, type ActionResult } from "@/lib/result";
 import { AREA_CODES, DEPOSIT_RATE, REQUEST_TYPES, SHRINE_KIND_CODES } from "@/lib/constants";
+import { saveOwnedVowLocation } from "../vow-location";
 
 // ---------- คำขอใบเสนอราคา (ถอน ย้าย ซ่อม) ----------
 
@@ -205,6 +206,7 @@ export async function deleteShrine(input: { shrineId: string }): Promise<ActionR
 // ---------- สมุดบน ----------
 
 const vowSchema = z.object({
+  location: geoSchema.nullable().optional(),
   place: z.string().trim().min(1, "กรอกว่าบนไว้กับใคร ที่ไหน").max(200),
   wish: z.string().trim().max(500).optional(),
   promise: z.string().trim().min(1, "กรอกสิ่งที่สัญญาว่าจะถวาย").max(500),
@@ -215,6 +217,7 @@ const vowSchema = z.object({
 });
 
 export async function createVow(input: {
+  location?: { lat: number; lng: number } | null;
   place: string;
   wish?: string;
   promise: string;
@@ -231,6 +234,8 @@ export async function createVow(input: {
     data: {
       userId: user.id,
       place: data.place,
+      lat: data.location ? Math.round(data.location.lat * 1e6) / 1e6 : null,
+      lng: data.location ? Math.round(data.location.lng * 1e6) / 1e6 : null,
       wish: data.wish ?? "",
       promise: data.promise,
       remindAt: data.remindAt ? new Date(`${data.remindAt}T12:00:00+07:00`) : null,
@@ -239,6 +244,14 @@ export async function createVow(input: {
 
   refreshAll();
   return ok({ vowId: vow.id });
+}
+
+export async function setVowLocation(input: { vowId: string; location: { lat: number; lng: number } | null }): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return NOT_LOGGED_IN;
+  const result = await saveOwnedVowLocation(user.id, input);
+  if (result.ok) refreshAll();
+  return result;
 }
 
 /** เปลี่ยนสถานะการบน: WAITING รอผล, GRANTED สมหวังแล้ว, FULFILLED แก้บนแล้ว */

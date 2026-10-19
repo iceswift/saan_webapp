@@ -9,6 +9,7 @@ import { getMyVow } from "@/server/queries";
 import { VowStamp } from "../vow-stamp";
 import { VowActions, VowDeleteButton } from "./vow-actions";
 import { VowReminder } from "./vow-reminder";
+import { VowLocation } from "./vow-location";
 
 export const metadata: Metadata = { title: "รายการบน" };
 
@@ -54,6 +55,8 @@ export default async function VowPage({ params }: PageProps<"/vows/[id]">) {
           </div>
         </dl>
       </Rise>
+
+      <VowLocation vowId={vow.id} location={vow.location} />
 
       <Rise i={1}>
         <div className="mt-10">

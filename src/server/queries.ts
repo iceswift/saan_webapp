@@ -387,6 +387,8 @@ export async function getMyRequest(requestId: string, userId: string): Promise<R
 function toVow(v: {
   id: string;
   place: string;
+  lat: number | null;
+  lng: number | null;
   wish: string;
   promise: string;
   status: string;
@@ -397,6 +399,7 @@ function toVow(v: {
   return {
     id: v.id,
     place: v.place,
+    location: v.lat !== null && v.lng !== null ? { lat: v.lat, lng: v.lng } : null,
     wish: v.wish,
     promise: v.promise,
     status: v.status as VowStatus,

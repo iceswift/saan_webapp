@@ -186,6 +186,7 @@ export type ProviderRequest = RequestSummary & {
 export type VowDTO = {
   id: string;
   place: string;
+  location: { lat: number; lng: number } | null;
   wish: string;
   promise: string;
   status: VowStatus;

@@ -1,6 +1,16 @@
 # Deployment status
 
-## Current appointment-tools release — 19 October 2026
+## Current vow-location release — 19 October 2026
+
+- Image **saan:vow-9ef4a8d52ba5**, config digest `sha256:87514aaecc5f6538332dcf44e72d10a0433f6eafac512093f237acccce017329`. Adds optional private map pins to vow creation and existing vow details, editing/removal, and user-initiated Google Maps directions. Runbook: [VOW-LOCATIONS.md](VOW-LOCATIONS.md).
+- Migration `20261019010000_vow_location` applied after home-only backup `/home/ice/saan/backups/scheduled/20261019T153605Z-2792791`. Adds nullable Vow lat/lng with an enforced pair/bounds constraint. No automatic geocoding of old records. Image-only rollback config: `deployment.env.before-vow-9ef4a8d52ba5`; retain nullable columns and data during rollback.
+- 61 SQLite and 48 final-image PostgreSQL integration tests passed. Explicit PostgreSQL probes rejected partial and out-of-bounds pins in saan_test. TypeScript, targeted ESLint, schema synchronization and production build passed. New tests verify owner-only reads/updates, legacy null pins, coordinate validation/rounding and clearing without loss of vow text.
+- Compact-layout browser QA created one explicitly synthetic vow `cmvff8t8n0001ph01wvt3ggr0` (ศาลทดสอบแผนที่ Saan 1910), placed the map-center pin by keyboard without GPS, saved, opened the map, cleared the pin, added it back and reloaded. Independent DB audit confirmed owner and rounded coordinates 13.756393,100.5019; text retained. Directions URL matches those coordinates; no external navigation was performed. Both themes checked and original system theme restored. Screenshots: ignored `output/staging/vow-map-mobile.png` and `vow-map-dark.png`.
+- Post-migration/pin backup `/home/ice/saan/backups/scheduled/20261019T154250Z-2798240` passed checksums. Restored into new isolated project `saan-restore-vow-20261019`, loopback 3104, no gateway credentials or worker, mutations disabled. Health passed; all checked source/restore counts, full financial journals, payout snapshots, Vow IDs/coordinates and both upload hashes matched. One Vow restored. Drill containers stopped and files retained on home server only.
+- App/worker healthy after deployment and backup restart. Original Omise payout and THB 30 outstanding refund audits unchanged. Existing backup schedule, credentials, private access and live-payment gates unchanged. Previous sections below are historical release evidence.
+
+
+## Historical appointment-tools release — 19 October 2026
 
 - Image `saan:appointment-ceb8db6d9b8f`, config digest `sha256:ad117f0d79a5a6c471b07bdfddf2c77b6ac85117b3bc4d2f85a1be1a6f45aff9`. Adds customer calendar download and copyable appointment summary, documented in [APPOINTMENT-TOOLS.md](APPOINTMENT-TOOLS.md). Existing operations/backup/payment safeguards retained. No new dependencies or migrations.
 - Three calendar tests, TypeScript, targeted ESLint and production build passed. Tests cover UTC conversion, Thai UTF-8 folding, escaped text, stable event UID and invalid dates.

@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createVow } from "@/server/actions/customer";
+import { ExpandableMap } from "@/components/map/expandable-map";
+import { LocationPicker } from "@/components/map/location-picker";
+import type { LatLng } from "@/lib/geo";
 
 /** minRemindAt คือวันเตือนที่เร็วที่สุด (YYYY-MM-DD) คำนวณบนเซิร์ฟเวอร์ */
 export function VowForm({ minRemindAt }: { minRemindAt: string }) {
@@ -18,6 +21,7 @@ export function VowForm({ minRemindAt }: { minRemindAt: string }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [place, setPlace] = useState("");
+  const [location, setLocation] = useState<LatLng | null>(null);
   const [wish, setWish] = useState("");
   const [promise, setPromise] = useState("");
   const [remindAt, setRemindAt] = useState("");
@@ -36,6 +40,7 @@ export function VowForm({ minRemindAt }: { minRemindAt: string }) {
     startTransition(async () => {
       const res = await createVow({
         place,
+        location,
         wish: wish.trim() || undefined,
         promise,
         remindAt: remindAt || undefined,
@@ -77,6 +82,10 @@ export function VowForm({ minRemindAt }: { minRemindAt: string }) {
             aria-describedby="place-hint"
           />
           <FieldHint id="place-hint" error={errors.place} />
+          <ExpandableMap className="mt-4" hasPin={Boolean(location)} title="ปักหมุดสถานที่บน (ไม่บังคับ)" hint="จำตำแหน่งไว้เปิดเส้นทางเมื่อกลับมาแก้บน">
+            <LocationPicker value={location} onChange={setLocation} />
+            <p className="mt-3 text-sm text-muted-foreground">พิกัดบันทึกไว้ในสมุดส่วนตัว แยกจากชื่อสถานที่ด้านบน ไม่ต้องใช้ตำแหน่งปัจจุบันก็ปักหมุดได้</p>
+          </ExpandableMap>
         </div>
 
         <div>
