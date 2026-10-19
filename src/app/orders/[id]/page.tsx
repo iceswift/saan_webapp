@@ -23,6 +23,7 @@ import {
   PayDepositPanel,
   ReviewForm,
 } from "./order-actions";
+import { OrderWorkspace } from "./order-workspace";
 import { OrderChat } from "./order-chat";
 import { AppointmentTools } from "./appointment-tools";
 import {
@@ -183,6 +184,15 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
             </div>
           ) : null}
 
+          {refundCases.length ? <section>
+            <SectionTitle>ติดตามเคสคืนเงินทดสอบ</SectionTitle>
+            <p className="text-sm text-muted-foreground">เป็นการทดสอบขั้นตอนเท่านั้น ยังไม่มีการคืนเงินจริง ยอดชำระเดิมยังคงเดิม</p>
+            <ul className="mt-3 divide-y divide-border">{refundCases.map(entry => <li key={entry.id} className="py-3 text-base">{formatBaht(entry.amountMinor / 100)} · {REFUND_CASE_LABELS[entry.status] ?? "รอตรวจสอบ"}</li>)}</ul>
+          </section> : null}
+
+          <OrderWorkspace
+            messageCount={order.messages.length}
+            overview={<>
           {order.review ? (
             <section>
               <SectionTitle>รีวิวของคุณ</SectionTitle>
@@ -200,12 +210,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
           </section>
 
           <OrderItems order={order} />
-          {refundCases.length ? <section>
-            <SectionTitle>ติดตามเคสคืนเงินทดสอบ</SectionTitle>
-            <p className="text-sm text-muted-foreground">เป็นการทดสอบขั้นตอนเท่านั้น ยังไม่มีการคืนเงินจริง ยอดชำระเดิมยังคงเดิม</p>
-            <ul className="mt-3 divide-y divide-border">{refundCases.map(entry => <li key={entry.id} className="py-3 text-base">{formatBaht(entry.amountMinor / 100)} · {REFUND_CASE_LABELS[entry.status] ?? "รอตรวจสอบ"}</li>)}</ul>
-          </section> : null}
-
+            </>}
+            messages={
           <OrderChat
             orderId={order.id}
             messages={order.messages}
@@ -213,9 +219,12 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
             counterpartLabel="ร้าน"
             quickReplies={QUICK_REPLIES}
           />
-
-          <OrderDetails order={order} />
-          <OrderPayments payments={order.payments} />
+            }
+            details={<>
+              <OrderDetails order={order} />
+              <OrderPayments payments={order.payments} />
+            </>}
+          />
         </TwoColumn>
       </OrderLive>
     </AppShell>

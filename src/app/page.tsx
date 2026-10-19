@@ -19,12 +19,13 @@ import { HomeSkeleton } from "@/components/skeletons";
 import { TextLink } from "@/components/text-link";
 import { TrustNote } from "@/components/trust-note";
 import { ServiceArt, ThumbArt, type ServiceArtName } from "@/components/visuals";
-import { type OrderType } from "@/lib/constants";
+import { VOW_STATUS, type OrderType } from "@/lib/constants";
 import { formatBaht, formatShortDate } from "@/lib/format";
 import type { OrderSummary } from "@/lib/types";
+import { homeAgenda } from "@/lib/home-agenda";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/server/auth";
-import { listMyOrders, listMyShrines, listProducts } from "@/server/queries";
+import { listMyOrders, listMyShrines, listMyVows, listProducts } from "@/server/queries";
 
 const SERVICES: { title: string; description: string; href: string; art: ServiceArtName }[] = [
   {
@@ -132,12 +133,16 @@ export default function HomePage() {
 async function HomeContent() {
   const user = await getCurrentUser();
   const heroSeen = (await cookies()).get(HERO_SEEN_COOKIE)?.value === "1";
-  const [orders, shrines, products] = await Promise.all([
+  const [orders, shrines, products, vows] = await Promise.all([
     user ? listMyOrders(user.id) : Promise.resolve([] as OrderSummary[]),
     user ? listMyShrines(user.id) : Promise.resolve([]),
     listProducts({ sort: "newest" }),
+    user ? listMyVows(user.id) : Promise.resolve([]),
   ]);
-  const ongoing = orders.filter((o) => o.status !== "COMPLETED" && o.status !== "CANCELLED").slice(0, 3);
+  const agenda = homeAgenda(orders);
+  const ongoing = agenda.slice(0, 3);
+  const openVows = vows.filter(vow => vow.status !== "FULFILLED");
+  const vowPreview = [...openVows].sort((a, b) => Number(b.status === "GRANTED") - Number(a.status === "GRANTED") || (a.remindAt ?? "9999").localeCompare(b.remindAt ?? "9999")).slice(0, 2);
   const newest = products.slice(0, 6);
   // ตัวเลขจริงจากข้อมูลที่หน้านี้อ่านอยู่แล้ว (listProducts คืนเฉพาะศาลที่เปิดขายของร้านที่ตรวจสอบแล้ว) ร้านน้อยกว่า 2 ร้านไม่แสดงเพราะดูเหมือนโอ้อวด
   const shopCount = new Set(products.map((p) => p.provider.id)).size;
@@ -170,7 +175,7 @@ async function HomeContent() {
             <Heading
               title={user?.name ? `งานของคุณ ${user.name}` : "งานของคุณ"}
               className="mb-4 lg:mb-5"
-              action={<TextLink href="/orders">ดูทั้งหมด</TextLink>}
+              action={<TextLink href="/orders">ทั้งหมด {agenda.length} งาน</TextLink>}
             />
             <ListGroup className="stagger-rise">
               {ongoing.map((order) => {
@@ -337,7 +342,7 @@ async function HomeContent() {
       <Reveal as="section" className="mt-14 border-t border-border pt-10 lg:mt-24 lg:pt-16">
         <div className="lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center lg:gap-16">
           <div>
-            <Heading title="จดสิ่งที่บนไว้ จะได้ไม่ลืมแก้บน" />
+            <Heading title={vowPreview.length ? "สมุดบนของคุณ" : "จดสิ่งที่บนไว้ จะได้ไม่ลืมแก้บน"} />
             <p className="mt-3 max-w-lg text-base text-muted-foreground">
               บันทึกสถานที่ สิ่งที่ขอ และสิ่งที่สัญญาไว้ แล้วตั้งเตือนในแอปเมื่อใกล้วันแก้บน
               สมุดนี้เป็นเพียงที่จดบันทึกของคุณ ไม่ได้รับรองผลของการบน
@@ -346,7 +351,14 @@ async function HomeContent() {
               <TextLink href="/vows">เปิดสมุดบน</TextLink>
             </div>
           </div>
-          <ServiceArt name="vow" className="mt-8 size-44 lg:mt-0 lg:ml-auto lg:size-64" />
+          {vowPreview.length ? (
+            <ListGroup bare label="บันทึกที่ยังไม่แก้บน" className="mt-8 lg:mt-0">
+              {vowPreview.map(vow => <ListRow key={vow.id} href={`/vows/${vow.id}`}
+                thumb={<ThumbArt service="vow" size="sm" />}
+                title={vow.place}
+                meta={`${VOW_STATUS[vow.status]}${vow.remindAt ? ` · เตือน ${formatShortDate(vow.remindAt)}` : ""}`} />)}
+            </ListGroup>
+          ) : <ServiceArt name="vow" className="mt-8 size-44 lg:mt-0 lg:ml-auto lg:size-64" />}
         </div>
       </Reveal>
 
