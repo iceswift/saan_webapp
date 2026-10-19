@@ -118,7 +118,7 @@ export function EmptyState({
 /**
  * รูปสินค้าหรือรูปศาล: มีรูปถ่ายใช้รูปถ่าย ไม่มีก็แสดงฉากศาลตามประเภท (kind) และเปลี่ยนโทนตาม seed (รหัสสินค้า)
  * ใส่ group/card ที่การ์ดแม่เพื่อให้รูปขยายเบา ๆ ตอนโฮเวอร์ (อยู่ในกรอบที่ตัดขอบไว้)
- * - arch: ยอดโค้งแบบซุ้มประตูศาล (ใช้กับรูปหลักหน้าสินค้าและภาพเด่นหน้าแรก ไม่ใช้กับการ์ดรายการ) ตั้งรัศมีด้วย [--arch-r:7rem]
+ * - arch: ยอดโค้งแบบซุ้มประตูศาล (ใช้กับรูปหลักหน้าสินค้า ไม่ใช้กับการ์ดรายการ) ต้องกว้างกว่า 14rem จึงจะโค้งเต็ม
  * - flush: ไม่มีมุมมนของตัวรูปเอง (ใช้เมื่อการ์ดแม่ตัดมุมให้แล้ว รูปชิดขอบการ์ด)
  * - showCaption: ป้าย "ภาพประกอบ" มุมล่าง เฉพาะเมื่อเป็นภาพวาด (ไม่มี src) ใช้กับรูปใหญ่ เพื่อไม่ให้เข้าใจว่าเป็นรูปถ่ายสินค้า
  */
@@ -159,7 +159,7 @@ export function ShrineImage({
         )}
       </div>
       {!src && showCaption ? (
-        <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1 text-sm whitespace-nowrap text-muted-foreground">
+        <span className="absolute bottom-3 left-3 rounded-full border border-border bg-background px-3 py-1 text-sm text-muted-foreground">
           ภาพประกอบ
         </span>
       ) : null}
