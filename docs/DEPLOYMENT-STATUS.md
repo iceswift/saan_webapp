@@ -1,6 +1,15 @@
 # Deployment status
 
-## Current customer design pass — 20 October 2026
+## Current booking/request form release — 20 October 2026
+
+- Source `b64e1da` (handoff documentation `fb83583`); image `saan:forms-8981b69d0362`, config digest `sha256:f8668f007a318081a22f943ef9a18ab5f16f83f447bca668b14b4f8f0cf50749`. Explicit next actions in the shrine-selection wizard and three-stage quote requests. See [FORM-EXPERIENCE.md](FORM-EXPERIENCE.md).
+- Image-only rollout with previous environment retained as `deployment.env.before-forms-8981b69d0362`. No schema migration, payment configuration change or external backup transfer. App health, private HTTPS and worker heartbeat passed after rollout.
+- TypeScript, targeted ESLint and Docker production build passed. Existing dynamic storage tracing warnings remain. No new packages or shared-component changes.
+- Browser shrine-selection flow: empty-answer validation and focus, selection without auto-navigation, unsure shrine type and unlimited budget, final BKK/HOME product results with no kind/max filters. No order or payment created by this flow.
+- Browser request flow: missing description, area and address errors; switching repair/removal retained description; selecting the existing synthetic shrine filled empty site fields; review matched inputs; back to site and details retained answers. One final confirmation created synthetic REPAIR request `cmvfjn0xr0001jz01qo4bucxz` with description beginning `ทดสอบฟอร์มสามขั้น Saan 2010` and the synthetic Bangkok address. It remains open for QA, with no quotes or payment. No real job is requested.
+- Review screenshots inspected in both themes; original dark appearance restored. Proof in ignored `output/staging/request-review-light.png`, `request-review-dark.png` and `request-created.png`. This pass did not retest image upload, map pin interactions, or dedicated phone-width layout; those existing controls remain mounted between request steps.
+
+## Historical customer design pass — 20 October 2026
 
 - Source `5e3e176`; image `saan:design-e94359bd8b30`, config digest `sha256:249eb9fe3492082d782dbe7ddd8c5c218fc1a2b53e8a67f0a18db262dfc6ab32`. Home agenda prioritization, private vow preview and customer order tabs. Scope: [DESIGN-REFRESH.md](DESIGN-REFRESH.md).
 - Image-only rollout; no schema migration, credential change or payment activation. Rollback environment: `deployment.env.before-design-e94359bd8b30`. App healthy, worker started, loopback and private HTTPS health both returned ok. Existing home-only backup summary remained successful (2026-10-19T15:43:02Z); no backup copied off the server.
