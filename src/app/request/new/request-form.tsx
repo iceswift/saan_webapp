@@ -43,6 +43,7 @@ export function RequestForm({
   const router = useRouter();
   const [type, setType] = useState(initialType);
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState<"next" | "back">("next");
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousStep = useRef(step);
   useEffect(() => {
@@ -95,11 +96,11 @@ export function RequestForm({
     if ((step === 2 || step === 3) && address.trim().length < 5) next.address = "กรุณากรอกที่อยู่";
     setErrors(next);
     if (Object.keys(next).length > 0) {
-      if (step === 3) setStep(next.description ? 1 : 2);
+      if (step === 3) { setDirection("back"); setStep(next.description ? 1 : 2); }
       requestAnimationFrame(() => focusFirstInvalid(formRef.current));
       return;
     }
-    if (step < 3) { setStep(current => current + 1); return; }
+    if (step < 3) { setDirection("next"); setStep(current => current + 1); return; }
     startTransition(async () => {
       const res = await createRequest({
         type,
@@ -120,7 +121,7 @@ export function RequestForm({
 
   const actionLabel = step === 3 ? "ยืนยันส่งคำขอ" : step === 2 ? "ตรวจทานคำขอ" : "ถัดไป";
   const navigation = <div className="flex w-full gap-3">
-    {step > 1 ? <Button type="button" variant="outline" size="xl" disabled={pending} onClick={() => { setErrors({}); setStep(current => current - 1); }}>ย้อนกลับ</Button> : null}
+    {step > 1 ? <Button type="button" variant="outline" size="xl" disabled={pending} onClick={() => { setErrors({}); setDirection("back"); setStep(current => current - 1); }}>ย้อนกลับ</Button> : null}
     <Button type="submit" form="request-form" variant="gold" size="xl" className="flex-1" loading={pending}>{actionLabel}</Button>
   </div>;
   const promise = "ส่งคำขอแล้วยังไม่ต้องจ่ายเงิน คุณเปรียบเทียบใบเสนอราคาและเลือกร้านเมื่อพร้อม";
@@ -145,7 +146,7 @@ export function RequestForm({
         <ProgressBar value={step} max={3} label={["รายละเอียดงาน", "สถานที่", "ตรวจทาน"][step - 1]} className="mb-6" />
         <h2 ref={headingRef} tabIndex={-1} className="mb-5 font-display text-xl font-medium outline-none">{["บอกงานที่ต้องการ", "เลือกสถานที่ให้ร้านเข้างาน", "ตรวจทานก่อนส่ง"][step - 1]}</h2>
         <form id="request-form" ref={formRef} onSubmit={submit} noValidate className="flex flex-col">
-          <div hidden={step !== 1} className="step-slide" data-dir="next">
+          <div hidden={step !== 1} className="step-slide" data-dir={direction}>
           <fieldset>
             <legend className="sr-only">ประเภทงาน</legend>
             <div className="grid grid-cols-2 gap-3">
@@ -183,7 +184,7 @@ export function RequestForm({
           </FieldHint>
 
           </div>
-          <div hidden={step !== 2} className="step-slide" data-dir="next">
+          <div hidden={step !== 2} className="step-slide" data-dir={direction}>
           {shrines.length > 0 ? (
             <>
               <SectionTitle className="mt-8 lg:mt-10">เกี่ยวกับศาลไหน</SectionTitle>
@@ -272,7 +273,7 @@ export function RequestForm({
           </ExpandableMap>
 
           </div>
-          {step === 3 ? <section aria-label="สรุปคำขอ" className="step-slide space-y-5" data-dir="next">
+          {step === 3 ? <section aria-label="สรุปคำขอ" className="step-slide space-y-5" data-dir={direction}>
             <dl className="divide-y divide-border border-y border-border">
               {[
                 ["ประเภทงาน", REQUEST_TYPES[type]],

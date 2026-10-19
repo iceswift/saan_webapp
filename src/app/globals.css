@@ -1070,3 +1070,29 @@ html.text-large .card-peek {
   animation-timing-function: var(--ease-out);
 }
 
+
+/* Long references and URLs must not widen phone layouts. */
+main {
+  overflow-wrap: anywhere;
+  scroll-margin-top: calc(var(--site-header-h, 0px) + 1rem);
+}
+
+/* First keyboard stop; visible only while focused. No layout shift. */
+.skip-content {
+  position: fixed;
+  inset-block-start: 1rem;
+  inset-inline-start: 1rem;
+  z-index: 100;
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 1rem;
+  font-weight: 500;
+  transform: translateY(calc(-100% - 2rem));
+}
+.skip-content:focus-visible {
+  transform: none;
+}
