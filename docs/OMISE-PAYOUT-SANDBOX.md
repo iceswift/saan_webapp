@@ -44,3 +44,7 @@ Remaining live gates: approved marketplace/holding arrangement, real destination
 ## Restore and pause rule
 
 `PAYMENT_MUTATIONS_DISABLED=true` blocks new payout initiation and the final pre-POST check; GET reconciliation remains available. Before restoring any database, pause outbound mutations. A restore can remove knowledge of a transfer that already exists at Omise, and the observed idemp_key behavior does not protect a replay. Audit provider transfers across the restore interval and map the original attempts before resuming; missing metadata/journals require investigation, never matching by amount alone or blindly creating a new operation. This sandbox does not claim autonomous recovery from lost pre-intent database history.
+
+## Reconciliation fairness follow-up — 19 October 2026
+
+Unresolved checks now rotate their scheduling timestamp after each worker attempt, including missing-transfer and verification-error results. A compare-and-update guard preserves concurrent result writes. The batch remains bounded to three and GET-only; UNKNOWN allocations remain reserved and no replacement transfer is created. A regression places three missing transfers before a paid fourth transfer and verifies that the next batch finalizes the fourth without resending any of them. Verified in 59 SQLite integration tests and 46 isolated PostgreSQL tests (current deployed image with these two candidate source/test files mounted read-only). This follow-up is source-tested, not yet included in the deployed image.

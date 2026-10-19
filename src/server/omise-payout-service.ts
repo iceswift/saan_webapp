@@ -98,9 +98,14 @@ export async function reconcileTestPayout(operationId:string,providedClient?:Tra
   }catch{return fail("ยืนยันรายการเดิมไม่ได้ ต้องตรวจสอบกับผู้ให้บริการ ห้ามส่งซ้ำ");}
 }
 
-export async function reconcileTestPayoutBatch(){
+export async function reconcileTestPayoutBatch(providedClient?:TransferClient){
   if(!payoutTestEnabled())return 0;
   const ops=await db.moneyOperation.findMany({where:{gateway:"omise_test",kind:"PAYOUT",payoutAttempt:{isNot:null},status:{in:["PROCESSING","PENDING","UNKNOWN"]},updatedAt:{lt:new Date(Date.now()-60000)}},take:3,orderBy:{updatedAt:"asc"}});
-  for(const op of ops)await reconcileTestPayout(op.id);
+  for(const op of ops){
+    await reconcileTestPayout(op.id,providedClient);
+    // Rotate unresolved checks too, so missing transfers cannot starve later attempts.
+    // Compare the original timestamp to avoid overwriting a concurrent result.
+    await db.moneyOperation.updateMany({where:{id:op.id,updatedAt:op.updatedAt,status:{in:["PROCESSING","PENDING","UNKNOWN"]}},data:{updatedAt:new Date()}});
+  }
   return ops.length;
 }

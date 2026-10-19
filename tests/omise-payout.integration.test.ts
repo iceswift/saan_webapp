@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after,test } from "node:test";
 import { db } from "../src/server/db";
-import { PAYOUT_TEST_POLICY,payoutTestEnabled,startTestPayout,reconcileTestPayout } from "../src/server/omise-payout-service";
+import { PAYOUT_TEST_POLICY,payoutTestEnabled,startTestPayout,reconcileTestPayout,reconcileTestPayoutBatch } from "../src/server/omise-payout-service";
 import type { TestTransfer,TransferClient,TransferExpectation } from "../src/server/omise-transfer-client";
 
 const url=process.env.DATABASE_URL??"";
@@ -107,4 +107,28 @@ test("provider acceptance followed by local write failure recovers once without 
   const op=await operation(f.order.id);assert.equal(op.status,"UNKNOWN");assert.equal(op.gatewayRef,"");assert.equal(g.calls(),1);
   await drop();g.set({...g.get()!,sent:true,paid:true});
   assert.equal((await reconcileTestPayout(op.id,g.client)).ok,true);assert.equal((await operation(f.order.id)).status,"SUCCEEDED");assert.equal(g.calls(),1);
+});
+
+test("unconfirmed transfers rotate out of the batch so later paid transfers are checked",async()=>{
+  // Keep older fixtures outside this worker tick; each integration suite has its own guarded database.
+  await db.moneyOperation.updateMany({where:{kind:"PAYOUT",status:{in:["PROCESSING","PENDING","UNKNOWN"]}},data:{updatedAt:new Date()}});
+  const attempts=[];
+  for(let i=0;i<4;i++){
+    const f=await fixture(),g=fake();
+    assert.equal((await startTestPayout(f.order.id,f.admin.id,PAYOUT_TEST_POLICY,g.client)).ok,true);
+    const op=await operation(f.order.id);
+    await db.moneyOperation.update({where:{id:op.id},data:{gatewayRef:i===3?op.gatewayRef:"",status:"UNKNOWN",updatedAt:new Date(Date.now()-600000+i*1000)}});
+    attempts.push({op,g});
+  }
+  const last=attempts[3];let reads=0;
+  const client={...last.g.client,recover:async()=>null,retrieve:async()=>{reads++;return {...last.g.get()!,sent:true,paid:true};},create:async()=>{throw new Error("worker must never send");}};
+  assert.equal(await reconcileTestPayoutBatch(client),3);
+  assert.equal(reads,0);
+  assert.equal(await reconcileTestPayoutBatch(client),1);
+  assert.equal(reads,1);
+  assert.equal((await db.moneyOperation.findUniqueOrThrow({where:{id:last.op.id}})).status,"SUCCEEDED");
+  for(const {op,g} of attempts.slice(0,3)){
+    const current=await db.moneyOperation.findUniqueOrThrow({where:{id:op.id}});
+    assert.equal(current.status,"UNKNOWN");assert.equal(current.gatewayRef,"");assert.equal(g.calls(),1);
+  }
 });

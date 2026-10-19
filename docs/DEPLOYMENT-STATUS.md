@@ -52,3 +52,7 @@ Updated 2026-10-18. See OPERATIONS.md for architecture and runbook.
 - The initial infrastructure image had no authenticated browser/payment-flow test. These private staging flows are now verified on the current release above. Real SMS, real payments and public launch remain unverified/unconfigured.
 - User explicitly chose not to copy backups off the home server on 2026-10-18. No backup was transferred to the development PC. Off-machine copies, scheduling and retention remain unconfigured; same-machine backups do not cover disk/server loss.
 - GitHub-hosted Actions blocked by account billing. Local results must be recorded separately.
+
+## Source-tested follow-up — 19 October 2026
+
+Payout reconciliation batch fairness fixed in source: missing/uncertain results rotate out of the oldest-three batch without releasing reservations or retrying transfers. 59 SQLite and 46 isolated PostgreSQL tests passed, including the starvation regression. PostgreSQL verification used the current image with candidate service/test files mounted into a disposable test container, targeting saan_test only. This follow-up has not been deployed; the current staging image remains payout-d8927aa6a651. No staging financial state or settings were changed.
