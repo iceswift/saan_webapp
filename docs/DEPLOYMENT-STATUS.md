@@ -1,6 +1,17 @@
 # Deployment status
 
-## Current personal-list release — 20 October 2026
+## Current interaction polish release — 20 October 2026
+
+- Source `70cdf76`, QA guide `4e435ad`; image `saan:polish-2a34dfc76592`, config digest `sha256:12760c1ff29ad75efa9d3c482fd22c9f6bc5d7e1d75c68576ecace5973555e77`. Keyboard skip-to-content, long-reference wrapping and correct request step animation direction. Guide: [INTERACTION-QA.md](INTERACTION-QA.md).
+- Image-only rollout with rollback config `deployment.env.before-polish-2a34dfc76592`. No schema, payment, credential, persistent-data or ingress changes. Final app health, private HTTPS and worker heartbeat passed. Existing build filesystem tracing warnings remain.
+- TypeScript, targeted ESLint and Docker production build passed. Targeted browser verification used an effective 325 CSS-pixel viewport with normal and large text (19px root), plus restored desktop width. Initial order timeline content width 410px was caused by an unbroken mock reference; after the fix it was 312px including at large text, within the 325px viewport. Full reference remained visible and wrapped.
+- Vows, account, notifications, new-shrine selection, request form, browse and product detail had no document overflow in the narrow/large-text sweep. Mobile browse filter opened on Close, Escape restored trigger focus, and custom THB 1,500 budget preserved BKK. No GPS permission requested.
+- First Tab revealed skip-to-content; Enter focused MAIN with temporary tabindex -1; next Tab removed that temporary attribute. Checked in narrow dark and desktop light. Order tabs used ArrowRight/Enter; existing photo viewer opened with Close focused and Escape restored image-trigger focus.
+- Request form forward/back animation names were step-in-next/step-in-back. Under emulated reduced motion the visible stage animation name was none. Earlier sampled product durations were 0.00001s, as specified by existing reduced-motion CSS. No request, order, message or financial action was submitted.
+- Restored normal text (16px root), original dark theme, default browser viewport and cleared all emulated media features. Proof: ignored `output/staging/polish-order-narrow.png`, `polish-skip-keyboard.png`, `polish-keyboard-desktop-light.png`.
+- Scope is targeted customer-flow interaction QA; a complete accessibility certification, real iOS/Android browser matrix and all provider/admin workflows were not performed.
+
+## Historical personal-list release — 20 October 2026
 
 - Source `8ff56ce`, handoff `d4c65ad`; image `saan:account-c62905be64aa`, config digest `sha256:fbd4c563bba4a47759e47176d7c19406029f5d0f15277fd8456824d9c7e69c46`. Vow search/status chips/grouped rows, consistent account recent orders and owner-scoped unread notifications. See [PERSONAL-LISTS.md](PERSONAL-LISTS.md).
 - Image-only rollout; rollback configuration `deployment.env.before-account-c62905be64aa`. No schema, payment, credential, notification-channel or backup-destination changes. App healthy; loopback/private HTTPS and worker heartbeat passed.
