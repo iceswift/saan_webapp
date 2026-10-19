@@ -1,6 +1,14 @@
 # Deployment status
 
-## Current booking/request form release — 20 October 2026
+## Current catalogue/product release — 20 October 2026
+
+- Source `e0dc934`, documentation `377d5d8`; image `saan:catalog-5592117f4589`, config digest `sha256:87a4be55cc294c349e0a3987ac8346ced097a9b557dd952f65db62e94ec60018`. Custom browse budget, all-size removal chips, local search-return context and product price checklist/section navigation. See [CATALOG-EXPERIENCE.md](CATALOG-EXPERIENCE.md).
+- Image-only rollout, previous config retained as `deployment.env.before-catalog-5592117f4589`; no schema, credential, payment or backup-destination changes. App healthy; loopback/private HTTPS and worker heartbeat passed.
+- TypeScript, targeted ESLint, two return-destination tests and Docker production build passed. Existing filesystem tracing warnings remain.
+- Browser verified negative-budget validation, THB 500 zero results, THB 1,500 matching result while retaining BKK, product detail and exact return to both original filters, removing only budget while retaining BKK, price-section anchor, and checkout receiving the product/BKK with THB 1,000 total and THB 300 deposit. No order or payment submitted.
+- Price section inspected in light/dark; original dark appearance restored. Screenshots: ignored `output/staging/catalog-budget.png`, `product-price-dark.png`, `product-price-light.png`. Existing staging has one product and no optional service packages; dedicated phone sheet and multi-product comparison QA remain unverified in this pass. No comparison widget was introduced.
+
+## Historical booking/request form release — 20 October 2026
 
 - Source `b64e1da` (handoff documentation `fb83583`); image `saan:forms-8981b69d0362`, config digest `sha256:f8668f007a318081a22f943ef9a18ab5f16f83f447bca668b14b4f8f0cf50749`. Explicit next actions in the shrine-selection wizard and three-stage quote requests. See [FORM-EXPERIENCE.md](FORM-EXPERIENCE.md).
 - Image-only rollout with previous environment retained as `deployment.env.before-forms-8981b69d0362`. No schema migration, payment configuration change or external backup transfer. App health, private HTTPS and worker heartbeat passed after rollout.
