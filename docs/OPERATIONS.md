@@ -42,7 +42,9 @@ Private TLS entry point (only after checking existing routes/permissions): `tail
 
 ## Backup and restore
 
-`sh deploy/backup.sh /ABSOLUTE/backup-directory` briefly stops only Saan's app to produce a consistent PostgreSQL dump + uploads archive, image inventory and checksums. The script restarts a previously running app even if a step fails. Backups contain personal data: permissions are restricted, transfer encrypted, and keep an encrypted copy on another machine/disk. Local copies alone are not disaster recovery. An off-machine schedule is not configured by these scripts.
+Current monitoring, daily home-only schedule and managed retention: see [OPERATIONS-MONITORING.md](OPERATIONS-MONITORING.md). The owner currently declines off-machine copies; do not transfer backups out of the home server without new authorization. The generic transfer guidance below describes a future migration, not permission to copy now.
+
+`sh deploy/backup.sh /ABSOLUTE/backup-directory` briefly stops Saan's worker and app to produce a consistent PostgreSQL dump + uploads archive, image inventory and checksums. The script restarts previously running services even if a step fails. Backups contain personal data and permissions are restricted. Local copies alone are not disaster recovery. An off-machine schedule is not configured.
 
 To restore: prepare a separate Compose project/environment and **new empty DATA_DIR**, start only its database, and run `RESTORE_EMPTY_STACK=yes sh restore.sh /ABSOLUTE/backup-bundle`. It checks checksums and refuses a nonempty target. Restore does not start the app. Use a different loopback port for a drill. Verify counts, image bytes, login/session behavior and health before switching traffic.
 

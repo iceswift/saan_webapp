@@ -1,5 +1,16 @@
 # Deployment status
 
+## Current operations release — 19 October 2026
+
+- Current image **saan:operations-1e62e28a6058**, config digest `sha256:66fad6f85bf56407eb07f59b5b77e4f500d73206a3f6af712a31fddff81ee097`. Includes payout reconciliation fairness from 359b4a5 and the new admin monitor. Production build, TypeScript, targeted ESLint and 46 final-image PostgreSQL tests passed. Existing 59 SQLite fairness regressions passed in the preceding source follow-up; this release also passed 14 provider/endpoint tests, the health-state unit test and isolated Linux backup-retention/failure checks. No new database migration.
+- `/admin/operations` browser verified in both themes with healthy worker/backup timestamps and the outstanding THB 30 refund. Finance page links to it. Anonymous streamed response redirects to login without financial order data; unauthenticated worker POST returns 401. No external notifications configured.
+- Durable private health mount: `/home/ice/saan/data/operations` → `/data/operations`. Worker stale threshold 5 minutes; backup stale threshold 30 hours; unresolved financial queue is shown independently of heartbeat.
+- Daily home-only backup installed in a marked ice-user crontab block at **03:00 Asia/Bangkok**. Host timezone verified; cron daemon active; other cron jobs preserved, private pre-change snapshots retained. Keeps 14 successful managed bundles under `/home/ice/saan/backups/scheduled`; manual/historical and failed bundles excluded from automatic pruning. Stops/restarts only previously running Saan app/worker. No off-machine transfer.
+- Pre-rollout verified backup `/home/ice/saan/backups/scheduled/20261019T121950Z-2732745`. Restored into isolated project `saan-restore-operations-20261019`, new data directory `/home/ice/saan/restore-operations-20261019/data`, loopback 3103, same new image, no gateway credentials, mutations/reconciliation disabled. Health passed. Source/restore counts matched: 4 users, 1 session, 4 orders, 6 payments, 10 money operations, 1 payout attempt, 1 payment pool, 1 refund case with 8 events, 2 shrines and 20 order events. Full money journals/payout snapshots and both uploaded-file hashes matched. Repeated restore refused a nonempty database, with data unchanged. Drill containers stopped; files retained on home server.
+- Post-rollout audits retained original successful transfer `trsf_test_69duwyjhh67hd1451kl`, net THB 962.34, exactly one completion event and 2 original payments. Refund remains ACTION_REQUIRED / due THB 30 / refunded THB 0 despite TEST_COMPLETED case. Protected rollback files have suffix `.before-operations-1e62e28a6058`; retain payout journals and current reconciliation path when rolling back.
+- Full runbook: [OPERATIONS-MONITORING.md](OPERATIONS-MONITORING.md). Earlier sections below are historical evidence, not a claim that their images are still running.
+
+
 ## Current payment sandbox release — 18 October 2026
 
 Current image: **saan:payout-d8927aa6a651**, config digest `sha256:9e2739e8552eaca843d0e12ad417a8800fa2da6b4f29006f0f6d4eaa6612a3ae`. Integrated synthetic-shop payouts deployed and verified through the browser, actual Omise test API, automatic worker reconciliation and app/worker replacement. Migration `20261018040000_payout_attempts` applied. 58 SQLite integration tests, 45 PostgreSQL tests and 4 transfer-client tests passed; TypeScript, targeted lint and production build passed. The shared money-mutation pause blocks new payouts while allowing reconciliation.
@@ -56,3 +67,5 @@ Updated 2026-10-18. See OPERATIONS.md for architecture and runbook.
 ## Source-tested follow-up — 19 October 2026
 
 Payout reconciliation batch fairness fixed in source: missing/uncertain results rotate out of the oldest-three batch without releasing reservations or retrying transfers. 59 SQLite and 46 isolated PostgreSQL tests passed, including the starvation regression. PostgreSQL verification used the current image with candidate service/test files mounted into a disposable test container, targeting saan_test only. This follow-up has not been deployed; the current staging image remains payout-d8927aa6a651. No staging financial state or settings were changed.
+
+Post-rollout scheduled-runner backup: `/home/ice/saan/backups/scheduled/20261019T122742Z-2742900` passed all checksums and restarted the app/worker successfully, using a minimal cron-like environment.

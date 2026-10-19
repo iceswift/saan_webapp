@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { reconcileOmiseBatch } from "@/server/omise-webhook-inbox";
 import { reconcileTestPayoutBatch } from "@/server/omise-payout-service";
+import { recordWorkerHealth } from "@/server/operations-health";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -9,6 +10,13 @@ export async function POST(request: Request) {
   const actual = Buffer.from(request.headers.get("authorization") ?? "");
   const expected = Buffer.from(`Bearer ${secret}`);
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return new Response(null, { status: 401 });
-  try { return Response.json({...await reconcileOmiseBatch(),payoutsChecked:await reconcileTestPayoutBatch()}); }
-  catch { return new Response(null, { status: 503 }); }
+  try {
+    const result = {...await reconcileOmiseBatch(),payoutsChecked:await reconcileTestPayoutBatch()};
+    await recordWorkerHealth(true);
+    return Response.json(result);
+  }
+  catch {
+    await recordWorkerHealth(false).catch(() => {});
+    return new Response(null, { status: 503 });
+  }
 }

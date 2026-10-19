@@ -32,6 +32,7 @@ export default async function AdminFinancePage() {
   return (
     <AppShell width="reading">
       <PageHeader title="การเงินและรายการค้าง" backHref="/admin" />
+      <LinkButton href="/admin/operations" variant="outline" size="xl" className="mb-4">ตรวจสอบตัวตรวจผลและข้อมูลสำรอง</LinkButton>
       <Notice tone="amber">
         {IS_MOCK_PAYMENT ? "โหมดทดสอบ ยังไม่มีการตัดเงินจริง คืนเงิน หรือโอนเงินให้ร้านจริง" : "ยังไม่เปิดใช้งานการคืนเงินและจ่ายให้ร้านผ่านผู้ให้บริการเงินจริง"}
       </Notice>

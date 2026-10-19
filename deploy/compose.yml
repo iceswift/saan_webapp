@@ -27,6 +27,7 @@ services:
       NEXT_PUBLIC_SITE_URL: ${SITE_URL:?Set HTTPS SITE_URL}
       SITE_URL: ${SITE_URL}
       UPLOAD_DIR: /data/uploads
+      OPERATIONS_DIR: /data/operations
       APP_ENV: ${APP_ENV:-production}
       STAGING_TEST_MODE: ${STAGING_TEST_MODE:-false}
       STAGING_TEST_PHONES: ${STAGING_TEST_PHONES:-}
@@ -46,6 +47,7 @@ services:
       ADMIN_PHONES: ${ADMIN_PHONES:-}
     volumes:
       - ${DATA_DIR}/uploads:/data/uploads
+      - ${DATA_DIR}/operations:/data/operations
     depends_on:
       db:
         condition: service_healthy

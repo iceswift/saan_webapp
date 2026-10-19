@@ -10,10 +10,13 @@ destination=$(cd "$destination" && pwd)
 bundle="$destination/$(date -u +%Y%m%dT%H%M%SZ)-$$"
 mkdir "$bundle"
 was_running=$(sh ./compose.sh ps --status running -q app)
+worker_running=$(sh ./compose.sh --profile payments ps --status running -q payment-worker)
 restart() {
   if [ -n "$was_running" ]; then sh ./compose.sh start app >/dev/null; fi
+  if [ -n "$worker_running" ]; then sh ./compose.sh --profile payments start payment-worker >/dev/null; fi
 }
 trap restart EXIT
+sh ./compose.sh --profile payments stop payment-worker
 sh ./compose.sh stop app
 sh ./compose.sh exec -T db pg_dump -U saan -d saan -Fc > "$bundle/database.dump"
 # Read the mounted upload directory through the app image, independent of the host path.
@@ -21,4 +24,4 @@ sh ./compose.sh run --rm --no-deps -T app tar -C /data/uploads -czf - . > "$bund
 sh ./compose.sh images --format json > "$bundle/images.json"
 printf '%s\n' 'format=1' 'database=PostgreSQL16' 'credentials=excluded' > "$bundle/manifest.txt"
 (cd "$bundle" && sha256sum database.dump uploads.tar.gz images.json manifest.txt > SHA256SUMS)
-printf 'Backup complete: %s\nCopy this directory to a different machine/disk.\n' "$bundle"
+printf 'Backup complete: %s\n' "$bundle"
