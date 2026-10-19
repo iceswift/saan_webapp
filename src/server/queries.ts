@@ -570,11 +570,11 @@ export async function countUnreadNotifications(userId: string): Promise<number> 
   return db.notification.count({ where: { userId, readAt: null } });
 }
 
-/** การแจ้งเตือนล่าสุด 50 รายการ */
-export async function listNotifications(userId: string): Promise<NotificationDTO[]> {
+/** Latest 50 owner-scoped notifications, optionally restricted to unread records. */
+export async function listNotifications(userId: string, unreadOnly = false): Promise<NotificationDTO[]> {
   await syncVowReminders(userId);
   const rows = await db.notification.findMany({
-    where: { userId },
+    where: { userId, ...(unreadOnly ? { readAt: null } : {}) },
     orderBy: { createdAt: "desc" },
     take: 50,
   });

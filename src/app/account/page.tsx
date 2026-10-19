@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
-import { DataTable } from "@/components/data-table";
 import { ListGroup, ListRow } from "@/components/list-group";
 import { NotificationBell } from "@/components/notification-bell";
 import { Rise } from "@/components/rise";
 import { OrderStatusBadge } from "@/components/status-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Monogram } from "@/components/visuals";
-import { formatBaht, formatPhone, formatShortDate } from "@/lib/format";
+import { LinkButton } from "@/components/link-button";
+import { EmptyState, Monogram, ThumbArt } from "@/components/visuals";
+import { formatPhone, formatShortDate } from "@/lib/format";
 import { requireUser } from "@/server/auth";
-import { getMyProvider, listMyOrders, listMyShrines, listMyVows } from "@/server/queries";
+import { getMyProvider, listMyOrders, listMyShrines, listMyVows, countUnreadNotifications } from "@/server/queries";
 import { AccountNav } from "../settings/account-nav";
 import { LogoutButton } from "./logout-button";
 
@@ -18,13 +18,16 @@ export const metadata: Metadata = { title: "บัญชี" };
 
 export default async function AccountPage() {
   const user = await requireUser("/account");
-  const [provider, shrines, orders, vows] = await Promise.all([
+  const [provider, shrines, orders, vows, unread] = await Promise.all([
     getMyProvider(user.id),
     listMyShrines(user.id),
     listMyOrders(user.id),
     listMyVows(user.id),
+    countUnreadNotifications(user.id),
   ]);
   const ongoing = orders.filter((o) => o.status !== "COMPLETED" && o.status !== "CANCELLED").length;
+
+  const awaitingVows = vows.filter(vow => vow.status === "GRANTED").length;
 
   return (
     <AppShell nav side={<AccountNav />}>
@@ -55,7 +58,7 @@ export default async function AccountPage() {
           <ListRow
             href="/vows"
             title="สมุดบน"
-            meta={vows.length > 0 ? `${vows.length} รายการ` : undefined}
+            meta={awaitingVows ? `รอแก้บน ${awaitingVows} รายการ` : vows.length ? `${vows.length} รายการ · เห็นได้เฉพาะคุณ` : "จดคำสัญญาและตั้งวันเตือน"}
           />
           <ListRow href="/settings/addresses" title="ที่อยู่ของฉัน" />
         </ListGroup>
@@ -63,7 +66,7 @@ export default async function AccountPage() {
 
       <Rise i={2}>
         <ListGroup className="mt-4" label="ทั่วไป">
-          <ListRow href="/notifications" title="การแจ้งเตือน" />
+          <ListRow href="/notifications" title="การแจ้งเตือน" meta={unread ? `ยังไม่อ่าน ${unread} รายการ` : "ไม่มีรายการที่ยังไม่อ่าน"} />
           <ListRow title="ธีมสี" trailing={<ThemeToggle variant="icons" />} />
           <ListRow href="/settings" title="ตั้งค่า" />
           <ListRow href="/help" title="ช่วยเหลือ" />
@@ -82,12 +85,12 @@ export default async function AccountPage() {
       </Rise>
 
       {orders.length > 0 ? (
-        <section className="max-lg:hidden">
+        <section className="mt-8">
           <SectionTitle
             action={
               <Link
                 href="/orders"
-                className="inline-flex min-h-9 items-center text-base font-medium underline-offset-4 hover:underline"
+                className="inline-flex min-h-11 items-center text-base font-medium underline-offset-4 hover:underline"
               >
                 ดูทั้งหมด
               </Link>
@@ -95,20 +98,16 @@ export default async function AccountPage() {
           >
             งานล่าสุด
           </SectionTitle>
-          <DataTable
-            caption="งานล่าสุดของฉัน"
-            rows={orders.slice(0, 5)}
-            rowKey={(o) => o.id}
-            rowHref={(o) => `/orders/${o.id}`}
-            columns={[
-              { key: "title", header: "งาน", cell: (o) => o.title, className: "max-w-0 w-full truncate" },
-              { key: "status", header: "สถานะ", cell: (o) => <OrderStatusBadge status={o.status} /> },
-              { key: "date", header: "วันที่สั่ง", cell: (o) => formatShortDate(o.createdAt), className: "whitespace-nowrap text-muted-foreground" },
-              { key: "total", header: "ยอดรวม", align: "right", cell: (o) => formatBaht(o.total) },
-            ]}
-          />
+          <ListGroup label="งานล่าสุดของฉัน">
+            {orders.slice(0, 3).map(order => <ListRow key={order.id} href={`/orders/${order.id}`}
+              thumb={<ThumbArt service={order.type === "INSTALL" ? "install" : order.type === "REMOVE" ? "move" : "repair"} size="sm" />}
+              title={order.title} meta={`${order.providerName} · ${formatShortDate(order.createdAt)}`}
+              trailing={<OrderStatusBadge status={order.status} />} />)}
+          </ListGroup>
         </section>
-      ) : null}
+      ) : <div className="mt-8"><EmptyState art="shrine" title="เริ่มดูแลเรื่องศาลกับเรา"
+        description="เมื่อจองบริการแล้ว คุณจะติดตามงานและติดต่อร้านได้จากบัญชีนี้"
+        action={<LinkButton href="/browse" variant="outline" size="xl">เลือกดูศาล</LinkButton>} /></div>}
 
       <div className="mt-8 lg:max-w-xs">
         <LogoutButton />
