@@ -18,6 +18,7 @@ import type {
 } from "./constants";
 
 export type ProviderSummary = {
+  publicAddress?: string;
   id: string;
   name: string;
   kind: ProviderKind;

@@ -1,0 +1,1 @@
+ALTER TABLE "Provider" ADD COLUMN "publicAddress" TEXT NOT NULL DEFAULT '';

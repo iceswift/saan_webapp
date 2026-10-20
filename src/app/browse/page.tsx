@@ -213,7 +213,7 @@ export default async function BrowsePage({ searchParams }: PageProps<"/browse">)
 
   return (
     <AppShell nav width="full">
-      <PageHeader title="เลือกดูศาล" />
+      <PageHeader title="เลือกดูศาล" action={<LinkButton href="/shops" variant="outline" size="xl">แผนที่ร้าน</LinkButton>} />
 
       <TwoColumn
         side="left"

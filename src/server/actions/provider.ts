@@ -41,6 +41,7 @@ const profileSchema = z.object({
   name: z.string().trim().min(2, "กรอกชื่อร้านหรือชื่อผู้ให้บริการ").max(100),
   kind: z.enum(PROVIDER_KIND_CODES, "เลือกประเภทผู้ให้บริการ"),
   description: z.string().trim().max(1000).optional(),
+  publicAddress: z.string().trim().max(500, "ที่อยู่ยาวได้ไม่เกิน 500 ตัวอักษร").optional(),
   phone: phoneSchema,
   areas: z.array(z.enum(AREA_CODES)).min(1, "เลือกพื้นที่ให้บริการอย่างน้อย 1 พื้นที่"),
   /** ตำแหน่งร้านและรัศมีบริการ (ไม่บังคับ ส่ง null เพื่อล้างค่า) */
@@ -58,6 +59,7 @@ type ProfileInput = {
   name: string;
   kind: string;
   description?: string;
+  publicAddress?: string;
   phone: string;
   areas: string[];
   base?: { lat: number; lng: number } | null;
@@ -82,6 +84,7 @@ export async function registerProvider(input: ProfileInput): Promise<ActionResul
         name: data.name,
         kind: data.kind,
         description: data.description ?? "",
+        publicAddress: data.publicAddress ?? "",
         phone: data.phone,
         areas: JSON.stringify([...new Set(data.areas)]),
       },
@@ -108,6 +111,7 @@ export async function updateProviderProfile(input: ProfileInput): Promise<Action
       name: data.name,
       kind: data.kind,
       description: data.description ?? "",
+      ...(data.publicAddress !== undefined ? { publicAddress: data.publicAddress } : {}),
       phone: data.phone,
       areas: JSON.stringify([...new Set(data.areas)]),
       // ส่งมาเฉพาะเมื่อฟอร์มมีส่วนแผนที่ (undefined = ไม่แตะค่าเดิม)

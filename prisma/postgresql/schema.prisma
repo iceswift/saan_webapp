@@ -69,6 +69,7 @@ model Provider {
   phone       String
   areas       String // JSON array ของรหัสพื้นที่ เช่น ["BKK","NBI"]
   status      String   @default("PENDING") // PENDING | VERIFIED | REJECTED
+  publicAddress String @default("") // Optional owner-supplied public business address
   baseLat         Float? // ตำแหน่งร้าน (ใช้คำนวณระยะทาง)
   baseLng         Float?
   serviceRadiusKm Int? // รัศมีให้บริการ กม. ว่าง = ไม่จำกัดตามระยะ

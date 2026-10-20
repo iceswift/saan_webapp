@@ -47,6 +47,7 @@ type Initial = {
   name: string;
   kind: ProviderKind | null;
   description: string;
+  publicAddress?: string;
   phone: string;
   areas: AreaCode[];
   /** ที่ตั้งร้านที่บันทึกไว้ (เฉพาะแบบฟอร์มแก้ไข) */
@@ -66,6 +67,7 @@ export function ProviderProfileForm({
 }) {
   const [name, setName] = useState(initial.name);
   const [kind, setKind] = useState<ProviderKind | null>(initial.kind);
+  const [publicAddress, setPublicAddress] = useState(initial.publicAddress ?? "");
   const [description, setDescription] = useState(initial.description);
   const [phone, setPhone] = useState(initial.phone);
   const [areas, setAreas] = useState<AreaCode[]>(initial.areas);
@@ -93,6 +95,7 @@ export function ProviderProfileForm({
       name: trimmedName,
       kind,
       description: description.trim(),
+      publicAddress: publicAddress.trim(),
       phone: phone.trim(),
       areas,
     };
@@ -181,6 +184,14 @@ export function ProviderProfileForm({
           />
           <FieldHint id="provider-kind-hint" error={errors.kind} />
         </fieldset>
+      </FormSection>
+
+      <FormSection title="ที่อยู่สาธารณะของร้าน">
+        <Field id="provider-public-address" label="ที่อยู่ที่ต้องการให้ลูกค้าเห็น" hint="ไม่บังคับ ข้อมูลนี้จะแสดงบนหน้าร้านและแผนที่รวมร้าน เว้นว่างเพื่อล้างที่อยู่ ไม่ต้องใส่ที่อยู่ส่วนตัวหากไม่ต้องการเผยแพร่">
+          <Textarea id="provider-public-address" value={publicAddress} maxLength={500} rows={3}
+            placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด และจุดสังเกต"
+            onChange={event => setPublicAddress(event.target.value)} />
+        </Field>
       </FormSection>
 
       <FormSection title="พื้นที่ให้บริการ">

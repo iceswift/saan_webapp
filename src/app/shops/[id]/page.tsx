@@ -3,7 +3,6 @@ import { ViewTransition } from "react";
 import { notFound } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
-import { ExpandableMap } from "@/components/map/expandable-map";
 import { MapView } from "@/components/map/map-view";
 import { ShareActions } from "@/components/share-actions";
 import { ArchMark } from "@/components/brand";
@@ -20,6 +19,9 @@ import {
   ReviewItem,
   monogramName,
 } from "@/app/shops/public-parts";
+import { LinkButton } from "@/components/link-button";
+import { buttonVariants } from "@/components/ui/button";
+import { mapsLink } from "@/lib/geo";
 import { AREAS } from "@/lib/constants";
 import { getPublicProvider } from "@/server/queries";
 
@@ -145,28 +147,22 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
         </Rise>
       ) : null}
 
-      {shopPoint ? (
-        <section className="mt-6 max-w-3xl">
-          <ExpandableMap title="ดูตำแหน่งร้าน" hint="ตำแหน่งโดยประมาณและพื้นที่ที่ร้านรับงาน">
-            <MapView
-              markers={[{ ...shopPoint, tone: "shop", label: provider.name }]}
-              radiusKm={provider.serviceRadiusKm}
-              height="16rem"
-              ariaLabel={`แผนที่ตำแหน่งโดยประมาณของ ${provider.name}`}
-              description={
-                provider.serviceRadiusKm
-                  ? `ร้านรับงานในรัศมี ${provider.serviceRadiusKm} กิโลเมตรจากที่ตั้งร้าน`
-                  : undefined
-              }
-            />
-            <p className="numeric mt-3 px-1 text-base">
-              {provider.serviceRadiusKm
-                ? `รับงานในรัศมี ${provider.serviceRadiusKm} กม.`
-                : "ร้านไม่จำกัดรัศมีรับงาน"}
-            </p>
-          </ExpandableMap>
-        </section>
-      ) : null}
+      <section id="shop-location" className="mt-8 max-w-3xl">
+        <SectionTitle>ที่ตั้งและติดต่อร้าน</SectionTitle>
+        <p className="mb-4 whitespace-pre-line text-base">{provider.publicAddress || "ร้านยังไม่ระบุที่อยู่สาธารณะ กรุณาโทรสอบถามก่อนเดินทาง"}</p>
+        {shopPoint ? <>
+          <MapView markers={[{ ...shopPoint, tone: "shop", label: provider.name }]} height="20rem"
+            ariaLabel={`แผนที่ตำแหน่งโดยประมาณของ ${provider.name}`}
+            description="หมุดเป็นตำแหน่งโดยประมาณ ควรโทรยืนยันจุดหมายกับร้านก่อนเดินทาง" />
+          <p className="mt-3 text-sm text-muted-foreground">ตำแหน่งบนแผนที่เป็นค่าโดยประมาณ ไม่ใช่ที่อยู่จัดส่งหรือเขตพื้นที่รับงาน</p>
+        </> : <p className="border-y border-border py-4 text-sm text-muted-foreground">ร้านยังไม่ได้ปักหมุดที่ตั้ง</p>}
+        {provider.serviceRadiusKm ? <p className="mt-3 text-sm text-muted-foreground">รัศมีรับงานที่ร้านระบุ {provider.serviceRadiusKm} กม. ควรยืนยันพื้นที่และค่าเดินทางกับร้าน</p> : null}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <a href={`tel:${provider.phone}`} className={buttonVariants({ variant: "outline", size: "xl" })}>โทรหาร้าน</a>
+          {shopPoint ? <a href={mapsLink(shopPoint)} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "outline", size: "xl" })}>นำทางไปบริเวณร้าน</a> : null}
+          <LinkButton href="/shops" variant="outline" size="xl">ดูแผนที่ร้านทั้งหมด</LinkButton>
+        </div>
+      </section>
 
       <section>
         <SectionTitle>ศาลที่ขาย</SectionTitle>
