@@ -60,11 +60,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-dvh flex-col">
         <ThemeProvider>
           <SkipToContent />
+          <div data-site-chrome className="contents">
           {isStagingTestMode() ? <p className="border-b border-border bg-muted px-4 py-3 text-center text-sm">พื้นที่ทดสอบ ใช้ข้อมูลสมมติเท่านั้น ไม่มีการส่งข้อความหรือตัดเงินจริง</p> : null}
           {/* ส่วนหัวและส่วนท้ายของเดสก์ท็อป (lg ขึ้นไป) มือถือซ่อนทั้งคู่ */}
           <SiteHeader />
+          </div>
           {children}
-          <SiteFooter />
+          <div data-site-chrome className="contents"><SiteFooter /></div>
           <Toaster position="top-center" />
         </ThemeProvider>
       </body>

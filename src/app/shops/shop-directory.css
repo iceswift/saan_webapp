@@ -1,29 +1,50 @@
-.shop-explorer { position: relative; isolation: isolate; height: calc(100svh - var(--site-header-h, 6rem) - 4rem); min-height: 36rem; margin: -1.5rem -1.25rem -2rem; overflow: hidden; border-block: 1px solid var(--border); }
+/* Route-owned full-screen map. Other routes keep their standard app chrome. */
+body:has(.shop-map-page) { overflow: hidden; }
+body:has(.shop-map-page) [data-site-chrome] { display: none; }
+.shop-map-page { position: fixed; inset: 0; z-index: 30; overflow: hidden; background: var(--background); }
+.shop-explorer { position: absolute; inset: 0; isolation: isolate; overflow: hidden; color: var(--foreground); }
 .shop-explorer-map { position: absolute; inset: 0; }
-.shop-map-actions { position: absolute; z-index: 10; top: 13rem; left: 1rem; right: 1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; pointer-events: none; }
-.shop-map-actions button { pointer-events: auto; }
-.shop-explorer-panel { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
-.shop-explorer-search { pointer-events: auto; position: absolute; top: .75rem; left: .75rem; right: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--background); }
-.shop-explorer-results { pointer-events: auto; position: absolute; inset: auto 0 0; height: 30%; display: flex; flex-direction: column; border-top: 1px solid var(--border); border-radius: 1rem 1rem 0 0; background: var(--background); transition: height var(--dur-base) var(--ease-out); }
-.shop-explorer[data-expanded="true"] .shop-explorer-results { height: 65%; }
-.shop-sheet-handle { display: block; flex-shrink: 0; min-height: 3.5rem; width: 100%; padding: .5rem 1.25rem; touch-action: none; cursor: ns-resize; font-size: 1rem; text-align: left; }
-.shop-result-content { overflow-y: auto; overscroll-behavior: contain; padding: 1rem 1.25rem 2rem; overflow-wrap: anywhere; }
+.shop-explorer .saan-map { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; }
+.shop-map-brand { position: absolute; z-index: 10; top: 1.25rem; right: 1.25rem; display: flex; align-items: center; gap: .5rem; }
+.shop-map-brand > button { background: var(--background); border: 1px solid var(--border); }
+.shop-map-actions { position: absolute; z-index: 10; top: 1.25rem; left: 25rem; right: 14rem; display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; pointer-events: none; }
+.shop-map-actions button { pointer-events: auto; border-color: var(--border); }
+.shop-test-label { position: absolute; z-index: 10; right: 1.25rem; top: 5rem; max-width: 18rem; border: 1px solid var(--border); border-radius: 9999px; background: var(--background); padding: .5rem .875rem; font-size: .875rem; }
+.shop-explorer-panel { position: absolute; z-index: 20; top: 1.25rem; bottom: 1.25rem; left: 1.25rem; width: 22.5rem; display: flex; flex-direction: column; pointer-events: none; gap: .75rem; }
+.shop-explorer-search { pointer-events: auto; flex-shrink: 0; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--background); }
+.shop-explorer-search h1 { text-wrap: balance; }
+.shop-explorer-search details > div { overscroll-behavior: contain; }
+.shop-explorer-results { pointer-events: auto; display: flex; flex-direction: column; min-height: 0; flex: 1; border: 1px solid var(--border); border-radius: 1rem; background: var(--background); overflow: hidden; }
+.shop-sheet-handle { display: none; }
+.shop-result-content { overflow-y: auto; overscroll-behavior: contain; padding: 1.25rem; overflow-wrap: anywhere; scrollbar-width: thin; }
+.shop-detail-art { position: relative; height: 12rem; margin: 0 0 1.25rem; overflow: hidden; border-radius: 1rem; background: var(--muted); }
+.shop-detail-art > span { position: absolute; bottom: .5rem; left: .5rem; right: .5rem; width: fit-content; border: 1px solid var(--border); border-radius: 9999px; background: var(--background); padding: .25rem .625rem; font-size: .875rem; }
+.shop-row-art { position: relative; display: block; width: 5.5rem; height: 6rem; flex-shrink: 0; border-radius: 1rem; overflow: hidden; background: var(--muted); }
+.shop-row-art > span { position: absolute; bottom: 0; inset-inline: 0; background: var(--background); font-size: .875rem; text-align: center; }
 .shop-explorer .saan-pin-wrap.is-selected .saan-pin { background: var(--gold); outline: 3px solid var(--background); }
-.shop-explorer .leaflet-top { top: 17rem; }
-.shop-explorer .leaflet-bottom { bottom: 31%; }
-@media (min-width: 640px) { .shop-explorer { margin: -2rem -2rem -2rem; } }
-@media (min-width: 1024px) {
-  .shop-explorer { margin: -2.5rem -2.5rem -4rem; height: calc(100svh - var(--site-header-h, 6rem) - 3rem); min-height: 38rem; }
-  .shop-explorer-map { left: 24rem; }
-  .shop-explorer-panel { width: 24rem; display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--background); }
-  .shop-explorer-search { position: relative; inset: auto; flex-shrink: 0; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 1.5rem; }
-  .shop-explorer-results, .shop-explorer[data-expanded="true"] .shop-explorer-results { position: relative; inset: auto; height: auto; min-height: 0; flex: 1; border: 0; border-radius: 0; }
-  .shop-sheet-handle { display: none; }
-  .shop-map-actions { top: 1rem; }
-  .shop-explorer .leaflet-top { top: 1rem; }
-  .shop-explorer .leaflet-bottom { bottom: 0; }
+.shop-explorer .leaflet-top { top: auto; bottom: 4rem; left: auto; right: 1rem; }
+.shop-explorer .leaflet-control-zoom { margin: 0; }
+.shop-explorer .leaflet-bottom { bottom: .5rem; }
+@media (max-width: 1023px) {
+  .shop-map-brand { top: auto; bottom: max(.875rem, env(safe-area-inset-bottom)); right: .75rem; }
+  .shop-map-brand a { display: none; }
+  .shop-map-brand > button { width: 2.75rem; height: 2.75rem; }
+  .shop-explorer-panel { inset: 0; width: auto; display: block; pointer-events: none; }
+  .shop-explorer-search { position: absolute; top: max(.75rem, env(safe-area-inset-top)); left: .75rem; right: .75rem; padding: .875rem 1rem; }
+  .shop-explorer-search h1 { font-size: 1.125rem; }
+  .shop-explorer-search h1 + p { display: none; }
+  .shop-explorer-search details { margin-top: .375rem; }
+  .shop-map-actions { top: 13rem; left: .75rem; right: .75rem; }
+  .shop-map-actions button { min-height: 2.75rem; height: auto; padding-block: .625rem; padding-inline: 1rem; }
+  .shop-test-label { top: auto; bottom: max(1rem, env(safe-area-inset-bottom)); left: .75rem; right: 4rem; max-width: none; width: fit-content; font-size: .875rem; }
+  .shop-explorer-results { position: absolute; inset: auto .75rem 4.75rem; height: 12.5rem; border-radius: 1.25rem; transition: height var(--dur-base) var(--ease-out); }
+  .shop-explorer[data-expanded="true"] .shop-explorer-results { height: min(62dvh, calc(100dvh - 13rem)); }
+  .shop-sheet-handle { display: block; flex-shrink: 0; min-height: 3.25rem; width: 100%; padding: .5rem 1rem; touch-action: none; cursor: ns-resize; font-size: 1rem; text-align: left; }
+  .shop-result-content { padding: .5rem 1rem 1.25rem; }
+  .shop-detail-art { height: 9rem; margin-bottom: 1rem; }
+  .shop-explorer .leaflet-top { bottom: 19rem; right: .75rem; }
+  .shop-explorer .leaflet-bottom { bottom: 17.5rem; }
+  .shop-explorer[data-expanded="true"] .leaflet-bottom { bottom: calc(min(62dvh, 100dvh - 13rem) + 5rem); }
+  .shop-explorer[data-expanded="true"] .leaflet-control-zoom { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .shop-explorer-results { transition: none; } }
-
-.shop-explorer .saan-map { position: absolute; inset: 0; height: 100%; border: 0; border-radius: 0; }
-@media (max-width: 1023px) { .shop-explorer[data-expanded="true"] .leaflet-bottom { bottom: 66%; } }
