@@ -38,15 +38,17 @@ body:has(.shop-map-page) [data-site-chrome] { display: none; }
   .shop-map-actions button { min-height: 2.75rem; height: auto; padding-block: .625rem; padding-inline: 1rem; }
   .shop-test-label { top: auto; bottom: max(1rem, env(safe-area-inset-bottom)); left: .75rem; right: 4rem; max-width: none; width: fit-content; font-size: .875rem; }
   .shop-explorer-results { position: absolute; inset: auto .75rem 4.75rem; height: 12.5rem; border-radius: 1rem; transition: height var(--dur-base) var(--ease-out); }
-  .shop-explorer[data-expanded="true"] .shop-explorer-results { height: min(62dvh, calc(100dvh - 13rem)); }
+  .shop-explorer[data-expanded="true"] .shop-explorer-results { height: min(62dvh, calc(100dvh - 18rem)); }
   .shop-sheet-handle { display: block; flex-shrink: 0; min-height: 3.25rem; width: 100%; padding: .5rem 1rem; touch-action: none; cursor: ns-resize; font-size: 1rem; text-align: left; }
   .shop-result-content { padding: .5rem 1rem 1.25rem; }
   .shop-detail-art { height: 9rem; margin-bottom: 1rem; }
   .shop-explorer .leaflet-top { bottom: 19rem; right: .75rem; }
   .shop-explorer .leaflet-bottom { bottom: 17.5rem; }
-  .shop-explorer[data-expanded="true"] .leaflet-bottom { bottom: calc(min(62dvh, 100dvh - 13rem) + 5rem); }
+  .shop-explorer[data-expanded="true"] .leaflet-bottom { bottom: calc(min(62dvh, 100dvh - 18rem) + 5rem); }
   .shop-explorer[data-expanded="true"] .leaflet-control-zoom { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .shop-explorer-results { transition: none; } }
 
 .shop-row-art img { object-position: 72% center; }
+
+.shop-explorer .leaflet-bar a, .shop-explorer .leaflet-bar a:hover { width: 2.75rem; height: 2.75rem; line-height: 2.75rem; }
