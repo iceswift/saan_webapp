@@ -2,54 +2,94 @@
 
 import "leaflet/dist/leaflet.css";
 import "@/components/map/map.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import "./shop-directory.css";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
+import { ArrowLeft, ChevronDown, ChevronUp, MapPin, X } from "lucide-react";
 import { createBaseMap, loadLeaflet, pinIcon } from "@/components/map/map-core";
 import { DEFAULT_CENTER } from "@/lib/geo";
 import { AREAS, AREA_CODES, PROVIDER_KINDS, PROVIDER_KIND_CODES } from "@/lib/constants";
 import type { DirectoryShop } from "@/lib/shop-directory";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Chip, ChipRow } from "@/components/chip";
 import { LinkButton } from "@/components/link-button";
-import { ListGroup, ListRow } from "@/components/list-group";
 import { EmptyState } from "@/components/visuals";
+
+type ViewBounds = { north: number; south: number; east: number; west: number };
 
 export function ShopDirectory({ shops }: { shops: DirectoryShop[] }) {
   const [q, setQ] = useState("");
   const [area, setArea] = useState("");
   const [kind, setKind] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [viewport, setViewport] = useState<ViewBounds | null>(null);
+  const [searchBounds, setSearchBounds] = useState<ViewBounds | null>(null);
+  const startY = useRef<number | null>(null);
+  const dragged = useRef(false);
   const selectedTitle = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { if (selected) selectedTitle.current?.focus(); }, [selected]);
-  const visible = useMemo(() => shops.filter(shop => (!area || shop.areas.some(code => code === area)) &&
+  const choose = useCallback((id: string) => { setSelected(id); setExpanded(true); }, []);
+  useEffect(() => { if (selected) selectedTitle.current?.focus({ preventScroll: true }); }, [selected]);
+  const filtered = useMemo(() => shops.filter(shop => (!area || shop.areas.some(code => code === area)) &&
     (!kind || shop.kind === kind) && (!q.trim() || `${shop.name} ${shop.address}`.toLocaleLowerCase("th").includes(q.trim().toLocaleLowerCase("th")))), [shops, area, kind, q]);
+  const visible = filtered.filter(shop => !searchBounds || (shop.location && shop.location.lat >= searchBounds.south && shop.location.lat <= searchBounds.north && shop.location.lng >= searchBounds.west && shop.location.lng <= searchBounds.east));
   const active = visible.find(shop => shop.id === selected);
-  return <>
-    <label htmlFor="shop-search" className="mb-2 block text-base font-medium">ค้นหาร้านหรือที่อยู่</label>
-    <Input id="shop-search" value={q} maxLength={100} onChange={event => setQ(event.target.value)} placeholder="ชื่อร้าน ถนน หรือจังหวัดในที่อยู่" />
-    <details className="my-5 border-y border-border py-3">
-      <summary className="min-h-11 cursor-pointer py-2 text-base font-medium">กรองพื้นที่รับงานและประเภทผู้ให้บริการ</summary>
-      <ChipRow label="พื้นที่รับงาน" className="my-3"><Chip active={!area} onClick={() => setArea("")}>ทุกพื้นที่</Chip>{AREA_CODES.map(code => <Chip key={code} active={area === code} onClick={() => setArea(code)}>{AREAS[code]}</Chip>)}</ChipRow>
-      <ChipRow label="ประเภทผู้ให้บริการ"><Chip active={!kind} onClick={() => setKind("")}>ทุกประเภท</Chip>{PROVIDER_KIND_CODES.map(code => <Chip key={code} active={kind === code} onClick={() => setKind(code)}>{PROVIDER_KINDS[code]}</Chip>)}</ChipRow>
-    </details>
-    <p role="status" className="mb-3 text-sm text-muted-foreground">พบ {visible.length} ร้าน · มีหมุด {visible.filter(shop => shop.location).length} ร้าน</p>
-    <p className="mb-4 text-sm text-muted-foreground">หมุดเป็นตำแหน่งโดยประมาณ ไม่ใช่เขตพื้นที่รับงาน โทรยืนยันที่อยู่กับร้านก่อนเดินทาง ร้านที่ยังไม่มีหมุดอยู่ในรายการด้านล่าง</p>
-    {visible.length ? <>
-      {visible.some(shop => shop.location) ? <DirectoryMap shops={visible} selected={active?.id ?? null} onSelect={setSelected} /> : <p className="border-y border-border py-5 text-base">ร้านที่พบยังไม่ได้ปักหมุด ดูข้อมูลจากรายการร้านได้</p>}
-      {active ? <section aria-label="ร้านที่เลือก" className="my-5 border-y border-border py-5">
-        <h2 ref={selectedTitle} tabIndex={-1} className="font-display text-xl font-medium outline-none">{active.name}</h2>
-        <p className="mt-2 whitespace-pre-line text-base">{active.address || "ร้านยังไม่ระบุที่อยู่สาธารณะ"}</p>
-        <p className="mt-2 text-sm text-muted-foreground">พื้นที่รับงาน: {active.areas.map(code => AREAS[code]).join(" · ") || "ยังไม่ระบุ"}</p>
-        <LinkButton href={`/shops/${active.id}`} variant="gold" size="xl" className="mt-4">ดูหน้าร้านและติดต่อ</LinkButton>
-      </section> : <p className="my-4 text-sm text-muted-foreground">แตะหมุดหรือเลือกร้านจากรายการเพื่อดูรายละเอียด</p>}
-      <ListGroup label="ร้านที่พบ">{visible.map(shop => <ListRow key={shop.id} onClick={() => setSelected(shop.id)}
-        title={shop.name} meta={`${PROVIDER_KINDS[shop.kind]} · ${shop.address || "ยังไม่ระบุที่อยู่สาธารณะ"}`}
-        trailing={<span className="text-sm text-muted-foreground">{active?.id === shop.id ? "เลือกอยู่" : shop.location ? "มีหมุด" : "ไม่มีหมุด"}</span>} />)}</ListGroup>
-    </> : <EmptyState art="search" title="ไม่พบร้านตามเงื่อนไข" description="ลองเปลี่ยนคำค้นหรือพื้นที่รับงาน" action={<button type="button" onClick={() => { setQ(""); setArea(""); setKind(""); }} className="min-h-12 rounded-full border border-border px-6 text-base font-medium">ล้างตัวกรอง</button>} />}
-  </>;
+  function reset() { setQ(""); setArea(""); setKind(""); setSearchBounds(null); setSelected(null); }
+  return <div className="shop-explorer" data-expanded={expanded}>
+    <div className="shop-explorer-map">
+      <DirectoryMap shops={filtered} selected={active?.id ?? null} onSelect={choose} onBounds={setViewport} />
+      <div className="shop-map-actions">
+        <Button variant="outline" size="xl" className="bg-background" onClick={() => { setSearchBounds(viewport); setSelected(null); }} loading={!viewport}>ค้นหาในบริเวณนี้</Button>
+        {searchBounds ? <Button variant="outline" size="xl" className="bg-background" onClick={() => setSearchBounds(null)}>ดูทุกบริเวณ</Button> : null}
+      </div>
+    </div>
+    <aside className="shop-explorer-panel" aria-label="ค้นหาและเลือกร้าน">
+      <div className="shop-explorer-search">
+        <div className="mb-3 flex items-center gap-3">
+          <LinkButton href="/browse" variant="outline" size="icon-xl"><ArrowLeft aria-hidden="true"/><span className="sr-only">กลับไปเลือกดูศาล</span></LinkButton>
+          <h1 className="font-display text-xl font-normal">ค้นหาร้านบนแผนที่</h1>
+        </div>
+        <label htmlFor="shop-search" className="sr-only">ค้นหาร้านหรือที่อยู่</label>
+        <Input id="shop-search" value={q} maxLength={100} onChange={event => { setQ(event.target.value); setSearchBounds(null); }} placeholder="ค้นหาชื่อร้านหรือที่อยู่" />
+        <details className="mt-3">
+          <summary className="min-h-11 cursor-pointer py-2 text-base font-medium">ตัวกรอง{area || kind ? " · กำลังใช้งาน" : ""}</summary>
+          <div className="max-h-52 overflow-y-auto py-2">
+            <p className="mb-2 text-sm text-muted-foreground">พื้นที่รับงาน (ไม่ใช่ที่ตั้งร้าน)</p>
+            <ChipRow label="พื้นที่รับงาน" className="mb-3"><Chip active={!area} onClick={() => { setArea(""); setSearchBounds(null); }}>ทุกพื้นที่</Chip>{AREA_CODES.map(code => <Chip key={code} active={area === code} onClick={() => { setArea(code); setSearchBounds(null); }}>{AREAS[code]}</Chip>)}</ChipRow>
+            <ChipRow label="ประเภทผู้ให้บริการ"><Chip active={!kind} onClick={() => { setKind(""); setSearchBounds(null); }}>ทุกประเภท</Chip>{PROVIDER_KIND_CODES.map(code => <Chip key={code} active={kind === code} onClick={() => { setKind(code); setSearchBounds(null); }}>{PROVIDER_KINDS[code]}</Chip>)}</ChipRow>
+          </div>
+        </details>
+      </div>
+      <div className="shop-explorer-results" id="shop-results">
+        <button type="button" className="shop-sheet-handle" aria-expanded={expanded} aria-controls="shop-result-content" onClick={() => { if (!dragged.current) setExpanded(value => !value); dragged.current = false; }}
+          onPointerDown={event => { dragged.current = false; startY.current = event.clientY; event.currentTarget.setPointerCapture(event.pointerId); }}
+          onPointerUp={event => { const delta = startY.current === null ? 0 : event.clientY - startY.current; startY.current = null; if (Math.abs(delta) > 24) { dragged.current = true; setExpanded(delta < 0); } }}
+>
+          <span className="mx-auto mb-2 block h-1 w-10 rounded-full bg-border" aria-hidden="true" />
+          <span className="flex items-center justify-between"><span>รายการร้าน · {visible.length}</span>{expanded ? <ChevronDown className="size-5"/> : <ChevronUp className="size-5"/>}</span>
+        </button>
+        <div id="shop-result-content" className="shop-result-content">
+          <p role="status" className="mb-3 text-sm text-muted-foreground">พบ {visible.length} ร้าน · มีหมุด {visible.filter(shop => shop.location).length} ร้าน{searchBounds ? " · ในบริเวณที่เลือก" : ""}</p>
+          {active ? <section aria-label="ร้านที่เลือก" className="mb-4 border-b border-border pb-5">
+            <div className="flex items-start justify-between gap-3"><h2 ref={selectedTitle} tabIndex={-1} className="font-display text-xl font-medium outline-none">{active.name}</h2><Button size="icon-xl" variant="ghost" aria-label="ปิดรายละเอียดร้าน" onClick={() => setSelected(null)}><X /></Button></div>
+            <p className="mt-2 text-sm text-muted-foreground">{PROVIDER_KINDS[active.kind]}</p>
+            <p className="mt-3 whitespace-pre-line text-base">{active.address || "ร้านยังไม่ระบุที่อยู่สาธารณะ"}</p>
+            <p className="mt-2 text-sm text-muted-foreground">พื้นที่รับงาน: {active.areas.map(code => AREAS[code]).join(" · ") || "ยังไม่ระบุ"}</p>
+            <LinkButton href={`/shops/${active.id}`} variant="gold" size="xl" className="mt-4">ดูหน้าร้านและติดต่อ</LinkButton>
+          </section> : null}
+          {visible.length ? <ul aria-label="ร้านที่พบ" className="divide-y divide-border border-y border-border">{visible.map(shop => <li key={shop.id}><button type="button" aria-pressed={active?.id === shop.id} onClick={() => choose(shop.id)} className="flex w-full items-start gap-3 px-3 py-5 text-left transition-colors hover:bg-muted aria-pressed:bg-muted">
+            <MapPin aria-hidden="true" className="mt-1 size-5 shrink-0" />
+            <span className="min-w-0"><span className="block text-base font-medium">{shop.name}</span><span className="mt-1 block text-sm text-muted-foreground">{PROVIDER_KINDS[shop.kind]}</span><span className="mt-2 block text-sm text-muted-foreground">{shop.address || "ยังไม่ระบุที่อยู่สาธารณะ"}</span><span className="mt-2 block text-sm">{shop.location ? active?.id === shop.id ? "เลือกอยู่บนแผนที่" : "ดูตำแหน่งบนแผนที่" : "ยังไม่มีหมุด"}</span></span>
+          </button></li>)}</ul> : <EmptyState art="search" title={shops.length ? "ไม่พบร้านตามเงื่อนไข" : "ยังไม่มีร้านที่ผ่านการตรวจสอบ"} description="ลองเปลี่ยนคำค้น ตัวกรอง หรือบริเวณแผนที่" action={<Button variant="outline" size="xl" onClick={reset}>ล้างตัวกรอง</Button>} />}
+          <p className="mt-4 text-sm text-muted-foreground">หมุดโดยประมาณ กรุณาโทรยืนยันก่อนเดินทาง ร้านไม่มีหมุดค้นหาได้เมื่อเลือกดูทุกบริเวณ</p>
+        </div>
+      </div>
+    </aside>
+  </div>;
 }
 
-function DirectoryMap({ shops, selected, onSelect }: { shops: DirectoryShop[]; selected: string | null; onSelect: (id: string) => void }) {
+function DirectoryMap({ shops, selected, onSelect, onBounds }: { shops: DirectoryShop[]; selected: string | null; onSelect: (id: string) => void; onBounds: (bounds: ViewBounds) => void }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<Leaflet.Map | null>(null);
   const markers = useRef(new Map<string, Leaflet.Marker>());
@@ -65,6 +105,8 @@ function DirectoryMap({ shops, selected, onSelect }: { shops: DirectoryShop[]; s
       if (cancelled || !el.current) return;
       instance = createBaseMap(L, el.current, { center: [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], zoom: 6 });
       map.current = instance;
+      const reportBounds = () => { if (!instance) return; const b = instance.getBounds(); onBounds({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() }); };
+      instance.on("moveend", reportBounds);
       const bounds = L.latLngBounds([]);
       for (const shop of shops) {
         if (!shop.location) continue;
@@ -77,21 +119,29 @@ function DirectoryMap({ shops, selected, onSelect }: { shops: DirectoryShop[]; s
             event.preventDefault(); event.stopPropagation(); onSelect(shop.id);
           }
         });
+        marker.getElement()?.classList.toggle("is-selected", shop.id === currentSelection.current);
+        marker.getElement()?.setAttribute("aria-pressed", String(shop.id === currentSelection.current));
         markers.current.set(shop.id, marker);
         bounds.extend([shop.location.lat, shop.location.lng]);
       }
       if (bounds.isValid()) instance.fitBounds(bounds.pad(0.15), { maxZoom: 13, animate: false });
+      reportBounds();
       const activeMarker = currentSelection.current ? markers.current.get(currentSelection.current) : null;
       if (activeMarker) { instance.panTo(activeMarker.getLatLng(), { animate: false }); activeMarker.openTooltip(); }
     }).catch(() => setError(true));
     const currentMarkers = markers.current;
     return () => { cancelled = true; observer.disconnect(); instance?.remove(); map.current = null; currentMarkers.clear(); };
-  }, [shops, onSelect]);
+  }, [shops, onSelect, onBounds]);
   useEffect(() => {
+    for (const [id, item] of markers.current) {
+      if (id !== selected) item.closeTooltip();
+      item.getElement()?.classList.toggle("is-selected", id === selected);
+      item.getElement()?.setAttribute("aria-pressed", String(id === selected));
+    }
     if (!selected) return;
     const marker = markers.current.get(selected);
     if (marker) { map.current?.panTo(marker.getLatLng(), { animate: false }); marker.openTooltip(); }
   }, [selected]);
-  return <><div ref={el} role="region" aria-label="แผนที่รวมตำแหน่งร้านโดยประมาณ" className="saan-map relative z-0 h-80 w-full overflow-hidden rounded-lg border border-border sm:h-96" />
-    {error ? <p role="alert" className="mt-2 text-sm text-muted-foreground">โหลดแผนที่ไม่สำเร็จ ยังเลือกร้านจากรายการด้านล่างได้</p> : null}</>;
+  return <><div ref={el} role="region" aria-label="แผนที่รวมตำแหน่งร้านโดยประมาณ" className="saan-map absolute inset-0 z-0 h-full w-full" />
+    {error ? <p role="alert" className="absolute bottom-4 left-4 z-10 max-w-sm rounded-lg border border-border bg-background p-3 text-sm">โหลดแผนที่ไม่สำเร็จ ยังเลือกร้านจากรายการด้านล่างได้</p> : null}</>;
 }
