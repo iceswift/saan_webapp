@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArchMark } from "@/components/brand";
+import { Wordmark } from "@/components/brand";
 import { ArrowLeft, ChevronDown, ChevronUp, X } from "lucide-react";
 import { createBaseMap, loadLeaflet, pinIcon } from "@/components/map/map-core";
 import { DEFAULT_CENTER } from "@/lib/geo";
@@ -43,7 +43,7 @@ export function ShopDirectory({ shops, testMode }: { shops: DirectoryShop[]; tes
   function reset() { setQ(""); setArea(""); setKind(""); setSearchBounds(null); setSelected(null); }
   return <div className="shop-explorer" data-expanded={expanded}>
     <div className="shop-explorer-map">
-      <div className="shop-map-brand"><LinkButton href="/" variant="outline" size="xl" className="bg-background"><ArchMark />ศาล Saan</LinkButton><ThemeToggle /></div>
+      <div className="shop-map-brand"><LinkButton href="/" variant="outline" size="xl" className="bg-background"><Wordmark size="sm" /></LinkButton><ThemeToggle variant="button" className="size-11" /></div>
       {testMode ? <p className="shop-test-label">พื้นที่ทดสอบ · ไม่มีร้านหรือการซื้อขายจริง</p> : null}
       <DirectoryMap shops={filtered} selected={active?.id ?? null} onSelect={choose} onBounds={setViewport} focusRequest={focusRequest} />
       <div className="shop-map-actions">
@@ -86,7 +86,7 @@ export function ShopDirectory({ shops, testMode }: { shops: DirectoryShop[]; tes
             <p className="mt-2 text-sm text-muted-foreground">พื้นที่รับงาน: {active.areas.map(code => AREAS[code]).join(" · ") || "ยังไม่ระบุ"}</p>
             <LinkButton href={`/shops/${active.id}`} variant="gold" size="xl" className="mt-4">ดูหน้าร้านและติดต่อ</LinkButton>
           </section> : null}
-          {!active && visible.length ? <ul aria-label="ร้านที่พบ" className="divide-y divide-border border-y border-border">{visible.map(shop => <li key={shop.id}><button type="button" aria-pressed={false} onClick={() => choose(shop.id)} className="flex w-full items-start gap-4 py-5 text-left transition-colors hover:bg-muted aria-pressed:bg-muted">
+          {!active && visible.length ? <ul aria-label="ร้านที่พบ" className="divide-y divide-border">{visible.map(shop => <li key={shop.id}><button type="button" aria-pressed={false} onClick={() => choose(shop.id)} className="flex w-full items-start gap-4 py-5 text-left transition-colors hover:bg-muted aria-pressed:bg-muted">
             <span className="shop-row-art"><Image src="/images/shop-concept-ai.png" alt="" width={160} height={160} sizes="88px" className="h-full w-full object-cover" /><span>ภาพ AI</span></span>
             <span className="min-w-0"><span className="block text-base font-medium">{shop.name}</span><span className="mt-1 block text-sm text-muted-foreground">{PROVIDER_KINDS[shop.kind]}</span><span className="mt-2 block text-sm text-muted-foreground">{shop.address || "ยังไม่ระบุที่อยู่สาธารณะ"}</span><span className="mt-2 block text-sm">{shop.location ? "ดูตำแหน่งบนแผนที่" : "ยังไม่มีหมุด"}</span></span>
           </button></li>)}</ul> : !active ? <EmptyState art="search" title={shops.length ? "ไม่พบร้านตามเงื่อนไข" : "ยังไม่มีร้านที่ผ่านการตรวจสอบ"} description="ลองเปลี่ยนคำค้น ตัวกรอง หรือบริเวณแผนที่" action={<Button variant="outline" size="xl" onClick={reset}>ล้างตัวกรอง</Button>} /> : null}
@@ -95,6 +95,16 @@ export function ShopDirectory({ shops, testMode }: { shops: DirectoryShop[]; tes
       </div>
     </aside>
   </div>;
+}
+
+function centerShop(instance: Leaflet.Map, marker: Leaflet.Marker) {
+  const zoom = instance.getZoom();
+  let center = instance.project(marker.getLatLng(), zoom);
+  if (window.matchMedia("(min-width: 1024px)").matches) {
+    const panel = instance.getContainer().closest(".shop-explorer")?.querySelector(".shop-explorer-panel");
+    center = center.subtract([(panel?.getBoundingClientRect().right ?? 0) / 2, 0]);
+  }
+  instance.panTo(instance.unproject(center, zoom), { animate: false });
 }
 
 function DirectoryMap({ shops, selected, onSelect, onBounds, focusRequest }: { focusRequest: number; shops: DirectoryShop[]; selected: string | null; onSelect: (id: string) => void; onBounds: (bounds: ViewBounds) => void }) {
@@ -135,7 +145,7 @@ function DirectoryMap({ shops, selected, onSelect, onBounds, focusRequest }: { f
       if (bounds.isValid()) instance.fitBounds(bounds.pad(0.15), { maxZoom: 13, animate: false });
       reportBounds();
       const activeMarker = currentSelection.current ? markers.current.get(currentSelection.current) : null;
-      if (activeMarker) { instance.panTo(activeMarker.getLatLng(), { animate: false }); activeMarker.openTooltip(); }
+      if (activeMarker) { centerShop(instance, activeMarker); activeMarker.openTooltip(); }
     }).catch(() => setError(true));
     const currentMarkers = markers.current;
     return () => { cancelled = true; observer.disconnect(); instance?.remove(); map.current = null; currentMarkers.clear(); };
@@ -148,7 +158,7 @@ function DirectoryMap({ shops, selected, onSelect, onBounds, focusRequest }: { f
     }
     if (!selected) return;
     const marker = markers.current.get(selected);
-    if (marker) { map.current?.panTo(marker.getLatLng(), { animate: false }); marker.openTooltip(); }
+    if (marker) { if (map.current) centerShop(map.current, marker); marker.openTooltip(); }
   }, [selected, focusRequest]);
   return <><div ref={el} role="region" aria-label="แผนที่รวมตำแหน่งร้านโดยประมาณ" className="saan-map absolute inset-0 z-0 h-full w-full" />
     {error ? <p role="alert" className="absolute bottom-4 left-4 z-10 max-w-sm rounded-lg border border-border bg-background p-3 text-sm">โหลดแผนที่ไม่สำเร็จ ยังเลือกร้านจากรายการด้านล่างได้</p> : null}</>;
