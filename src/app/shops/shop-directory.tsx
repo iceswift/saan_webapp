@@ -71,6 +71,12 @@ function DirectoryMap({ shops, selected, onSelect }: { shops: DirectoryShop[]; s
         const marker = L.marker([shop.location.lat, shop.location.lng], { icon: pinIcon(L, "shop"), keyboard: true, title: shop.name, alt: shop.name }).addTo(instance);
         const label = document.createElement("span"); label.textContent = shop.name;
         marker.bindTooltip(label).on("click", () => onSelect(shop.id));
+        // Explicit key handling also supports divIcon markers across browser engines.
+        marker.getElement()?.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault(); event.stopPropagation(); onSelect(shop.id);
+          }
+        });
         markers.current.set(shop.id, marker);
         bounds.extend([shop.location.lat, shop.location.lng]);
       }
