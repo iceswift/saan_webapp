@@ -24,13 +24,15 @@ export function ShopDirectory({ shops }: { shops: DirectoryShop[] }) {
   const [kind, setKind] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
+  const resultContent = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState<ViewBounds | null>(null);
   const [searchBounds, setSearchBounds] = useState<ViewBounds | null>(null);
   const startY = useRef<number | null>(null);
   const dragged = useRef(false);
   const selectedTitle = useRef<HTMLHeadingElement>(null);
-  const choose = useCallback((id: string) => { setSelected(id); setExpanded(true); }, []);
-  useEffect(() => { if (selected) selectedTitle.current?.focus({ preventScroll: true }); }, [selected]);
+  const choose = useCallback((id: string) => { setSelected(id); setExpanded(true); setFocusRequest(value => value + 1); }, []);
+  useEffect(() => { if (selected) { if (resultContent.current) resultContent.current.scrollTop = 0; selectedTitle.current?.focus({ preventScroll: true }); } }, [selected, focusRequest]);
   const filtered = useMemo(() => shops.filter(shop => (!area || shop.areas.some(code => code === area)) &&
     (!kind || shop.kind === kind) && (!q.trim() || `${shop.name} ${shop.address}`.toLocaleLowerCase("th").includes(q.trim().toLocaleLowerCase("th")))), [shops, area, kind, q]);
   const visible = filtered.filter(shop => !searchBounds || (shop.location && shop.location.lat >= searchBounds.south && shop.location.lat <= searchBounds.north && shop.location.lng >= searchBounds.west && shop.location.lng <= searchBounds.east));
@@ -38,7 +40,7 @@ export function ShopDirectory({ shops }: { shops: DirectoryShop[] }) {
   function reset() { setQ(""); setArea(""); setKind(""); setSearchBounds(null); setSelected(null); }
   return <div className="shop-explorer" data-expanded={expanded}>
     <div className="shop-explorer-map">
-      <DirectoryMap shops={filtered} selected={active?.id ?? null} onSelect={choose} onBounds={setViewport} />
+      <DirectoryMap shops={filtered} selected={active?.id ?? null} onSelect={choose} onBounds={setViewport} focusRequest={focusRequest} />
       <div className="shop-map-actions">
         <Button variant="outline" size="xl" className="bg-background" onClick={() => { setSearchBounds(viewport); setSelected(null); }} loading={!viewport}>ค้นหาในบริเวณนี้</Button>
         {searchBounds ? <Button variant="outline" size="xl" className="bg-background" onClick={() => setSearchBounds(null)}>ดูทุกบริเวณ</Button> : null}
@@ -69,7 +71,7 @@ export function ShopDirectory({ shops }: { shops: DirectoryShop[] }) {
           <span className="mx-auto mb-2 block h-1 w-10 rounded-full bg-border" aria-hidden="true" />
           <span className="flex items-center justify-between"><span>รายการร้าน · {visible.length}</span>{expanded ? <ChevronDown className="size-5"/> : <ChevronUp className="size-5"/>}</span>
         </button>
-        <div id="shop-result-content" className="shop-result-content">
+        <div ref={resultContent} id="shop-result-content" className="shop-result-content">
           <p role="status" className="mb-3 text-sm text-muted-foreground">พบ {visible.length} ร้าน · มีหมุด {visible.filter(shop => shop.location).length} ร้าน{searchBounds ? " · ในบริเวณที่เลือก" : ""}</p>
           {active ? <section aria-label="ร้านที่เลือก" className="mb-4 border-b border-border pb-5">
             <div className="flex items-start justify-between gap-3"><h2 ref={selectedTitle} tabIndex={-1} className="font-display text-xl font-medium outline-none">{active.name}</h2><Button size="icon-xl" variant="ghost" aria-label="ปิดรายละเอียดร้าน" onClick={() => setSelected(null)}><X /></Button></div>
@@ -89,7 +91,7 @@ export function ShopDirectory({ shops }: { shops: DirectoryShop[] }) {
   </div>;
 }
 
-function DirectoryMap({ shops, selected, onSelect, onBounds }: { shops: DirectoryShop[]; selected: string | null; onSelect: (id: string) => void; onBounds: (bounds: ViewBounds) => void }) {
+function DirectoryMap({ shops, selected, onSelect, onBounds, focusRequest }: { focusRequest: number; shops: DirectoryShop[]; selected: string | null; onSelect: (id: string) => void; onBounds: (bounds: ViewBounds) => void }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<Leaflet.Map | null>(null);
   const markers = useRef(new Map<string, Leaflet.Marker>());
@@ -141,7 +143,7 @@ function DirectoryMap({ shops, selected, onSelect, onBounds }: { shops: Director
     if (!selected) return;
     const marker = markers.current.get(selected);
     if (marker) { map.current?.panTo(marker.getLatLng(), { animate: false }); marker.openTooltip(); }
-  }, [selected]);
+  }, [selected, focusRequest]);
   return <><div ref={el} role="region" aria-label="แผนที่รวมตำแหน่งร้านโดยประมาณ" className="saan-map absolute inset-0 z-0 h-full w-full" />
     {error ? <p role="alert" className="absolute bottom-4 left-4 z-10 max-w-sm rounded-lg border border-border bg-background p-3 text-sm">โหลดแผนที่ไม่สำเร็จ ยังเลือกร้านจากรายการด้านล่างได้</p> : null}</>;
 }
