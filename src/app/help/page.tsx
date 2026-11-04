@@ -3,20 +3,14 @@ import { AppShell, PageHeader, SectionTitle } from "@/components/app-shell";
 import { LinkButton } from "@/components/link-button";
 import { ListGroup, ListRow } from "@/components/list-group";
 import { Rise } from "@/components/rise";
-import { SoonBadge } from "@/components/coming-soon";
-import { SUPPORT } from "@/lib/constants";
+import { supportConfiguration } from "@/server/launch-config";
 import { FaqSearch } from "./faq-search";
 import { HELP_STEPS } from "./faq-data";
 
 export const metadata: Metadata = { title: "ช่วยเหลือ" };
 
 export default function HelpPage() {
-  const support: Record<"email" | "line" | "phone", string> = SUPPORT;
-  const contacts = [
-    { label: "อีเมล", value: support.email, href: `mailto:${support.email}` },
-    { label: "โทรศัพท์", value: support.phone, href: `tel:${support.phone}` },
-    { label: "LINE", value: support.line, href: undefined },
-  ].filter((c) => c.value.trim() !== "");
+  const { contacts } = supportConfiguration();
 
   return (
     <AppShell>
@@ -48,11 +42,10 @@ export default function HelpPage() {
       ) : (
         <div className="flex flex-col gap-4">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-muted-foreground">
-            ช่องทางติดต่อทีมงาน
-            <SoonBadge />
+            ขณะนี้ยังไม่มีช่องทางติดต่อทีมงาน
           </p>
           <p className="text-base">หากมีปัญหากับคำสั่งซื้อ ส่งข้อความหาร้านได้ในหน้าคำสั่งซื้อของคุณ</p>
-          <LinkButton href="/orders" variant="secondary" className="w-full lg:w-auto">
+          <LinkButton href="/orders" variant="secondary" size="xl" className="w-full lg:w-auto">
             ไปที่งานของฉัน
           </LinkButton>
         </div>

@@ -20,6 +20,6 @@ function run(args) {
 }
 run(["node_modules/prisma/build/index.js", "migrate", "deploy", "--schema", "prisma/postgresql/schema.prisma"]);
 run(["scripts/test-postgres.mjs"]);
-const sqliteOnly = new Set(["otp.integration.test.ts", "provider-orders.integration.test.ts", "reviews.integration.test.ts"]);
+const sqliteOnly = new Set(["provider-orders.integration.test.ts", "reviews.integration.test.ts"]);
 const suites = readdirSync("tests").filter(name => name.endsWith(".integration.test.ts") && !sqliteOnly.has(name)).sort().map(name => `tests/${name}`);
 run(["--conditions=react-server", "--import", "tsx", "--test", "--test-concurrency=1", ...suites]);

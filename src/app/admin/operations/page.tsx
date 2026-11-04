@@ -7,6 +7,7 @@ import { requireRole } from "@/server/auth";
 import { db } from "@/server/db";
 import { healthState, readHealth } from "@/server/operations-health";
 import { formatDateTime, formatBaht } from "@/lib/format";
+import { launchConfiguration } from "@/server/launch-config";
 
 export const metadata: Metadata = { title: "ตรวจสอบระบบการเงิน" };
 const labels = { good: "ทำงานปกติ", missing: "ยังไม่มีข้อมูลยืนยัน", stale: "ข้อมูลเก่า ต้องตรวจสอบ", failed: "ตรวจพบข้อผิดพลาด" };
@@ -24,6 +25,8 @@ async function snapshot() {
 export default async function OperationsPage() {
   await requireRole("ADMIN", "/admin/operations");
   const [worker, backup, count, operations] = await snapshot();
+  const readiness = launchConfiguration();
+  const readinessLabels = { configured: "ตั้งค่าแล้ว ยังต้องตรวจยืนยัน", missing: "ยังไม่ได้ตั้งค่า", blocked: "ยังไม่เปิดใช้งาน", invalid: "ต้องแก้ไขการตั้งค่า" };
   return <AppShell width="reading">
     <PageHeader title="ตรวจสอบระบบการเงิน" backHref="/admin/finance" />
     <ListGroup label="สถานะระบบ">
@@ -38,5 +41,8 @@ export default async function OperationsPage() {
     </ListGroup></div>
     <p className="mt-4 text-sm text-muted-foreground">แสดงสูงสุด 50 รายการเก่าสุด การแจ้งเตือนแสดงในหน้านี้ ยังไม่มีการส่งข้อความออกภายนอก สำรองข้อมูลยังอยู่บนเครื่องเดียวกับระบบ</p>
     <LinkButton className="mt-6" href="/admin/finance" variant="outline" size="xl">ดูรายการการเงิน</LinkButton>
+    <SectionTitle>ก่อนเปิดใช้งานจริง</SectionTitle>
+    <p className="mb-4 text-base text-muted-foreground">ระบบยังไม่พร้อมเปิดสาธารณะ รายการนี้ตรวจการตั้งค่า ไม่ใช่การรับรองว่าบริการภายนอกใช้งานได้แล้ว</p>
+    <ListGroup label="ความพร้อมเปิดใช้งานจริง">{readiness.checks.map(check => <ListRow key={check.id} title={`${check.title} · ${readinessLabels[check.state]}`} meta={check.detail} />)}</ListGroup>
   </AppShell>;
 }

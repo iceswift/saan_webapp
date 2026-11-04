@@ -4,9 +4,9 @@ import { fail, ok, type ActionResult } from "@/lib/result";
 
 export async function consumeOtp(phone: string, code: string): Promise<ActionResult> {
   const otp = await db.otpCode.findFirst({
-    where: { phone, consumedAt: null, expiresAt: { gt: new Date() } }, orderBy: { createdAt: "desc" },
+    where: { phone }, orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
-  if (!otp) return fail("รหัสหมดอายุ กรุณาขอรหัสใหม่");
+  if (!otp || otp.consumedAt || otp.expiresAt <= new Date()) return fail("รหัสหมดอายุหรือถูกใช้แล้ว กรุณาขอรหัสใหม่");
   if (otp.attempts >= 5) return fail("ใส่รหัสผิดหลายครั้ง กรุณาขอรหัสใหม่");
   if (otp.code !== code) {
     await db.otpCode.updateMany({

@@ -2,9 +2,11 @@
 
 ## Runtime and QA images (4 November 2026)
 
-The Docker `runtime` target prunes development dependencies. Do not assume `tsx`, ESLint or the shadcn generator is available in an app container. Keep Prisma CLI for `db:postgres:deploy`. Build an isolated QA image from the same source with `docker build --target build -t saan:qa-RELEASE .`; run `node scripts/test-postgres-integration.mjs` there with an explicitly supplied `/saan_test` DATABASE_URL only. The runner forces mock payments, omits gateway/worker secrets, isolates uploads/operations in a temporary directory and redacts child database URLs. Three SQLite-only suites stay in `npm run test:integration`. Never change the running app's database URL to run tests. Backups/restores still use production-image Node/tar and PostgreSQL utilities, not development tools.
+The Docker `runtime` target prunes development dependencies. Do not assume `tsx`, ESLint or the shadcn generator is available in an app container. Keep Prisma CLI for `db:postgres:deploy`. Build an isolated QA image from the same source with `docker build --target build -t saan:qa-RELEASE .`; run `node scripts/test-postgres-integration.mjs` there with an explicitly supplied `/saan_test` DATABASE_URL only. The runner forces mock payments, omits gateway/worker secrets, isolates uploads/operations in a temporary directory and redacts child database URLs. Two SQLite-only suites stay in `npm run test:integration`. Never change the running app's database URL to run tests. Backups/restores still use production-image Node/tar and PostgreSQL utilities, not development tools.
 
 Current dependency limitations and patch evidence: [SECURITY-REVIEW-2026-11-04.md](SECURITY-REVIEW-2026-11-04.md). Delivery sequence and external decisions: [DELIVERY-WORKBOARD.md](DELIVERY-WORKBOARD.md).
+
+Optional support/runtime inventory fields and disabled SMS defaults: [LAUNCH-CONFIGURATION.md](LAUNCH-CONFIGURATION.md). Current owner instruction is preparation only; no domain or external service account exists. A configured contact/domain syntax is not delivery/ownership certification. Keep the actual production-authentication gates closed.
 
 Run writable suites against `saan_test` one at a time. Money reconciliation tests inspect shared batches, so random fixture IDs do not make concurrent suite runs independent. On the home server wrap the complete QA container invocation with `flock /home/ice/saan/postgres-qa.lock ...`. A run overlapping another writable suite is invalid evidence; repeat it serially before deployment.
 

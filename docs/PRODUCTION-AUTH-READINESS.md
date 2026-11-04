@@ -2,11 +2,17 @@
 
 Prepared 4 November 2026 from the current implementation. This is an engineering plan, not an enabled SMS integration. Production remains closed to test login.
 
+Owner has confirmed no domain/SMS/support services exist yet and asked for preparation only. Runtime support settings and the role-protected administrator inventory are implemented as described in LAUNCH-CONFIGURATION.md. They do not activate delivery, DNS, live payments or external backups.
+
 ## Current behavior
 
 `runtime-policy.ts` allows designated private-staging phones only. Both request and verification actions enforce this gate; authenticated reads also reject test identities outside the allowed environment. `integrations.ts` exposes `SmsSender.sendOtp` but currently supplies only the console/test adapter. The test action returns the visible code; OTP records contain the test code, expire after five minutes, limit verification attempts to five and requests to five per phone in ten minutes. Consumption is conditional, so concurrent reuse is rejected. This is insufficient for public SMS authentication and must not simply be enabled for all phones.
 
 ## Information needed from the owner
+
+The preparation release now rejects older challenges after the newest is consumed, expired or locked; this is covered on SQLite/PostgreSQL. Atomic issuance/resend, real-delivery handling and digest storage below are still separate production requirements.
+
+The following are future activation inputs, not a request to create accounts now.
 
 - Actual SMS/OTP account/provider, approved sender/template and recipient-country scope. Credentials go directly into protected server configuration, never chat or Git.
 - Public domain/origin and approved support contact for failed access/recovery. Neither is configured today.

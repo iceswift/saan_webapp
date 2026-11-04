@@ -45,6 +45,11 @@ services:
       PAYMENT_WORKER_SECRET: ${PAYMENT_WORKER_SECRET:-}
       PAYMENT_MUTATIONS_DISABLED: ${PAYMENT_MUTATIONS_DISABLED:-true}
       ADMIN_PHONES: ${ADMIN_PHONES:-}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+      SUPPORT_PHONE: ${SUPPORT_PHONE:-}
+      SUPPORT_LINE_URL: ${SUPPORT_LINE_URL:-}
+      SMS_PROVIDER: ${SMS_PROVIDER:-unconfigured}
+      SMS_SEND_ENABLED: ${SMS_SEND_ENABLED:-false}
     volumes:
       - ${DATA_DIR}/uploads:/data/uploads
       - ${DATA_DIR}/operations:/data/operations
