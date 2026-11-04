@@ -1,3 +1,4 @@
+import { normalizeThaiPhone } from "@/lib/phone-input";
 import "server-only";
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -75,7 +76,7 @@ export async function notify(
 export const phoneSchema = z
   .string()
   .trim()
-  .transform((v) => v.replace(/[\s-]/g, ""))
+  .transform(normalizeThaiPhone)
   .pipe(z.string().regex(/^0\d{9}$/, "กรอกเบอร์โทร 10 หลัก ขึ้นต้นด้วย 0"));
 
 export const idSchema = z.string().min(1, "ไม่พบรายการ");

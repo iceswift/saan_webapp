@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FieldHint, focusFirstInvalid } from "@/components/field-hint";
 import { ProgressBar } from "@/components/progress-bar";
@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { requestOtp, updateProfile, verifyOtp } from "@/server/actions/auth";
 
+import { normalizeThaiDigits, normalizeThaiPhone } from "@/lib/phone-input";
+
 type Step = "phone" | "code" | "name";
 
 const STEP_INDEX: Record<Step, number> = { phone: 1, code: 2, name: 3 };
@@ -18,6 +20,10 @@ const STEP_LABEL: Record<Step, string> = { phone: "เบอร์โทร", co
 export function LoginForm({ next, needsNameOnly, testMode = false }: { next: string; needsNameOnly: boolean; testMode?: boolean }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const initialStep = useRef(true);
   const [step, setStep] = useState<Step>(needsNameOnly ? "name" : "phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -25,6 +31,12 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
   const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
+  const [status, setStatus] = useState("");
+  useEffect(() => {
+    if (initialStep.current) { initialStep.current = false; return; }
+    const input = step === "phone" ? phoneRef.current : step === "code" ? codeRef.current : nameRef.current;
+    input?.focus();
+  }, [step]);
 
   /** แจ้งข้อผิดพลาดใต้ช่องแล้วโฟกัสช่องนั้น */
   function fail(message: string) {
@@ -33,20 +45,24 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
   }
 
   function sendCode() {
-    if (phone.replace(/\D/g, "").length !== 10) {
+    const normalized = normalizeThaiPhone(phone);
+    if (!/^0\d{9}$/.test(normalized)) {
       fail("กรุณากรอกเบอร์โทร 10 หลัก");
       return;
     }
     startTransition(async () => {
-      const res = await requestOtp({ phone });
+      const res = await requestOtp({ phone: normalized });
       if (!res.ok) {
         fail(res.error);
         return;
       }
+      setPhone(normalized);
       setDevCode(res.data.devCode);
       setCode("");
       setError(undefined);
       setStep("code");
+      setStatus(step === "code" ? (testMode ? "สร้างรหัสทดสอบใหม่แล้ว" : "ขอรหัสใหม่แล้ว") : "");
+      requestAnimationFrame(() => codeRef.current?.focus());
     });
   }
 
@@ -103,6 +119,7 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
             </Label>
             <Input
               id="phone"
+              ref={phoneRef}
               type="tel"
               inputMode="numeric"
               autoComplete="tel"
@@ -129,6 +146,7 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
             </Label>
             <Input
               id="code"
+              ref={codeRef}
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
@@ -136,7 +154,7 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
               className="h-16 text-center font-display text-3xl tracking-[0.4em]"
               value={code}
               onChange={(e) => {
-                setCode(e.target.value.replace(/\D/g, ""));
+                setCode(normalizeThaiDigits(e.target.value).replace(/\D/g, ""));
                 setError(undefined);
               }}
               aria-invalid={Boolean(error)}
@@ -159,6 +177,7 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
             </Label>
             <Input
               id="name"
+              ref={nameRef}
               autoComplete="name"
               placeholder="เช่น คุณสมชาย"
               value={name}
@@ -178,7 +197,10 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
       <Button type="submit" size="xl" variant="gold" className="mt-6 w-full" loading={pending}>
         {step === "phone" ? "รับรหัสยืนยัน" : step === "code" ? "ยืนยัน" : "เริ่มใช้งาน"}
       </Button>
+      <p role="status" className="mt-3 text-sm text-muted-foreground">{status}</p>
       {step === "code" ? (
+        <>
+        <Button type="button" variant="outline" size="xl" className="mt-2 w-full" loading={pending} onClick={sendCode}>ขอรหัสใหม่</Button>
         <Button
           type="button"
           variant="ghost"
@@ -186,11 +208,13 @@ export function LoginForm({ next, needsNameOnly, testMode = false }: { next: str
           className="mt-2 w-full text-muted-foreground"
           onClick={() => {
             setError(undefined);
+            setStatus("");
             setStep("phone");
           }}
         >
           เปลี่ยนเบอร์โทร
         </Button>
+        </>
       ) : null}
     </form>
   );

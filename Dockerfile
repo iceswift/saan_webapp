@@ -11,11 +11,16 @@ ENV DATABASE_URL=postgresql://build:unused@127.0.0.1:5432/build
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
+# Keep the build target available for isolated QA; ship only production dependencies.
+FROM build AS production-deps
+RUN npm prune --omit=dev --ignore-scripts --no-audit --no-fund
+RUN node -e "if (typeof require('@prisma/client').PrismaClient !== 'function') process.exit(1)"
+
 FROM node:22-bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
-COPY --from=build --chown=node:node /app /app
+COPY --from=production-deps --chown=node:node /app /app
 RUN mkdir -p /data/uploads && chown node:node /data/uploads
 USER node
 EXPOSE 3000

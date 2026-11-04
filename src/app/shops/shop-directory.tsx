@@ -14,7 +14,8 @@ import { DEFAULT_CENTER } from "@/lib/geo";
 import { AREAS, AREA_CODES, PROVIDER_KINDS, PROVIDER_KIND_CODES } from "@/lib/constants";
 import type { DirectoryShop } from "@/lib/shop-directory";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { BottomSheet, BottomSheetClose } from "@/components/bottom-sheet";
 import { Chip, ChipRow } from "@/components/chip";
 import { LinkButton } from "@/components/link-button";
 import { EmptyState } from "@/components/visuals";
@@ -59,14 +60,16 @@ export function ShopDirectory({ shops, testMode }: { shops: DirectoryShop[]; tes
         </div>
         <label htmlFor="shop-search" className="sr-only">ค้นหาร้านหรือที่อยู่</label>
         <Input id="shop-search" value={q} maxLength={100} onChange={event => { setQ(event.target.value); setSearchBounds(null); }} placeholder="ค้นหาชื่อร้านหรือที่อยู่" />
-        <details className="mt-3">
-          <summary className="min-h-11 cursor-pointer py-2 text-base font-medium">ตัวกรอง{area || kind ? " · กำลังใช้งาน" : ""}</summary>
-          <div className="max-h-52 overflow-y-auto py-2">
-            <p className="mb-2 text-sm text-muted-foreground">พื้นที่รับงาน (ไม่ใช่ที่ตั้งร้าน)</p>
-            <ChipRow label="พื้นที่รับงาน" className="mb-3"><Chip active={!area} onClick={() => { setArea(""); setSearchBounds(null); }}>ทุกพื้นที่</Chip>{AREA_CODES.map(code => <Chip key={code} active={area === code} onClick={() => { setArea(code); setSearchBounds(null); }}>{AREAS[code]}</Chip>)}</ChipRow>
-            <ChipRow label="ประเภทผู้ให้บริการ"><Chip active={!kind} onClick={() => { setKind(""); setSearchBounds(null); }}>ทุกประเภท</Chip>{PROVIDER_KIND_CODES.map(code => <Chip key={code} active={kind === code} onClick={() => { setKind(code); setSearchBounds(null); }}>{PROVIDER_KINDS[code]}</Chip>)}</ChipRow>
-          </div>
-        </details>
+        <BottomSheet title="ตัวกรองร้าน" description="พื้นที่รับงานคือพื้นที่ที่ร้านให้บริการ ไม่ใช่ตำแหน่งหน้าร้าน"
+          trigger={<>ตัวกรอง{area || kind ? " · กำลังใช้งาน" : ""}</>}
+          triggerClassName={buttonVariants({ variant: "outline", size: "xl", className: "mt-3 w-full" })}>
+          <p className="text-base font-medium">พื้นที่รับงาน</p>
+          <ChipRow label="พื้นที่รับงาน"><Chip active={!area} onClick={() => { setArea(""); setSearchBounds(null); }}>ทุกพื้นที่</Chip>{AREA_CODES.map(code => <Chip key={code} active={area === code} onClick={() => { setArea(code); setSearchBounds(null); }}>{AREAS[code]}</Chip>)}</ChipRow>
+          <p className="text-base font-medium">ประเภทผู้ให้บริการ</p>
+          <ChipRow label="ประเภทผู้ให้บริการ"><Chip active={!kind} onClick={() => { setKind(""); setSearchBounds(null); }}>ทุกประเภท</Chip>{PROVIDER_KIND_CODES.map(code => <Chip key={code} active={kind === code} onClick={() => { setKind(code); setSearchBounds(null); }}>{PROVIDER_KINDS[code]}</Chip>)}</ChipRow>
+          <Button variant="ghost" size="xl" onClick={reset}>ล้างตัวกรองทั้งหมด</Button>
+          <BottomSheetClose className={buttonVariants({ size: "xl" })}>ดูร้าน {visible.length} แห่ง</BottomSheetClose>
+        </BottomSheet>
       </div>
       <div className="shop-explorer-results" id="shop-results">
         <button type="button" className="shop-sheet-handle" aria-expanded={expanded} aria-controls="shop-result-content" onClick={() => { if (!dragged.current) setExpanded(value => !value); dragged.current = false; }}
@@ -79,7 +82,7 @@ export function ShopDirectory({ shops, testMode }: { shops: DirectoryShop[]; tes
         <div ref={resultContent} id="shop-result-content" className="shop-result-content">
           <p role="status" className="mb-3 text-sm text-muted-foreground">พบ {visible.length} ร้าน · มีหมุด {visible.filter(shop => shop.location).length} ร้าน{searchBounds ? " · ในบริเวณที่เลือก" : ""}</p>
           {active ? <section aria-label="ร้านที่เลือก" className="shop-detail">
-            <div className="shop-detail-art"><Image src="/images/shop-concept-ai.png" alt="ภาพประกอบ AI โชว์รูมศาลสมมติ ไม่ใช่ภาพร้านจริง" width={1536} height={1024} sizes="(min-width: 1024px) 360px, 90vw" className="h-full w-full object-cover" /><span>ภาพประกอบ AI · ไม่ใช่ภาพร้านจริง</span></div>
+            <div className="shop-detail-art"><Image src="/images/shop-concept-ai.png" alt="ภาพประกอบ AI โชว์รูมศาลสมมติ ไม่ใช่ภาพร้านจริง" width={1536} height={1024} sizes="(min-width: 768px) 360px, (min-width: 600px) and (max-height: 500px) 320px, 90vw" className="h-full w-full object-cover" /><span>ภาพประกอบ AI · ไม่ใช่ภาพร้านจริง</span></div>
             <div className="flex items-start justify-between gap-3"><h2 ref={selectedTitle} tabIndex={-1} className="font-display text-xl font-medium outline-none">{active.name}</h2><Button size="icon-xl" variant="ghost" aria-label="กลับไปรายการร้าน" onClick={() => setSelected(null)}><X /></Button></div>
             <p className="mt-2 text-sm text-muted-foreground">{PROVIDER_KINDS[active.kind]}</p>
             <p className="mt-3 whitespace-pre-line text-base">{active.address || "ร้านยังไม่ระบุที่อยู่สาธารณะ"}</p>
@@ -100,7 +103,7 @@ export function ShopDirectory({ shops, testMode }: { shops: DirectoryShop[]; tes
 function centerShop(instance: Leaflet.Map, marker: Leaflet.Marker) {
   const zoom = instance.getZoom();
   let center = instance.project(marker.getLatLng(), zoom);
-  if (window.matchMedia("(min-width: 1024px)").matches) {
+  if (window.matchMedia("(min-width: 768px), (min-width: 600px) and (max-height: 500px)").matches) {
     const panel = instance.getContainer().closest(".shop-explorer")?.querySelector(".shop-explorer-panel");
     center = center.subtract([(panel?.getBoundingClientRect().right ?? 0) / 2, 0]);
   }

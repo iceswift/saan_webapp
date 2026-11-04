@@ -1,3 +1,4 @@
+import { parseWholeBaht } from "@/lib/baht-input";
 import { FieldHint } from "@/components/field-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,8 +86,8 @@ export function PriceField({
   error?: string | null;
   showDeposit?: boolean;
 }) {
-  const amount = Number(value);
-  const valid = value.trim() !== "" && Number.isInteger(amount) && amount >= 1;
+  const amount = parseWholeBaht(value);
+  const valid = amount !== null && amount >= 1;
   return (
     <Field
       id={id}
@@ -107,10 +108,9 @@ export function PriceField({
         </span>
         <Input
           id={id}
-          type="number"
+          type="text"
           inputMode="numeric"
-          min={1}
-          step={1}
+          maxLength={20}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -125,7 +125,7 @@ export function PriceField({
 
 /** ตรวจราคาเป็นจำนวนเต็มมากกว่า 0 ใช้ตอนกดบันทึก */
 export function priceError(value: string): string | undefined {
-  const n = Number(value);
-  if (value.trim() === "" || !Number.isInteger(n) || n < 1) return "กรอกราคาเป็นจำนวนเต็มที่มากกว่า 0";
+  const n = parseWholeBaht(value);
+  if (n === null || n < 1) return "กรอกราคาเต็มบาทตั้งแต่ 1 ถึง 10,000,000 เช่น 1,500";
   return undefined;
 }

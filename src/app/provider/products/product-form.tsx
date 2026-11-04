@@ -1,5 +1,7 @@
 "use client";
 
+import { parseWholeBaht } from "@/lib/baht-input";
+
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -69,7 +71,7 @@ export function ProductForm({
         name: trimmedName,
         description: description.trim(),
         kind,
-        price: Number(price),
+        price: parseWholeBaht(price) ?? 0,
         imageUrl: imageUrls[0] ?? null,
         active: open,
       });
@@ -81,7 +83,7 @@ export function ProductForm({
     });
   }
 
-  const previewPrice = Number(price);
+  const previewPrice = parseWholeBaht(price) ?? 0;
   const previewValid = Number.isInteger(previewPrice) && previewPrice >= 1;
 
   return (

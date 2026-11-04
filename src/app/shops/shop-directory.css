@@ -25,7 +25,7 @@ body:has(.shop-map-page) [data-site-chrome] { display: none; }
 .shop-explorer .leaflet-top { top: auto; bottom: 4rem; left: auto; right: 1rem; }
 .shop-explorer .leaflet-control-zoom { margin: 0; }
 .shop-explorer .leaflet-bottom { bottom: .5rem; }
-@media (max-width: 1023px) {
+@media (max-width: 767px) and (min-height: 501px), (max-width: 599px) {
   .shop-map-brand { top: auto; bottom: max(.875rem, env(safe-area-inset-bottom)); right: .75rem; }
   .shop-map-brand a { display: none; }
   .shop-map-brand > button { width: 2.75rem; height: 2.75rem; }
@@ -52,3 +52,19 @@ body:has(.shop-map-page) [data-site-chrome] { display: none; }
 .shop-row-art img { object-position: 72% center; }
 
 .shop-explorer .leaflet-bar a, .shop-explorer .leaflet-bar a:hover { width: 2.75rem; height: 2.75rem; line-height: 2.75rem; }
+
+/* Tablet and short landscape use a side panel, rather than two broad overlays. */
+@media (min-width: 768px) and (max-width: 1023px), (min-width: 600px) and (max-height: 500px) {
+  .shop-map-brand a { display: none; }
+  .shop-map-actions { right: 5rem; }
+}
+@media (min-width: 600px) and (max-height: 500px) {
+  .shop-explorer-panel { top: .75rem; bottom: .75rem; left: .75rem; width: 20rem; }
+  .shop-explorer-search { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); gap: .5rem; padding: .75rem; }
+  .shop-explorer-search > div:first-child { grid-column: 1; grid-row: 1; margin: 0; }
+  .shop-explorer-search > div:first-child > div { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .shop-explorer-search > input { grid-column: 2; grid-row: 1; }
+  .shop-explorer-search > button { grid-column: 1 / -1; grid-row: 2; margin: 0; }
+  .shop-map-actions { left: 22rem; }
+  .shop-test-label { top: auto; bottom: 1rem; right: 5rem; max-width: 18rem; }
+}

@@ -1,5 +1,11 @@
 # Saan operations and AI handoff
 
+## Runtime and QA images (4 November 2026)
+
+The Docker `runtime` target prunes development dependencies. Do not assume `tsx`, ESLint or the shadcn generator is available in an app container. Keep Prisma CLI for `db:postgres:deploy`. Build an isolated QA image from the same source with `docker build --target build -t saan:qa-RELEASE .`; run TypeScript integration tests there against `/saan_test` only. Never change the running app's database URL to run tests. QA environment must select mock payments and omit gateway/worker secrets. Backups/restores still use production-image Node/tar and PostgreSQL utilities, not development tools.
+
+Current dependency limitations and patch evidence: [SECURITY-REVIEW-2026-11-04.md](SECURITY-REVIEW-2026-11-04.md). Delivery sequence and external decisions: [DELIVERY-WORKBOARD.md](DELIVERY-WORKBOARD.md).
+
 ## Architecture decisions (updated 2026-10-19)
 
 - Deploy a modular Next.js monolith, not microservices. A versioned Docker image runs the same code on the home server or a VDS.

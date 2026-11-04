@@ -6,18 +6,14 @@ import { LinkButton } from "@/components/link-button";
 import { Rise } from "@/components/rise";
 import { ShrineArt } from "@/components/visuals";
 import { getCurrentUser } from "@/server/auth";
+import { safeLoginNext } from "./safe-next";
 import { LoginForm } from "./login-form";
 import { isStagingTestMode, stagingPhones } from "@/server/runtime-policy";
 
 export const metadata: Metadata = { title: "เข้าสู่ระบบ" };
 
-function safeNext(next: string | string[] | undefined): string {
-  if (typeof next !== "string") return "/";
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
-}
-
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const next = safeNext((await searchParams).next);
+  const next = safeLoginNext((await searchParams).next);
   const user = await getCurrentUser();
   if (user && user.name) redirect(next);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeThaiPhone } from "@/lib/phone-input";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { AppShell, PageHeader } from "@/components/app-shell";
@@ -81,7 +82,8 @@ export function ProviderProfileForm({
     const trimmedName = name.trim();
     const next: Errors = {};
     if (trimmedName.length < 2) next.name = "กรอกชื่อร้านหรือชื่อผู้ให้บริการ";
-    if (phone.replace(/\D/g, "").length < 9) next.phone = "กรอกเบอร์ติดต่อให้ครบ";
+    const normalizedPhone = normalizeThaiPhone(phone);
+    if (!/^0\d{9}$/.test(normalizedPhone)) next.phone = "กรอกเบอร์ติดต่อ 10 หลัก ขึ้นต้นด้วย 0";
     if (!kind) next.kind = "เลือกประเภทผู้ให้บริการ";
     if (areas.length === 0) next.areas = "เลือกพื้นที่ให้บริการอย่างน้อย 1 พื้นที่";
     if (mode === "profile" && radius !== null && !base) next.radius = "ปักหมุดที่ตั้งร้านก่อน จึงจะกำหนดรัศมีได้";
@@ -96,7 +98,7 @@ export function ProviderProfileForm({
       kind,
       description: description.trim(),
       publicAddress: publicAddress.trim(),
-      phone: phone.trim(),
+      phone: normalizedPhone,
       areas,
     };
     // ส่วนแผนที่มีเฉพาะแบบฟอร์มแก้ไข (ตอนสมัครยังไม่ส่งค่านี้ เซิร์ฟเวอร์จะไม่แตะค่าเดิม)

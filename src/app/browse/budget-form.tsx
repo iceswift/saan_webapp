@@ -1,5 +1,6 @@
 "use client";
 
+import { parseWholeBaht } from "@/lib/baht-input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FieldHint } from "@/components/field-hint";
@@ -13,14 +14,15 @@ export function BudgetForm({ query, current, id }: { query: string; current?: nu
     event.preventDefault();
     const input = event.currentTarget.elements.namedItem("budget") as HTMLInputElement;
     const value = input.value.trim();
-    if (value && (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) <= 0)) {
+    const amount = parseWholeBaht(value, Number.MAX_SAFE_INTEGER);
+    if (value && (amount === null || amount <= 0)) {
       setError("กรอกงบเป็นจำนวนเต็มมากกว่า 0 บาท หรือเว้นว่างเพื่อดูทุกราคา");
       input.focus();
       return;
     }
     setError(undefined);
     const params = new URLSearchParams(query);
-    if (value) params.set("max", String(Number(value))); else params.delete("max");
+    if (value) params.set("max", String(amount)); else params.delete("max");
     router.push(params.size ? `/browse?${params}` : "/browse", { scroll: false });
   }} className="mt-3">
     <label htmlFor={id} className="mb-2 block text-sm text-muted-foreground">กำหนดงบสูงสุดเอง (บาท)</label>

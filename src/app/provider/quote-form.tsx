@@ -1,5 +1,7 @@
 "use client";
 
+import { parseWholeBaht } from "@/lib/baht-input";
+
 import { useRef, useState, useTransition } from "react";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
@@ -32,7 +34,7 @@ export function QuoteForm({
     }
 
     startTransition(async () => {
-      const res = await sendQuote({ requestId, price: Number(priceText), note: note.trim() });
+      const res = await sendQuote({ requestId, price: parseWholeBaht(priceText) ?? 0, note: note.trim() });
       if (!res.ok) {
         toast.error(res.error);
         return;
