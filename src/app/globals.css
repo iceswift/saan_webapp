@@ -1096,3 +1096,15 @@ main {
 .skip-content:focus-visible {
   transform: none;
 }
+
+/* Seven 44px hit areas must fit even when sheet padding squeezes a narrow phone.
+   The physical hit-area floor is fixed; day text and height still scale in rem. */
+@media (max-width: 26rem) {
+  [role="grid"]:has(.cal-day) {
+    inline-size: max(100%, 308px);
+    margin-inline-start: min(0px, calc((100% - 308px) / 2));
+  }
+  .cal-day {
+    min-inline-size: 44px;
+  }
+}

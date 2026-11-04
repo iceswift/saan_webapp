@@ -30,6 +30,14 @@ Verified on `saan:inclusive-8a648f0f7b38` in the in-app browser:
 
 Screenshots are ignored local artifacts in `output/staging/inclusive-*`. Viewport overrides occasionally produced scaled/stale captures; the refreshed natural-size desktop screenshot is the main visual proof. Narrow sizes were additionally checked through rendered layout rectangles and keyboard interaction. This is not physical mobile or screen-reader certification.
 
-## Follow-ups
+## Narrow-calendar follow-up
 
-Physical iOS/Android, screen-reader testing with actual assistive technology, a larger real provider dataset, map tile outages, and participants with low digital confidence remain outstanding. Browser emulation and code inspection do not prove those experiences. Provider public imagery/contact availability and payout onboarding remain the next product phase.
+Checkout was reviewed at measured 325×703 CSS pixels without submitting a valid order. Missing date/place type produced inline errors; focus moved to the date field. ArrowRight moved from 5 to 6 November; Enter selected `6 พ.ย. 2569` and returned focus to the trigger. Order count remained four.
+
+This review found day buttons shrinking to ≈38.93×44px because seven columns shared the sheet's padded width. A narrowly scoped global CSS rule now gives only grids containing `.cal-day` a centered 308px minimum footprint on narrow screens, with a physical 44px minimum day width. Shared component files/API are unchanged; text and height still scale in rem. No horizontal page overflow was introduced.
+
+Verified on `saan:calendar-10d6520730ae`: normal text ≈44×44px; 19px root large-text mode ≈44×52.24px; month arrows ≈47.76×52.24px; close ≈52.24px square. Grid bounds x≈2.25–310.25 within the 312px document/325px viewport. Buddhist-year display, keyboard selection and Escape dismissal still work. Screenshot: ignored `output/staging/calendar-large-touch-targets.png`. Normal text/default viewport restored. This is layout/interaction evidence, not a physical-device user study.
+
+## Remaining coverage
+
+Physical iOS/Android, screen-reader testing with actual assistive technology, a larger real provider dataset, map tile outages, and participants with low digital confidence remain outstanding. Browser emulation and code inspection do not prove those experiences. Real providers still need to supply their own photos/contact details and complete approved payout onboarding; the photo/contact fields themselves are now implemented.

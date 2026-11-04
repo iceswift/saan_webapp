@@ -34,3 +34,5 @@ Continue independent code, private tests and documentation while those decisions
 ## Evidence locations
 
 Current releases: DEPLOYMENT-STATUS.md. Operational boundaries: OPERATIONS.md. Map design: SHOP-MAP-DESIGN.md. Existing payment account questions: OMISE-PROVIDER-QUESTIONS-TH.md. Add dated audit evidence rather than overwriting history.
+
+Public SMS/authentication preparation and acceptance gates: PRODUCTION-AUTH-READINESS.md. Owner service/domain/support information was requested 4 Nov; no answer or credentials should be inferred from elapsed time.

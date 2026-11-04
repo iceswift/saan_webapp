@@ -1,6 +1,13 @@
 # Deployment status
 
-## Current public provider-profile release — 4 November 2026
+## Current narrow-calendar usability follow-up — 4 November 2026
+
+- Runtime `saan:calendar-10d6520730ae`, config digest `sha256:07b0463864f1903146da821dc34dfd3b76994893fc8b0500141774099d8ceed3`. Includes the provider-profile/inclusive/security releases below. Only application-code change is narrow-calendar CSS, preserving 44px day hit areas while large text retains scaled text/height. Shared component files/API unchanged. Measured browser evidence: [INCLUSIVE-QA-2026-11-04.md](INCLUSIVE-QA-2026-11-04.md).
+- Production build/TypeScript passed with the known tracing warnings. CSS-only image rollout; no migration, database/financial settings or backup-destination changes. Financial integration suites were not repeated for this presentation-only change; current backend is identical to the 64 SQLite/52 PostgreSQL verified profile release. Rollback image `saan:provider-profile-275c91da1aa0`, protected checkpoint `deployment.env.before-calendar-10d6520730ae`.
+- Checkout missing-field recovery, Thai date/keyboard selection, narrow normal/large text geometry verified without submitting a valid booking. Order count remains four. Customer normal text/light theme and natural viewport restored. App health returned `{"status":"ok"}`, worker success `2026-11-04T09:19:51.779Z`.
+- Latest home-only backup/restore drill remains the 08:59 snapshot below, on the same schema/backend. Public authentication planning is [PRODUCTION-AUTH-READINESS.md](PRODUCTION-AUTH-READINESS.md); no SMS account/domain/support recipient was inferred or activated.
+
+## Historical public provider-profile release — 4 November 2026
 
 - Runtime `saan:provider-profile-275c91da1aa0`, config digest `sha256:ddf48536c5ac32dcdea603b67941b71bdec0a2c2475cd8277506664320c09a81`; QA target `saan:qa-275c91da1aa0`. Adds optional owner-uploaded cover and public contact availability, removes sample hours, uses uploaded cover in shop/map/metadata, and protects save while uploading. Contract/evidence: [PROVIDER-PUBLIC-PROFILE.md](PROVIDER-PUBLIC-PROFILE.md). Previous inclusive/security fixes are included.
 - Additive migration `20261104010000_provider_public_profile` applied after home-only backup `/home/ice/saan/backups/scheduled/20261104T071628Z-1503183`. Existing rows default to empty hours/null cover. Rollback image `saan:inclusive-8a648f0f7b38`, protected checkpoint `deployment.env.before-provider-profile-275c91da1aa0`; keep new columns/content when rolling back the image.
