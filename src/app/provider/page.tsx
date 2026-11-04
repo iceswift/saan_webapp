@@ -155,6 +155,8 @@ export default async function ProviderPage({ searchParams }: PageProps<"/provide
               phone: provider.phone,
               areas: provider.areas,
               publicAddress: provider.publicAddress,
+              contactHours: provider.contactHours,
+              coverUrl: provider.coverUrl,
               base: provider.location,
               serviceRadiusKm: provider.serviceRadiusKm,
             }}

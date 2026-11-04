@@ -1,0 +1,2 @@
+ALTER TABLE "Provider" ADD COLUMN "contactHours" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Provider" ADD COLUMN "coverUrl" TEXT;

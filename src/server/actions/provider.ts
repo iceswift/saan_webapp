@@ -5,25 +5,23 @@ import type { Provider } from "@prisma/client";
 import { db } from "../db";
 import { getCurrentUser } from "../auth";
 import { confirmProviderOrder } from "../provider-order-service";
+import { profileSchema, updateOwnedProviderProfile, type ProfileInput } from "../provider-profile-service";
+import { readImage } from "../storage";
 import { recordRefundObligations } from "../refund-obligations";
 import {
   addEvent,
-  geoSchema,
   idSchema,
   notify,
   NOT_ALLOWED,
   NOT_LOGGED_IN,
   parseInput,
-  phoneSchema,
   priceSchema,
   refreshAll,
   uploadUrlSchema,
 } from "../action-utils";
 import { fail, ok, type ActionResult } from "@/lib/result";
 import {
-  AREA_CODES,
   PACKAGE_TYPE_CODES,
-  PROVIDER_KIND_CODES,
   SHRINE_KIND_CODES,
 } from "@/lib/constants";
 import { formatBaht } from "@/lib/format";
@@ -37,35 +35,6 @@ async function myProvider(): Promise<Provider | null> {
   return db.provider.findUnique({ where: { userId: user.id } });
 }
 
-const profileSchema = z.object({
-  name: z.string().trim().min(2, "กรอกชื่อร้านหรือชื่อผู้ให้บริการ").max(100),
-  kind: z.enum(PROVIDER_KIND_CODES, "เลือกประเภทผู้ให้บริการ"),
-  description: z.string().trim().max(1000).optional(),
-  publicAddress: z.string().trim().max(500, "ที่อยู่ยาวได้ไม่เกิน 500 ตัวอักษร").optional(),
-  phone: phoneSchema,
-  areas: z.array(z.enum(AREA_CODES)).min(1, "เลือกพื้นที่ให้บริการอย่างน้อย 1 พื้นที่"),
-  /** ตำแหน่งร้านและรัศมีบริการ (ไม่บังคับ ส่ง null เพื่อล้างค่า) */
-  base: geoSchema.nullable().optional(),
-  serviceRadiusKm: z
-    .number("รัศมีต้องเป็นตัวเลข")
-    .int("รัศมีต้องเป็นจำนวนเต็ม")
-    .min(1, "รัศมีอย่างน้อย 1 กม.")
-    .max(500, "รัศมีมากสุด 500 กม.")
-    .nullable()
-    .optional(),
-});
-
-type ProfileInput = {
-  name: string;
-  kind: string;
-  description?: string;
-  publicAddress?: string;
-  phone: string;
-  areas: string[];
-  base?: { lat: number; lng: number } | null;
-  serviceRadiusKm?: number | null;
-};
-
 /** สมัครเป็นผู้ให้บริการ บัญชีจะอยู่ในสถานะรอตรวจสอบจนผู้ดูแลระบบอนุมัติ */
 export async function registerProvider(input: ProfileInput): Promise<ActionResult> {
   const user = await getCurrentUser();
@@ -76,6 +45,7 @@ export async function registerProvider(input: ProfileInput): Promise<ActionResul
 
   const existing = await db.provider.findUnique({ where: { userId: user.id } });
   if (existing) return fail("คุณสมัครเป็นผู้ให้บริการแล้ว");
+  if (data.coverUrl && !await readImage(data.coverUrl.split("/").at(-1)!)) return fail("ไม่พบรูปที่อัปโหลด กรุณาเลือกรูปอีกครั้ง");
 
   await db.$transaction(async (tx) => {
     await tx.provider.create({
@@ -85,6 +55,8 @@ export async function registerProvider(input: ProfileInput): Promise<ActionResul
         kind: data.kind,
         description: data.description ?? "",
         publicAddress: data.publicAddress ?? "",
+        contactHours: data.contactHours ?? "",
+        coverUrl: data.coverUrl ?? null,
         phone: data.phone,
         areas: JSON.stringify([...new Set(data.areas)]),
       },
@@ -99,31 +71,11 @@ export async function registerProvider(input: ProfileInput): Promise<ActionResul
 }
 
 export async function updateProviderProfile(input: ProfileInput): Promise<ActionResult> {
-  const provider = await myProvider();
-  if (!provider) return NOT_PROVIDER;
-  const parsed = parseInput(profileSchema, input);
-  if (!parsed.ok) return parsed;
-  const data = parsed.data;
-
-  await db.provider.update({
-    where: { id: provider.id },
-    data: {
-      name: data.name,
-      kind: data.kind,
-      description: data.description ?? "",
-      ...(data.publicAddress !== undefined ? { publicAddress: data.publicAddress } : {}),
-      phone: data.phone,
-      areas: JSON.stringify([...new Set(data.areas)]),
-      // ส่งมาเฉพาะเมื่อฟอร์มมีส่วนแผนที่ (undefined = ไม่แตะค่าเดิม)
-      ...(data.base !== undefined
-        ? { baseLat: data.base?.lat ?? null, baseLng: data.base?.lng ?? null }
-        : {}),
-      ...(data.serviceRadiusKm !== undefined ? { serviceRadiusKm: data.serviceRadiusKm } : {}),
-    },
-  });
-
-  refreshAll();
-  return ok();
+  const user = await getCurrentUser();
+  if (!user) return NOT_LOGGED_IN;
+  const result = await updateOwnedProviderProfile(user.id, input);
+  if (result.ok) refreshAll();
+  return result;
 }
 
 // ---------- ปฏิทินวันว่าง ----------

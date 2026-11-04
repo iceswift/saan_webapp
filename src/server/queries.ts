@@ -78,6 +78,8 @@ function toProvider(
     status: p.status as ProviderStatus,
     description: p.description,
     publicAddress: p.publicAddress,
+    contactHours: p.contactHours,
+    coverUrl: p.coverUrl,
     phone: p.phone,
     areas: parseList<AreaCode>(p.areas),
     rating: r ? Math.round(r.rating * 10) / 10 : null,

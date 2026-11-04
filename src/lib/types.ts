@@ -18,6 +18,8 @@ import type {
 } from "./constants";
 
 export type ProviderSummary = {
+  contactHours?: string;
+  coverUrl?: string | null;
   publicAddress?: string;
   id: string;
   name: string;

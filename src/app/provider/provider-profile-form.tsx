@@ -12,7 +12,7 @@ import { LocationPicker } from "@/components/map/location-picker";
 import { Notice } from "@/components/notice";
 import { TwoColumn } from "@/components/page-layout";
 import { Rise } from "@/components/rise";
-import { SampleBadge } from "@/components/sample-badge";
+import { ShopPhotoField } from "./shop-photo-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +27,6 @@ import {
   type ProviderKind,
 } from "@/lib/constants";
 import { FieldHint } from "@/components/field-hint";
-import { SAMPLE_OPENING_HOURS } from "@/lib/mock/biz-tips";
 import { registerProvider, updateProviderProfile } from "@/server/actions/provider";
 import { Field, FormSection } from "./form-bits";
 import { buildOptions, OptionCards, ToggleChips } from "./pickers";
@@ -49,6 +48,8 @@ type Initial = {
   kind: ProviderKind | null;
   description: string;
   publicAddress?: string;
+  contactHours?: string;
+  coverUrl?: string | null;
   phone: string;
   areas: AreaCode[];
   /** ที่ตั้งร้านที่บันทึกไว้ (เฉพาะแบบฟอร์มแก้ไข) */
@@ -69,6 +70,9 @@ export function ProviderProfileForm({
   const [name, setName] = useState(initial.name);
   const [kind, setKind] = useState<ProviderKind | null>(initial.kind);
   const [publicAddress, setPublicAddress] = useState(initial.publicAddress ?? "");
+  const [contactHours, setContactHours] = useState(initial.contactHours ?? "");
+  const [cover, setCover] = useState<string | null>(initial.coverUrl ?? null);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [description, setDescription] = useState(initial.description);
   const [phone, setPhone] = useState(initial.phone);
   const [areas, setAreas] = useState<AreaCode[]>(initial.areas);
@@ -79,6 +83,7 @@ export function ProviderProfileForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   function save() {
+    if (photoUploading || pending) return;
     const trimmedName = name.trim();
     const next: Errors = {};
     if (trimmedName.length < 2) next.name = "กรอกชื่อร้านหรือชื่อผู้ให้บริการ";
@@ -98,6 +103,8 @@ export function ProviderProfileForm({
       kind,
       description: description.trim(),
       publicAddress: publicAddress.trim(),
+      contactHours: contactHours.trim(),
+      coverUrl: cover,
       phone: normalizedPhone,
       areas,
     };
@@ -128,6 +135,10 @@ export function ProviderProfileForm({
         save();
       }}
     >
+      <FormSection title="รูปหน้าร้าน">
+        <p className="text-sm text-muted-foreground">ไม่บังคับ รูปนี้จะแสดงบนหน้าร้านและแผนที่ เลือกรูปที่คุณมีสิทธิ์เผยแพร่</p>
+        <ShopPhotoField value={cover} onChange={setCover} onBusyChange={setPhotoUploading} saving={pending} />
+      </FormSection>
       <FormSection title="ข้อมูลร้าน">
         <Field id="provider-name" label="ชื่อร้านหรือชื่อผู้ให้บริการ" error={errors.name}>
           <Input
@@ -196,6 +207,13 @@ export function ProviderProfileForm({
         </Field>
       </FormSection>
 
+      <FormSection title="ช่วงเวลาที่ติดต่อได้">
+        <Field id="provider-contact-hours" label="วันและเวลาที่ลูกค้าติดต่อร้านได้" hint="ไม่บังคับ แสดงต่อสาธารณะ ไม่ใช่การจองคิว กรุณาระบุหากต้องนัดหมายก่อนเข้าร้าน">
+          <Textarea id="provider-contact-hours" value={contactHours} maxLength={300} rows={3}
+            placeholder="เช่น จันทร์–เสาร์ 09:00–17:00 น. กรุณาโทรนัดก่อนเข้าร้าน"
+            onChange={event => setContactHours(event.target.value)} />
+        </Field>
+      </FormSection>
       <FormSection title="พื้นที่ให้บริการ">
         <fieldset>
           <legend className="sr-only">พื้นที่ให้บริการ</legend>
@@ -277,7 +295,7 @@ export function ProviderProfileForm({
       <AppShell
         width="full"
         footer={
-          <Button type="submit" form={formId} size="xl" variant="gold" loading={pending} className="w-full">
+          <Button type="submit" form={formId} size="xl" variant="gold" loading={pending || photoUploading} className="w-full">
             ส่งใบสมัคร
           </Button>
         }
@@ -325,7 +343,7 @@ export function ProviderProfileForm({
   return (
     <div className="flex flex-col gap-8">
       {fields}
-      <Button type="submit" form={formId} size="xl" loading={pending} className="w-full sm:w-fit sm:px-12">
+      <Button type="submit" form={formId} size="xl" loading={pending || photoUploading} className="w-full sm:w-fit sm:px-12">
         บันทึก
       </Button>
 
@@ -333,29 +351,6 @@ export function ProviderProfileForm({
         <h2 className="text-base font-medium">ตั้งค่าเพิ่มเติม</h2>
         <p className="mt-0.5 mb-4 text-sm text-muted-foreground">ส่วนนี้กำลังพัฒนา ยังบันทึกหรือใช้งานจริงไม่ได้</p>
         <ListGroup label="ตั้งค่าเพิ่มเติม">
-          <li>
-            <details className="group/hours">
-              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-4 px-4 py-3 transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
-                <span className="min-w-0 flex-1">
-                  <span className="block text-base leading-snug font-medium">เวลาเปิดร้าน</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">
-                    ให้ลูกค้ารู้ว่าติดต่อได้ช่วงไหน
-                  </span>
-                </span>
-                <SampleBadge />
-              </summary>
-              <ul className="divide-y divide-border border-t border-border px-4">
-                {SAMPLE_OPENING_HOURS.map((day) => (
-                  <li key={day.weekday} className="flex items-center justify-between gap-3 py-3 text-base">
-                    <span>{day.weekday}</span>
-                    <span className={day.closed ? "text-muted-foreground" : "numeric font-medium"}>
-                      {day.hours}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </li>
           <ListRow title="บัญชีรับเงิน" meta="บัญชีที่ร้านต้องการให้โอนเงินเข้า" trailing={<SoonBadge />} />
           <ListRow title="ทีมงานของร้าน" meta="เชิญช่างหรือผู้ช่วยมาดูแลงานร่วมกัน" trailing={<SoonBadge />} />
         </ListGroup>

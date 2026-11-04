@@ -32,7 +32,9 @@ test("public directory contains only verified businesses, rounds pins, and never
     assert.deepEqual(publicPin.location, { lat: 13.756, lng: 100.502 });
     assert.deepEqual(publicPin.areas, ["BKK"]);
     assert.equal(publicPin.address, pinned.publicAddress);
-    assert.deepEqual(Object.keys(publicPin).sort(), ["address", "areas", "id", "kind", "location", "name"]);
+    assert.deepEqual(Object.keys(publicPin).sort(), ["address", "areas", "contactHours", "coverUrl", "id", "kind", "location", "name"]);
+    assert.equal(publicPin.coverUrl, null);
+    assert.equal(publicPin.contactHours, "");
     assert.equal(rows.find(row => row.id === legacy.id)?.address, "");
     for (const id of [legacy.id, partial.id, outside.id]) assert.equal(rows.find(row => row.id === id)?.location, null);
     assert.deepEqual(rows.find(row => row.id === outside.id)?.areas, []);

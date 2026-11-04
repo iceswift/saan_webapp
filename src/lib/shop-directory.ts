@@ -1,5 +1,7 @@
 import type { AreaCode, ProviderKind } from "./constants";
 export type DirectoryShop = {
+  contactHours?: string;
+  coverUrl?: string | null;
   id: string;
   name: string;
   kind: ProviderKind;

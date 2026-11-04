@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Metadata } from "next";
 import { ViewTransition } from "react";
 import { notFound } from "next/navigation";
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: PageProps<"/shops/[id]">): Pr
     .filter(Boolean)
     .join(" · ");
   // ใช้รูปสินค้าจริงของร้านเป็นรูปแชร์ ถ้ามี (ไม่ใช้รูปวาดประกอบ)
-  const photo = shop.products.find((p) => p.imageUrl)?.imageUrl;
+  const photo = provider.coverUrl || shop.products.find((p) => p.imageUrl)?.imageUrl;
   return {
     title,
     description,
@@ -97,7 +98,7 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
       <PageHeader title={provider.name} backHref="/browse" backLabel="เลือกดูศาล" />
 
       <Rise>
-        <CoverBand />
+        {provider.coverUrl ? <div className="relative h-52 overflow-hidden rounded-2xl bg-muted sm:h-64 lg:h-80"><Image src={provider.coverUrl} alt={`ภาพร้าน ${provider.name} ที่ร้านอัปโหลด`} fill sizes="(min-width: 1024px) 1100px, 100vw" className="object-cover" priority /></div> : <CoverBand />}
         <div className="-mt-9 flex flex-col gap-4 px-4 lg:flex-row lg:items-end lg:gap-6 lg:px-8">
           {/* ต่อกับโมโนแกรมในแถว "ร้านที่ขายศาลนี้" ของหน้าสินค้า (ชื่อเดียวกันต่อร้าน) */}
           <ViewTransition name={`shop-${provider.id}`} share="morph-mark" default="none">
@@ -157,6 +158,7 @@ export default async function ShopPage({ params }: PageProps<"/shops/[id]">) {
           <p className="mt-3 text-sm text-muted-foreground">ตำแหน่งบนแผนที่เป็นค่าโดยประมาณ ไม่ใช่ที่อยู่จัดส่งหรือเขตพื้นที่รับงาน</p>
         </> : <p className="border-y border-border py-4 text-sm text-muted-foreground">ร้านยังไม่ได้ปักหมุดที่ตั้ง</p>}
         {provider.serviceRadiusKm ? <p className="mt-3 text-sm text-muted-foreground">รัศมีรับงานที่ร้านระบุ {provider.serviceRadiusKm} กม. ควรยืนยันพื้นที่และค่าเดินทางกับร้าน</p> : null}
+        <div className="mt-4 border-y border-border py-4"><h3 className="text-base font-medium">ช่วงเวลาที่ติดต่อได้</h3><p className="mt-2 whitespace-pre-line text-base text-muted-foreground">{provider.contactHours || "ร้านยังไม่ระบุช่วงเวลาติดต่อ กรุณาโทรสอบถาม"}</p><p className="mt-2 text-sm text-muted-foreground">ข้อมูลที่ร้านระบุ ไม่ใช่การยืนยันคิวงาน ควรนัดหมายก่อนเดินทาง</p></div>
         <div className="mt-4 flex flex-wrap gap-3">
           <a href={`tel:${provider.phone}`} className={buttonVariants({ variant: "outline", size: "xl" })}>โทรหาร้าน</a>
           {shopPoint ? <a href={mapsLink(shopPoint)} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "outline", size: "xl" })}>นำทางไปบริเวณร้าน</a> : null}

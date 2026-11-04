@@ -12,9 +12,9 @@ A completed change has reviewed Thai copy, meaningful interaction/error/empty/lo
 |---|---|---|
 | 1 | Close the full-screen map release | Closed engineering follow-up 4 Nov on inclusive-8a648f0f7b38; desktop/portrait/landscape geometry, keyboard filters, selection, large text and dark inspected. Physical devices/large datasets remain pilot checks. |
 | 2 | Inclusive end-to-end customer/provider/admin review | First pass shipped: Thai phone/OTP/prices, resend, safe returns, filter recovery; automated and browser evidence in INCLUSIVE-QA-2026-11-04.md. Full assistive-technology/real-participant matrix remains open. |
-| 3 | Real-provider readiness | Public profile/photos/contact availability, review/onboarding and payout-recipient setup. Existing photos are placeholder art; hours/team/account setup are unfinished. |
+| 3 | Real-provider readiness | Public photo and contact availability shipped and restore-tested 4 Nov; sample hours removed. Owner-scoped registration/edit and verified-only directory remain. Real shop details and approved payout-recipient onboarding remain open; team sharing stays deferred. See PROVIDER-PUBLIC-PROFILE.md. |
 | 4 | Live collection, settlement and refunds | Sandbox foundation exists. Need Omise's account-specific approval/contract, refund route, fees/holding terms, merchant/business/accounting decisions. Keep live gates closed. Prepare concrete configuration/runbooks before activation. |
-| 5 | Public operations | Real SMS/authentication, dependency/security review, public domain/ingress, external alert delivery and off-machine backups. No public exposure or new external data recipient without the necessary owner choice/authorization. |
+| 5 | Public operations | Next/Zod patched; dev tools pruned; current home-only backup and isolated restore verified. Prisma CLI advisories remain documented. Real SMS/authentication, public domain/ingress, external alert delivery and off-machine destination remain open. No public exposure or new external data recipient without the necessary owner choice/authorization. |
 | 6 | Small real-user pilot | Prepare task scripts, feedback/defect process, success/stop criteria and a limited rollout. Recruiting/real transactions require real participants and approved live setup. |
 
 ## Deferred optional features
