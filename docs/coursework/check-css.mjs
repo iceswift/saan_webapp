@@ -3,7 +3,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-const directory=path.join(root,'.next/static/css');
+// Webpack uses static/css; Turbopack emits CSS beside JS under static/chunks.
+const directory=path.join(root,'.next/static');
 const files=readdirSync(directory,{recursive:true}).filter(name=>name.endsWith('.css'));
 assert.ok(files.length,'Build must produce stylesheets');
 const css=files.map(name=>readFileSync(path.join(directory,name),'utf8')).join('\n');

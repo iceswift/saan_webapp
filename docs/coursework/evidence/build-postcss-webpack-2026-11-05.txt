@@ -1,0 +1,80 @@
+▲ Next.js 16.4.5 (webpack)
+- Environments: .env
+✓ Running next.config.ts took 64ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 14.4s
+  Running TypeScript ...
+  Finished TypeScript in 6.4s ...
+  Collecting page data using 23 workers ...
+  Generating static pages using 23 workers (0/44) ...
+  Generating static pages using 23 workers (11/44) 
+  Generating static pages using 23 workers (22/44) 
+  Generating static pages using 23 workers (33/44) 
+✓ Generating static pages using 23 workers (44/44) in 3.9s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/finance
+├ ƒ /admin/operations
+├ ƒ /api/files/[name]
+├ ƒ /api/geocode
+├ ƒ /api/health
+├ ƒ /api/internal/payment-reconcile
+├ ƒ /api/me/export
+├ ƒ /api/search
+├ ƒ /api/upload
+├ ƒ /api/webhooks/omise
+├ ƒ /browse
+├ ƒ /guide
+├ ƒ /guide/[slug]
+├ ƒ /help
+├ ○ /icon.svg
+├ ƒ /legal/privacy
+├ ƒ /legal/terms
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /new
+├ ƒ /new/checkout
+├ ƒ /new/products
+├ ƒ /notifications
+├ ƒ /orders
+├ ƒ /orders/[id]
+├ ƒ /orders/[id]/calendar
+├ ƒ /products/[id]
+├ ƒ /provider
+├ ƒ /provider/finance
+├ ƒ /provider/orders/[id]
+├ ƒ /provider/packages/[id]
+├ ƒ /provider/packages/new
+├ ƒ /provider/products/[id]
+├ ƒ /provider/products/new
+├ ƒ /request/new
+├ ƒ /requests/[id]
+├ ƒ /settings
+├ ƒ /settings/addresses
+├ ƒ /settings/addresses/[id]
+├ ƒ /settings/addresses/new
+├ ƒ /settings/display
+├ ƒ /settings/notifications
+├ ƒ /settings/privacy
+├ ƒ /settings/profile
+├ ƒ /settings/security
+├ ƒ /shops
+├ ƒ /shops/[id]
+├ ƒ /shrines
+├ ƒ /shrines/[id]
+├ ƒ /shrines/new
+├ ƒ /vows
+├ ƒ /vows/[id]
+└ ƒ /vows/new
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
