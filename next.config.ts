@@ -4,14 +4,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // ให้เปิดเซิร์ฟเวอร์พัฒนาผ่าน 127.0.0.1 ได้ด้วย (คุกกี้แยกจาก localhost ใช้ทดสอบสองบัญชีพร้อมกัน)
   allowedDevOrigins: ["127.0.0.1"],
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
 };
 
 export default nextConfig;

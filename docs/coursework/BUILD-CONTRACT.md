@@ -19,3 +19,7 @@ The direct Webpack command completed, but the browser rendered oversized unbound
 Use the existing @tailwindcss/turbopack package, whose implementation is a standard webpack-compatible loader, as a CSS pre-loader in the Webpack pipeline. Preserve the current Turbopack rule. No new dependency, shared UI edit, live integration or home-server deployment is required.
 
 Record the real failing CSS check before changing config and the passing run afterward. This is a narrow prospective correction with a genuine red/green sequence; it does not retroactively establish TDD for the older application. Human teammate review remains outstanding.
+
+## Revision 2 after the first correction attempt
+
+Adding a custom Webpack CSS rule disabled Next.js's built-in CSS handling. The attempt failed compilation and is retained as build-corrected-webpack-2026-11-05.txt. It was not accepted. Revised design follows the installed Next.js CSS guide: the official @tailwindcss/postcss 4.3.3 adapter and a shared postcss.config.mjs replace the bundler-specific compiler rule. This adds one direct development dependency matching the existing compiler version; preserve native Next.js CSS handling for both bundlers. Acceptance criteria remain unchanged.
