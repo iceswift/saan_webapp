@@ -1,0 +1,167 @@
+▲ Next.js 16.4.5 (Turbopack)
+- Environments: .env
+✓ Running next.config.ts took 38ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 23.2s
+  Running TypeScript ...
+  Finished TypeScript in 4.5s ...
+  Collecting page data using 23 workers ...
+  Generating static pages using 23 workers (0/44) ...
+  Generating static pages using 23 workers (11/44) 
+  Generating static pages using 23 workers (22/44) 
+  Generating static pages using 23 workers (33/44) 
+✓ Generating static pages using 23 workers (44/44) in 5.9s
+  Finalizing page optimization ...
+Turbopack build encountered 3 warnings:
+./src/server/storage.ts:46:25
+Warning: Dynamic filesystem access causes tracing of the whole project
+  44 |   if (!match) return null;
+  45 |   try {
+> 46 |     const bytes = await readFile(path.join(UPLOAD_DIR, name));
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  47 |     return { bytes, mime: TYPES[match[1] as Ext].mime };
+  48 |   } catch {
+  49 |     return null;
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFile(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  App Route:
+    ./src/server/storage.ts
+    ./src/app/api/upload/route.ts
+
+  Server Component:
+    ./src/server/storage.ts
+    ./src/server/actions/provider.ts
+
+
+./src/server/storage.ts:38:19
+Warning: Dynamic filesystem access causes tracing of the whole project
+  36 |   const name = `${randomBytes(16).toString("hex")}.${ext}`;
+  37 |   await mkdir(UPLOAD_DIR, { recursive: true });
+> 38 |   await writeFile(path.join(UPLOAD_DIR, name), bytes);
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  39 |   return { url: `/api/files/${name}` };
+  40 | }
+  41 |
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  App Route:
+    ./src/server/storage.ts
+    ./src/app/api/upload/route.ts
+
+  Server Component:
+    ./src/server/storage.ts
+    ./src/server/actions/provider.ts
+
+
+./src/server/storage.ts:46:34
+Warning: Dynamic filesystem access causes tracing of the whole project
+  44 |   if (!match) return null;
+  45 |   try {
+> 46 |     const bytes = await readFile(path.join(UPLOAD_DIR, name));
+     |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  47 |     return { bytes, mime: TYPES[match[1] as Ext].mime };
+  48 |   } catch {
+  49 |     return null;
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  App Route:
+    ./src/server/storage.ts
+    ./src/app/api/upload/route.ts
+
+  Server Component:
+    ./src/server/storage.ts
+    ./src/server/actions/provider.ts
+
+
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /account
+├ ƒ /admin
+├ ƒ /admin/finance
+├ ƒ /admin/operations
+├ ƒ /api/files/[name]
+├ ƒ /api/geocode
+├ ƒ /api/health
+├ ƒ /api/internal/payment-reconcile
+├ ƒ /api/me/export
+├ ƒ /api/search
+├ ƒ /api/upload
+├ ƒ /api/webhooks/omise
+├ ƒ /browse
+├ ƒ /guide
+├ ƒ /guide/[slug]
+├ ƒ /help
+├ ○ /icon.svg
+├ ƒ /legal/privacy
+├ ƒ /legal/terms
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /new
+├ ƒ /new/checkout
+├ ƒ /new/products
+├ ƒ /notifications
+├ ƒ /orders
+├ ƒ /orders/[id]
+├ ƒ /orders/[id]/calendar
+├ ƒ /products/[id]
+├ ƒ /provider
+├ ƒ /provider/finance
+├ ƒ /provider/orders/[id]
+├ ƒ /provider/packages/[id]
+├ ƒ /provider/packages/new
+├ ƒ /provider/products/[id]
+├ ƒ /provider/products/new
+├ ƒ /request/new
+├ ƒ /requests/[id]
+├ ƒ /settings
+├ ƒ /settings/addresses
+├ ƒ /settings/addresses/[id]
+├ ƒ /settings/addresses/new
+├ ƒ /settings/display
+├ ƒ /settings/notifications
+├ ƒ /settings/privacy
+├ ƒ /settings/profile
+├ ƒ /settings/security
+├ ƒ /shops
+├ ƒ /shops/[id]
+├ ƒ /shrines
+├ ƒ /shrines/[id]
+├ ƒ /shrines/new
+├ ƒ /vows
+├ ƒ /vows/[id]
+└ ƒ /vows/new
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

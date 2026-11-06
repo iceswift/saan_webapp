@@ -1,0 +1,410 @@
+
+> saan@0.1.0 test:integration
+> node scripts/test-integration.mjs
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": SQLite database "money-test.db" at "file:D:/saan/storage/tests/ci/money-test.db"
+
+The database is already in sync with the Prisma schema.
+
+TAP version 13
+# Subtest: durable simulated receipts survive another process and reject changed requests
+ok 1 - durable simulated receipts survive another process and reject changed requests
+  ---
+  duration_ms: 567.7983
+  type: 'test'
+  ...
+# Subtest: unread view finds older items beyond the recent fifty and remains owner scoped
+ok 2 - unread view finds older items beyond the recent fifty and remains owner scoped
+  ---
+  duration_ms: 131.9603
+  type: 'test'
+  ...
+# Subtest: payout requires explicit sandbox gate and never production
+ok 3 - payout requires explicit sandbox gate and never production
+  ---
+  duration_ms: 1.5731
+  type: 'test'
+  ...
+# Subtest: only admin can dispatch; invalid policy, recipient or order prevents reservation
+ok 4 - only admin can dispatch; invalid policy, recipient or order prevents reservation
+  ---
+  duration_ms: 158.6664
+  type: 'test'
+  ...
+# Subtest: concurrent requests dispatch once; sent alone never finalizes; paid finalizes one event
+ok 5 - concurrent requests dispatch once; sent alone never finalizes; paid finalizes one event
+  ---
+  duration_ms: 162.7525
+  type: 'test'
+  ...
+# Subtest: lost POST response recovers original identity from metadata without another dispatch
+ok 6 - lost POST response recovers original identity from metadata without another dispatch
+  ---
+  duration_ms: 100.2628
+  type: 'test'
+  ...
+# Subtest: missing original, changed account or destination retains unknown reservation
+ok 7 - missing original, changed account or destination retains unknown reservation
+  ---
+  duration_ms: 82.8673
+  type: 'test'
+  ...
+# Subtest: refund and unknown payout reservations prevent spending the same available funds
+ok 8 - refund and unknown payout reservations prevent spending the same available funds
+  ---
+  duration_ms: 60.6279
+  type: 'test'
+  ...
+# Subtest: two different orders cannot reserve the same available account balance
+ok 9 - two different orders cannot reserve the same available account balance
+  ---
+  duration_ms: 127.886
+  type: 'test'
+  ...
+# Subtest: provider acceptance followed by local write failure recovers once without resubmission
+ok 10 - provider acceptance followed by local write failure recovers once without resubmission
+  ---
+  duration_ms: 150.821
+  type: 'test'
+  ...
+# Subtest: unconfirmed transfers rotate out of the batch so later paid transfers are checked
+ok 11 - unconfirmed transfers rotate out of the batch so later paid transfers are checked
+  ---
+  duration_ms: 680.5483
+  type: 'test'
+  ...
+# Subtest: concurrent OTP redemption succeeds exactly once and cannot be replayed
+ok 12 - concurrent OTP redemption succeeds exactly once and cannot be replayed
+  ---
+  duration_ms: 78.2432
+  type: 'test'
+  ...
+# Subtest: expired OTP and locked OTP cannot be redeemed
+ok 13 - expired OTP and locked OTP cannot be redeemed
+  ---
+  duration_ms: 103.779
+  type: 'test'
+  ...
+# Subtest: resending never resurrects an older code after the newest challenge is consumed, expired or locked
+ok 14 - resending never resurrects an older code after the newest challenge is consumed, expired or locked
+  ---
+  duration_ms: 153.3972
+  type: 'test'
+  ...
+# Subtest: a paid then cancelled order cannot report a new successful payment
+ok 15 - a paid then cancelled order cannot report a new successful payment
+  ---
+  duration_ms: 195.0536
+  type: 'test'
+  ...
+# Subtest: negative stale retrieval cannot release cancellation while submission is in flight
+ok 16 - negative stale retrieval cannot release cancellation while submission is in flight
+  ---
+  duration_ms: 163.3791
+  type: 'test'
+  ...
+# Subtest: concurrent duplicate deposits execute once and finalize once
+ok 17 - concurrent duplicate deposits execute once and finalize once
+  ---
+  duration_ms: 149.8156
+  type: 'test'
+  ...
+# Subtest: cancellation cannot pass a reserved in-flight deposit
+ok 18 - cancellation cannot pass a reserved in-flight deposit
+  ---
+  duration_ms: 142.9154
+  type: 'test'
+  ...
+# Subtest: cancellation first prevents all subsequent charges
+ok 19 - cancellation first prevents all subsequent charges
+  ---
+  duration_ms: 112.2233
+  type: 'test'
+  ...
+# Subtest: balance completion creates one payment and one shrine with coordinates
+ok 20 - balance completion creates one payment and one shrine with coordinates
+  ---
+  duration_ms: 153.6125
+  type: 'test'
+  ...
+# Subtest: legacy fully paid completion is idempotent without gateway call
+ok 21 - legacy fully paid completion is idempotent without gateway call
+  ---
+  duration_ms: 107.2367
+  type: 'test'
+  ...
+# Subtest: timeout stays UNKNOWN and reconciliation retrieves without recharging
+ok 22 - timeout stays UNKNOWN and reconciliation retrieves without recharging
+  ---
+  duration_ms: 182.6871
+  type: 'test'
+  ...
+# Subtest: fresh PROCESSING cannot be reconciled while execute is in flight
+ok 23 - fresh PROCESSING cannot be reconciled while execute is in flight
+  ---
+  duration_ms: 131.6095
+  type: 'test'
+  ...
+# Subtest: FAILED is terminal and permits cancellation without later reconciliation
+ok 24 - FAILED is terminal and permits cancellation without later reconciliation
+  ---
+  duration_ms: 144.7143
+  type: 'test'
+  ...
+# Subtest: PENDING blocks a new charge and cancellation until retrieval confirms success
+ok 25 - PENDING blocks a new charge and cancellation until retrieval confirms success
+  ---
+  duration_ms: 165.8494
+  type: 'test'
+  ...
+# Subtest: stale PROCESSING recovers through retrieval without another execution
+ok 26 - stale PROCESSING recovers through retrieval without another execution
+  ---
+  duration_ms: 126.1668
+  type: 'test'
+  ...
+# Subtest: captured payment with local write failure preserves reference and reconciles once
+ok 27 - captured payment with local write failure preserves reference and reconciles once
+  ---
+  duration_ms: 263.1895
+  type: 'test'
+  ...
+# Subtest: unauthorized customer cannot pay or cancel another customer's order
+ok 28 - unauthorized customer cannot pay or cancel another customer's order
+  ---
+  duration_ms: 115.4773
+  type: 'test'
+  ...
+# Subtest: legacy overpayment is blocked for manual inspection
+ok 29 - legacy overpayment is blocked for manual inspection
+  ---
+  duration_ms: 118.6776
+  type: 'test'
+  ...
+# Subtest: asynchronous QR reserves once, resumes the same charge, and only completes on retrieval
+ok 30 - asynchronous QR reserves once, resumes the same charge, and only completes on retrieval
+  ---
+  duration_ms: 295.3549
+  type: 'test'
+  ...
+# Subtest: durable inbox deduplicates, resumes after lease expiry, retrieves provider truth and finalizes once
+ok 31 - durable inbox deduplicates, resumes after lease expiry, retrieves provider truth and finalizes once
+  ---
+  duration_ms: 291.1308
+  type: 'test'
+  ...
+# Subtest: unpaid asynchronous balance never completes work; missing callback polling completes once
+ok 32 - unpaid asynchronous balance never completes work; missing callback polling completes once
+  ---
+  duration_ms: 859.128
+  type: 'test'
+  ...
+# Subtest: concurrent balance confirmation creates one completion event, payment and shrine
+ok 33 - concurrent balance confirmation creates one completion event, payment and shrine
+  ---
+  duration_ms: 201.2529
+  type: 'test'
+  ...
+# Subtest: cancelled paid Omise deposit creates one refund obligation without claiming money was returned
+ok 34 - cancelled paid Omise deposit creates one refund obligation without claiming money was returned
+  ---
+  duration_ms: 190.2978
+  type: 'test'
+  ...
+# Subtest: blocked Bangkok date rejects confirmation and rolls back every mutation
+ok 35 - blocked Bangkok date rejects confirmation and rolls back every mutation
+  ---
+  duration_ms: 139.3304
+  type: 'test'
+  ...
+# Subtest: an open date confirms once and emits one event and notification
+ok 36 - an open date confirms once and emits one event and notification
+  ---
+  duration_ms: 103.5605
+  type: 'test'
+  ...
+# Subtest: closing a date leaves an already confirmed appointment intact
+ok 37 - closing a date leaves an already confirmed appointment intact
+  ---
+  duration_ms: 111.3391
+  type: 'test'
+  ...
+# Subtest: another user and an unverified owner cannot confirm
+ok 38 - another user and an unverified owner cannot confirm
+  ---
+  duration_ms: 97.3987
+  type: 'test'
+  ...
+# Subtest: concurrent confirmation and cancellation produce one terminal transition
+ok 39 - concurrent confirmation and cancellation produce one terminal transition
+  ---
+  duration_ms: 127.1196
+  type: 'test'
+  ...
+# Subtest: past and invalid appointments cannot mutate the order
+ok 40 - past and invalid appointments cannot mutate the order
+  ---
+  duration_ms: 78.9751
+  type: 'test'
+  ...
+# Subtest: public profile updates are owner scoped, preserve omitted fields, and publish only explicit shop content
+ok 41 - public profile updates are owner scoped, preserve omitted fields, and publish only explicit shop content
+  ---
+  duration_ms: 133.049
+  type: 'test'
+  ...
+# Subtest: refund case gate always denies production and requires explicit private sandbox opt-in
+ok 42 - refund case gate always denies production and requires explicit private sandbox opt-in
+  ---
+  duration_ms: 2.0293
+  type: 'test'
+  ...
+# Subtest: only admins open one full-amount sandbox case; customer projection excludes internal evidence
+ok 43 - only admins open one full-amount sandbox case; customer projection excludes internal evidence
+  ---
+  duration_ms: 216.5743
+  type: 'test'
+  ...
+# Subtest: stale approvals, real bank details, duplicate reference and invalid transitions cannot complete a case
+ok 44 - stale approvals, real bank details, duplicate reference and invalid transitions cannot complete a case
+  ---
+  duration_ms: 276.9665
+  type: 'test'
+  ...
+# Subtest: a transfer reference cannot be reused on another case and failed audit writes roll back state
+ok 45 - a transfer reference cannot be reused on another case and failed audit writes roll back state
+  ---
+  duration_ms: 790.1764
+  type: 'test'
+  ...
+# Subtest: concurrent review submissions create one review and one notification
+ok 46 - concurrent review submissions create one review and one notification
+  ---
+  duration_ms: 171.937
+  type: 'test'
+  ...
+# Subtest: another user cannot review an order
+ok 47 - another user cannot review an order
+  ---
+  duration_ms: 80.0648
+  type: 'test'
+  ...
+# Subtest: reviews require completed customer acceptance
+ok 48 - reviews require completed customer acceptance
+  ---
+  duration_ms: 80.7986
+  type: 'test'
+  ...
+# Subtest: notification insertion failure rolls back the review and permits retry
+ok 49 - notification insertion failure rolls back the review and permits retry
+  ---
+  duration_ms: 166.1148
+  type: 'test'
+  ...
+# Subtest: Omise sandbox requires explicit selection and cannot enable public production
+ok 50 - Omise sandbox requires explicit selection and cannot enable public production
+  ---
+  duration_ms: 1.3437
+  type: 'test'
+  ...
+# Subtest: production never enables test login or simulated payments
+ok 51 - production never enables test login or simulated payments
+  ---
+  duration_ms: 0.3542
+  type: 'test'
+  ...
+# Subtest: staging requires explicit switch, valid allowlist and selected mock gateway
+ok 52 - staging requires explicit switch, valid allowlist and selected mock gateway
+  ---
+  duration_ms: 0.4443
+  type: 'test'
+  ...
+# Subtest: unsupported Omise refunds remain actionable obligations; refund/reconcile/payout never contact provider
+ok 53 - unsupported Omise refunds remain actionable obligations; refund/reconcile/payout never contact provider
+  ---
+  duration_ms: 175.9317
+  type: 'test'
+  ...
+# Subtest: refund obligation insertion rolls back with cancellation and retries do not duplicate it
+ok 54 - refund obligation insertion rolls back with cancellation and retries do not duplicate it
+  ---
+  duration_ms: 83.6149
+  type: 'test'
+  ...
+# Subtest: duplicate concurrent refunds finalize once with one audit event
+ok 55 - duplicate concurrent refunds finalize once with one audit event
+  ---
+  duration_ms: 128.5729
+  type: 'test'
+  ...
+# Subtest: completed fully paid work pays shop once despite duplicate requests
+ok 56 - completed fully paid work pays shop once despite duplicate requests
+  ---
+  duration_ms: 122.3312
+  type: 'test'
+  ...
+# Subtest: no payout before acceptance, no underpaid payout, no refund of completed work
+ok 57 - no payout before acceptance, no underpaid payout, no refund of completed work
+  ---
+  duration_ms: 106.2587
+  type: 'test'
+  ...
+# Subtest: refund timeout blocks repeat execution and retrieves original result exactly once
+ok 58 - refund timeout blocks repeat execution and retrieves original result exactly once
+  ---
+  duration_ms: 121.8911
+  type: 'test'
+  ...
+# Subtest: never reconcile undispatched requests and never refund via another gateway
+ok 59 - never reconcile undispatched requests and never refund via another gateway
+  ---
+  duration_ms: 62.258
+  type: 'test'
+  ...
+# Subtest: shop finance never returns another shop's orders
+ok 60 - shop finance never returns another shop's orders
+  ---
+  duration_ms: 94.7539
+  type: 'test'
+  ...
+# Subtest: mock validation rejects fractional/negative amounts and stable keys preserve references
+ok 61 - mock validation rejects fractional/negative amounts and stable keys preserve references
+  ---
+  duration_ms: 0.9346
+  type: 'test'
+  ...
+# Subtest: stale negative retrieval never hides a later successful refund submission
+ok 62 - stale negative retrieval never hides a later successful refund submission
+  ---
+  duration_ms: 122.4708
+  type: 'test'
+  ...
+# Subtest: public directory contains only verified businesses, rounds pins, and never exposes owner or customer locations
+ok 63 - public directory contains only verified businesses, rounds pins, and never exposes owner or customer locations
+  ---
+  duration_ms: 623.9266
+  type: 'test'
+  ...
+# Subtest: legacy vows stay valid without coordinates; only the owner can read or update a pin
+ok 64 - legacy vows stay valid without coordinates; only the owner can read or update a pin
+  ---
+  duration_ms: 89.9855
+  type: 'test'
+  ...
+# Subtest: invalid, partial and out-of-bounds coordinates never change a stored pin
+ok 65 - invalid, partial and out-of-bounds coordinates never change a stored pin
+  ---
+  duration_ms: 46.8266
+  type: 'test'
+  ...
+1..65
+# tests 65
+# suites 0
+# pass 65
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23209.5421

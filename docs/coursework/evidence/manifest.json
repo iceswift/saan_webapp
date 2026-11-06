@@ -1,0 +1,53 @@
+{
+  "checkedAt": "2026-11-05T10:25:15.937299+07:00",
+  "applicationBaseline": "846b532cd5f609844bf1885c58e1e78576d69bf6",
+  "courseReleaseAccepted": false,
+  "documentPages": 27,
+  "rendering": "Hidden Microsoft Word PDF export and bundled Poppler PNG rasterization",
+  "checks": {
+    "integration": {
+      "exitCode": 0,
+      "tests": 69,
+      "pass": 69,
+      "fail": 0,
+      "skipped": 0
+    },
+    "http": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "sourceIdentity": "846b532cd5f609844bf1885c58e1e78576d69bf6"
+    },
+    "typecheck": {
+      "exitCode": 0
+    },
+    "webpackBuild": {
+      "exitCode": 0,
+      "details": "build-postcss-webpack-2026-11-05.txt"
+    },
+    "defaultBuild": {
+      "exitCode": 0,
+      "details": "build-postcss-default-2026-11-05.txt"
+    },
+    "compiledStyles": {
+      "exitCode": 0,
+      "details": "css-after-2026-11-05.txt"
+    }
+  },
+  "artifacts": {
+    "Saan_CPE334_Deliverable_1.docx": {
+      "bytes": 223549,
+      "sha256": "3a5dc7c49fe6a5161491d21877c758c77c1c80e79091389c61988f8e3ba75066"
+    },
+    "Saan_CPE334_Deliverable_1.pdf": {
+      "bytes": 718298,
+      "sha256": "5e584552b420749f208ad9247f51453080a142a9c756248b443f988c10e61bb8"
+    }
+  },
+  "remaining": [
+    "Master course specification and reuse decision",
+    "Genuine teammate review and contribution evidence",
+    "Complete browser-created order journey and impossible calendar date case",
+    "Human acceptance of the final release"
+  ]
+}

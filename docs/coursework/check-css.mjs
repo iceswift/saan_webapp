@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+// Webpack uses static/css; Turbopack emits CSS beside JS under static/chunks.
+const directory=path.join(root,'.next/static');
+const files=readdirSync(directory,{recursive:true}).filter(name=>name.endsWith('.css'));
+assert.ok(files.length,'Build must produce stylesheets');
+const css=files.map(name=>readFileSync(path.join(directory,name),'utf8')).join('\n');
+assert.equal(/@(?:theme|utility)\b/.test(css),false,'Tailwind directives must be compiled for browser layout');
+assert.match(css,/\.flex\s*\{\s*display:\s*flex\s*;?\s*\}/,'Shared flex layout must exist in built CSS');
+console.log('PASS BLD-AC-01: compiled directives and shared flex layout utility');

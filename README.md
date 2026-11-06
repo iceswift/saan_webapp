@@ -1,5 +1,9 @@
 # Saan
 
+## University coursework
+
+The separate English CPE 334 report, actual verification evidence and practical two-person review workbook are documented in [docs/coursework/README.md](docs/coursework/README.md). Course allocation is separate from completed student contributions and release acceptance. The shared PostCSS configuration supports both default and Webpack builds; the exact verified commands and results are retained in that workspace.
+
 เว็บแอปตัวกลางงานศาลพระภูมิ: ตั้งศาลใหม่ ถอนย้าย ซ่อม ศาลของฉัน และสมุดบน
 แผนผลิตภัณฑ์อยู่ที่ [docs/PLAN.md](docs/PLAN.md) แนวทางเขียนโค้ดอยู่ที่ [AGENTS.md](AGENTS.md)
 
