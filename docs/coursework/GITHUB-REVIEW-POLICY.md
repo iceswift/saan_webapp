@@ -22,4 +22,3 @@ Repository: https://github.com/iceswift/saan_webapp (private).
 The review gate requires one eligible reviewer, not a named CODEOWNER. If more collaborators are added later, revisit named-review requirements so the policy continues to guarantee the intended reviewer. The owner merge gate continues to reserve merging to iceswift.
 
 Both rules follow the default branch rather than a literal name. Revisit them before changing the repository's default branch. No commits, merges, test pushes or deployment changes were made to test rejection; verification inspected saved active settings and API definitions. No required CI checks were added in this settings task.
-

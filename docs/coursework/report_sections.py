@@ -52,13 +52,13 @@ def section_c_ui(page, para, sub, table, code):
 def section_e_boundaries(page, para, sub, table, code):
     page('Part E', 'Order boundaries and verification responsibilities')
     table(['Input or condition', 'Expected behavior', 'Evidence obligation'], [
-        ('Product inactive or shop not verified', 'Reject submission; public detail also becomes unavailable.', 'CQ-01 covers queries. Direct createInstallOrder rejection is still a separate action-level case.'),
+        ('Product inactive or shop not verified', 'Reject submission; public detail also becomes unavailable.', 'CQ-01 covers queries. HTTP-12 now verifies actual stale product/provider rejection without writes.'),
         ('Package belongs to another shop', 'Reject the entire request; never charge for a partially accepted selection.', 'HTTP-05 passed the actual rejected action with unchanged order count. HTTP-04 supplies a same-shop control.'),
         ('Duplicate package IDs', 'Deduplicate before pricing; do not add the same package twice.', 'HTTP-04 passed: one package counted once, total 1100, deposit 330 and two order items.'),
         ('Unsupported area or outside radius', 'Reject when applicable; optional coordinates do not imply GPS consent.', 'Test area rejection and radius boundary with synthetic coordinates. Do not infer real customer location.'),
         ('No dates or more than three', 'Schema rejection before persistence.', 'Assert returned failure and unchanged order count. Inspect focused field in the UI.'),
         ('Today past date or all days blocked', 'Reject; require future Bangkok dates and at least one open preference.', 'Clock-aware boundary cases and zero new records. Confirmed appointments use a separate future-time check.'),
-        ('Malformed or impossible date', 'Reject impossible calendar values as a desired validation boundary.', 'Existing action checks yyyy-mm-dd shape and lexical future order. Calendar validity needs an explicit test and potential correction; not claimed complete.'),
+        ('Malformed or impossible date', 'Reject impossible calendar values before persistence.', 'Corrected through PR 11 after actual failing HTTP regression; HTTP-10/11 verify rejection and valid leap/tomorrow controls.'),
         ('Catalog price changes after purchase', 'Persisted item and order amounts do not silently change.', 'CQ-03 passed stored snapshot assertions. HTTP-04 separately passed server-side action pricing and persistence.'),
         ('Another user reads the order', 'No private address, note or messages returned.', 'CQ-04 and HTTP-06 passed query and session denial. VIS-03 shows the unrelated-account browser result.'),
     ], [4.1,6.3,6.8])
@@ -75,7 +75,7 @@ def section_f_coverage(page, para, sub, table, code):
         ('AC-03 / TEST-03', 'HTTP-01 and HTTP-09; browser logout and protected navigation.', 'Passed stored-session deletion and denied replay; explicit login redirect verified, including streaming transport.'),
         ('AC-04 / TEST-04', 'coursework-queries.integration.test.ts: CQ-01 and CQ-02.', 'Passed: active verified catalog, filters, stale verification and same-shop active package projection. UI evidence pending.'),
         ('AC-05 / TEST-05', 'CQ-03 plus HTTP-04 actual createInstallOrder.', 'Passed buyer identity, deduplicated packages, total 1100, deposit 330, two items and initial event; saved route retrieval verified.'),
-        ('AC-06 / TEST-06', 'HTTP-05 actual invalid createInstallOrder calls.', 'Passed unsupported area, foreign package, past or empty dates and all-blocked preferences with unchanged count. Impossible calendar date remains open.'),
+        ('AC-06 / TEST-06', 'HTTP-05 and HTTP-10/11/12 actual createInstallOrder calls.', 'Passed invalid inputs, real calendar rejection, Bangkok today/tomorrow and stale eligibility without writes; see current evidence update.'),
         ('AC-07 / TEST-07', 'CQ-04 plus HTTP-06 and unrelated-user browser check.', 'Passed query and actual session route denial: no private address or note for unrelated buyer/provider.'),
         ('AC-08 / TEST-08', 'Duplicate-deposit integration case plus HTTP-07.', 'Passed mock deposit action twice with one paid record and AWAITING_PROVIDER. No external gateway used.'),
         ('AC-09 / TEST-09', 'Provider service cases and HTTP-08 authenticated confirmOrder.', 'Passed one accepted confirmation and stored appointment after duplicate attempt. Browser retrieved confirmed result.'),
@@ -99,7 +99,7 @@ def section_f_http(page, para, sub, table, code):
         ('HTTP-08', 'Blocked confirmation preserves events, notifications and schedule; removing the block allows one confirmation and rejects a duplicate.', 'PASS'),
         ('HTTP-09', 'Actual logout removes the session; replaying its old cookie yields an explicit login navigation and no private order.', 'PASS'),
     ], [2.3,13.1,1.8])
-    code('Command: node docs/coursework/check-http.mjs\nRESULT 9 passed, 0 failed, 0 skipped')
+    code('Historical 5 November run: node docs/coursework/check-http.mjs\nRESULT 9 passed, 0 failed, 0 skipped\nCurrent 7 November run: 13 passed; see closing update')
     para('Initial harness attempts failed because the SQLite file needed to exist and because streamed login navigation was incorrectly expected to always use an HTTP 3xx status. Both failures are retained. The corrected check requires an explicit Next.js login redirect directive and no private marker; it does not treat an arbitrary HTTP 200 as authorization denial. No OTP, session token or raw server log is included in report evidence.')
 
 def section_f_build(page, para, sub, table, code):
@@ -124,10 +124,10 @@ def section_f_team(page, para, sub, table, code):
     ], [4.1,7,6.1])
     sub('Meaningful verification without heavy coding')
     para('Supanut can take an independent verification task from setup to outcome: read the expected rule, prepare synthetic conditions, run the journey, compare actual state with the contract, report a mismatch, and verify a correction. A finding should identify the action, starting state, expected result, actual result and evidence. Merely clicking Approve or adding a name to the cover is not this work.')
-    sub('Contribution record template')
+    sub('Contribution records and outstanding evidence')
     table(['Date and member', 'Artifact and work performed', 'Evidence and result'], [
-        ('Awaiting execution', 'Requirements review: identify ambiguous rule and propose an observable AC.', 'Record actual document change or Issue and the decision reached.'),
-        ('Awaiting execution', 'Manual test: run a named TEST against a recorded release.', 'Record input, expected and actual result, pass or defect and screenshot.'),
+        ('7 Nov / Supanut', 'Requirements review reported in Issue 4; UI and automated checks reported in Issues 5 and 8.', 'Comments received; referenced detailed findings, logs and screenshots still awaited. Do not infer their contents.'),
+        ('7 Nov / Suwiwat with AI', 'Published baseline through PR 10; reproduced and corrected impossible calendar dates through PR 11.', 'Real red/green HTTP evidence, 69 integration checks and owner-authorized integration; no peer PR approval claimed.'),
         ('Awaiting execution', 'Peer review: inspect source, assertions and behavior in another author’s PR.', 'Record a specific finding or reason for approval and response or retest.'),
     ], [3.3,7,6.9])
     sub('AI declaration and attribution')
@@ -135,7 +135,7 @@ def section_f_team(page, para, sub, table, code):
 
 def section_f_review(page, para, sub, table, code):
     page('Part F', 'Independent verification and release checklist')
-    para('The following is a runnable handoff for Supanut. Execution has not been claimed. Use synthetic local data and record the exact source revision plus any uncommitted changes. Do not test against real customers or submit a live payment.')
+    para('This handoff defines the verification details to retain. Supanut has now posted summaries on Issues 4, 5 and 8; the closing evidence update records what was received and what artifacts are still awaited. Use synthetic local data and record exact source identity. Do not test against real customers or submit a live payment.')
     table(['Check', 'Steps and expected observation', 'Record'], [
         ('RV-01 Requirements', 'Read FR-03, BR-01 and AC-05. Explain who computes the price and why the client cannot supply it. Compare wording with the source.', 'Any mismatch, clarified requirement and traceability update.'),
         ('RV-02 Normal journey', 'Log in as seeded buyer, create an order, perform mock deposit, switch to its shop, confirm an open future date and reload as buyer.', 'Role and release, order reference, totals, saved status, screenshots and actual outcome.'),

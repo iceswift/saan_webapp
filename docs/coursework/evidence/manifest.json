@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-11-05T10:25:15.937299+07:00",
-  "applicationBaseline": "846b532cd5f609844bf1885c58e1e78576d69bf6",
+  "checkedAt": "2026-11-07T02:02:36.616543+07:00",
+  "applicationBaseline": "9377577047bf210c5e72da0cf7fbab5733451fa0",
   "courseReleaseAccepted": false,
-  "documentPages": 27,
+  "documentPages": 29,
   "rendering": "Hidden Microsoft Word PDF export and bundled Poppler PNG rasterization",
   "checks": {
     "integration": {
@@ -13,21 +13,21 @@
       "skipped": 0
     },
     "http": {
-      "passed": 9,
+      "passed": 13,
       "failed": 0,
       "skipped": 0,
-      "sourceIdentity": "846b532cd5f609844bf1885c58e1e78576d69bf6"
+      "sourceIdentity": "a31e79132c796f94a4ec6880de76d76598c0b792"
     },
     "typecheck": {
       "exitCode": 0
     },
     "webpackBuild": {
       "exitCode": 0,
-      "details": "build-postcss-webpack-2026-11-05.txt"
+      "details": "build-date-after-2026-11-07.txt"
     },
     "defaultBuild": {
-      "exitCode": 0,
-      "details": "build-postcss-default-2026-11-05.txt"
+      "exitCode": 1,
+      "details": "Fresh 7 November Turbopack PostCSS worker startup failure; Webpack passed"
     },
     "compiledStyles": {
       "exitCode": 0,
@@ -36,18 +36,18 @@
   },
   "artifacts": {
     "Saan_CPE334_Deliverable_1.docx": {
-      "bytes": 223549,
-      "sha256": "3a5dc7c49fe6a5161491d21877c758c77c1c80e79091389c61988f8e3ba75066"
+      "bytes": 226178,
+      "sha256": "cee317bb50ec8f5281c571ad083be7e0541c2cd39e4f349e0caca9dc8e13c335"
     },
     "Saan_CPE334_Deliverable_1.pdf": {
-      "bytes": 718298,
-      "sha256": "5e584552b420749f208ad9247f51453080a142a9c756248b443f988c10e61bb8"
+      "bytes": 735424,
+      "sha256": "af0bcdbffa8ae7c531e28a59bc1eeec33f707b65a6a7233d098f4ba5897b5955"
     }
   },
   "remaining": [
     "Master course specification and reuse decision",
-    "Genuine teammate review and contribution evidence",
-    "Complete browser-created order journey and impossible calendar date case",
+    "Referenced teammate artifacts and substantive course PR reviews",
+    "Inspect teammate-reported browser journey files and captions",
     "Human acceptance of the final release"
   ]
 }

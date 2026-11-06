@@ -1,10 +1,10 @@
 # CPE 334 Sprint 1 Requirements and Evidence Audit
 
-Audit date: 6 November 2026  
-Course source: `C:/Users/iceberg/Downloads/project_deliverable_1_v1.pdf` (8 pages)  
-Local source reviewed: `f96e64c4fc48bb7e06758243e1de0d30dd3330cb` (`main`) with pre-existing uncommitted coursework changes  
-Application source represented by the retained evidence: `846b532cd5f609844bf1885c58e1e78576d69bf6`  
-GitHub `main` verified read-only: `849294959eeadd6ef88a8c8110c1ba3674b57925`  
+Audit date: 6 November 2026
+Course source: `C:/Users/iceberg/Downloads/project_deliverable_1_v1.pdf` (8 pages)
+Local source reviewed: `f96e64c4fc48bb7e06758243e1de0d30dd3330cb` (`main`) with pre-existing uncommitted coursework changes
+Application source represented by the retained evidence: `846b532cd5f609844bf1885c58e1e78576d69bf6`
+GitHub `main` verified read-only: `849294959eeadd6ef88a8c8110c1ba3674b57925`
 Report reviewed: `output/coursework/Saan_CPE334_Deliverable_1.pdf` and matching DOCX, 27 pages.
 
 ## Audit conclusion

@@ -29,3 +29,9 @@ HTTP-10 rejects overflow dates, non-leap 29 February, invalid month/day and trai
 - `group_work_specs.docx` remains unavailable. Team scope and role allocation are confirmed; external course-theme/reuse requirements are not invented or waived by that team decision.
 
 The owner authorized integration after checks, using the individual PR-only bypass documented in GITHUB-REVIEW-POLICY.md. That authorization is not approval to fabricate a course peer review or claim the report submission-ready. Keep production/cloud work separate from this Sprint 1 pass.
+
+## Integration and report update
+
+PR #10 is merged at 3f536bf and PR #11 at 9377577. The application source proposed for assessment is 9377577047bf210c5e72da0cf7fbab5733451fa0, pending student acceptance. The English report has been rebuilt to 29 pages with current boundary evidence, actual owner integration and received teammate comments. All 29 rendered pages were visually inspected; after three final wording corrections, the three changed pages were inspected again and the other 26 PNGs were byte-identical. The structural checker passed page count, navigation, both identities, current tested source hashes and DOCX/PDF fingerprints. Output remains under ignored output/coursework; report authoring source and verification metadata are versioned here.
+
+The packaged DOCX renderer was attempted but has no LibreOffice on this host. Hidden Word PDF export and bundled Poppler rasterization were used, matching the prior verified fallback. Final course submission readiness is still not claimed: the teammate artifact receipt, substantive course process and both students' acceptance remain outstanding.
