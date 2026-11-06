@@ -14,10 +14,15 @@ The first restricted build could not download Google Fonts. The subsequent defau
 
 ikmie posted statements on Issues #4, #5 and #8 and closed those issues. These are real teammate-authored statements, not agent execution. They report requirements review, a UI-created journey with nine screenshots, and 65 integration plus 34 unit tests on the older available source. At the last inspection, the referenced REQUIREMENTS-FINDINGS.md, TEST-RESULTS.md, screenshots and raw logs were not available in the repository or linked from the comments. Treat the counts/journeys as teammate-reported until the artifacts can be inspected. Do not ask him to repeat old work just because our source was unpublished.
 
+## Boundary correction verified
+
+The unchanged application accepted 2030-02-30 in a real session-backed create action. The prospective contract and regression were committed as a31e791 before correction. The schema now uses Zod's calendar-aware ISO date validator. The corrected Webpack build passed; all 13 HTTP scenarios and all 69 integration tests passed. The HTTP report retains file hashes because the implementation was tested as an uncommitted change on the contract commit. Match hashes rather than claiming that the contract commit contained the fix.
+
+HTTP-10 rejects overflow dates, non-leap 29 February, invalid month/day and trailing text without order/item/event writes. HTTP-11 preserves real leap dates (including the Gregorian century rule), accepts Bangkok tomorrow and rejects Bangkok today. HTTP-12 verifies stale product, provider and package eligibility without writes. HTTP-13 documents existing repeated-submit behavior: two distinct unpaid orders, each with its own item/event snapshot; no payment occurs. A new idempotency contract or universal concurrent eligibility locking is not claimed.
+
 ## Remaining work
 
-- Investigate and correct the actual impossible-calendar-date boundary, with contract and retained failing/passing evidence.
-- Verify stale product/provider/package eligibility and explicitly document repeated order submission semantics; do not confuse package/payment deduplication with order idempotency.
+- Integrate the verified date correction and retain the real failing/passing action evidence. Stale eligibility and sequential repeated-submit behavior are now checked; broader concurrent-create guarantees are not introduced.
 - Obtain the teammate's existing artifacts, reconcile differences and incorporate the actual evidence into the report.
 - Update the English report and PDF after code integration and final evidence; verify every page and its navigation.
 - Record genuine course-required peer review and final student acceptance separately from the owner's merge exception.

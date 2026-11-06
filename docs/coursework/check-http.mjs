@@ -136,6 +136,55 @@ try {
     assert.equal(await db.order.count(),count);
     await db.providerBlockedDate.deleteMany({where:{providerId:shop.id}});
   });
+  await check('HTTP-10 impossible future dates reject without persisted side effects',async()=>{
+    const before = [await db.order.count(), await db.orderItem.count(), await db.orderEvent.count()];
+    for (const invalid of ['2030-02-30','2031-02-29','2100-02-29','2030-04-31','2030-13-01','2030-01-00','2030-01-02extra']) {
+      const r = await action('createInstallOrder',{...input,preferredDates:[invalid]},buyerCookie,'/new/checkout');
+      assert.equal(r.result.ok,false,`Reject impossible calendar date ${invalid}`);
+      assert.deepEqual([await db.order.count(),await db.orderItem.count(),await db.orderEvent.count()],before);
+    }
+  });
+  await check('HTTP-11 leap day and Bangkok tomorrow pass while Bangkok today rejects',async()=>{
+    const today = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok'}).format(new Date());
+    const tomorrow = new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+    const before = await db.order.count();
+    assert.equal((await action('createInstallOrder',{...input,preferredDates:[today]},buyerCookie,'/new/checkout')).result.ok,false);
+    assert.equal(await db.order.count(),before);
+    for (const valid of [tomorrow,'2032-02-29','2400-02-29']) {
+      const r = await action('createInstallOrder',{...input,preferredDates:[valid]},buyerCookie,'/new/checkout');
+      assert.equal(r.result.ok,true,`Accept real future date ${valid}`);
+      assert.equal((await db.order.findUniqueOrThrow({where:{id:r.result.data.orderId}})).preferredDates,JSON.stringify([valid]));
+    }
+    assert.equal(await db.order.count(),before+3);
+  });
+  await check('HTTP-12 stale product provider and package eligibility reject without writes',async()=>{
+    const before = [await db.order.count(),await db.orderItem.count(),await db.orderEvent.count()];
+    const reject = async()=>{
+      assert.equal((await action('createInstallOrder',input,buyerCookie,'/new/checkout')).result.ok,false);
+      assert.deepEqual([await db.order.count(),await db.orderItem.count(),await db.orderEvent.count()],before);
+    };
+    await db.product.update({where:{id:product.id},data:{active:false}});
+    try { await reject(); } finally { await db.product.update({where:{id:product.id},data:{active:true}}); }
+    await db.provider.update({where:{id:shop.id},data:{status:'REJECTED'}});
+    try { await reject(); } finally { await db.provider.update({where:{id:shop.id},data:{status:'VERIFIED'}}); }
+    await db.servicePackage.update({where:{id:pack.id},data:{active:false}});
+    try { await reject(); } finally { await db.servicePackage.update({where:{id:pack.id},data:{active:true}}); }
+  });
+  await check('HTTP-13 repeated valid submissions are distinct unpaid purchase intents',async()=>{
+    const before = await db.order.count();
+    const ids=[];
+    for(let i=0;i<2;i++) {
+      const r=await action('createInstallOrder',input,buyerCookie,'/new/checkout');
+      assert.equal(r.result.ok,true); ids.push(r.result.data.orderId);
+    }
+    assert.notEqual(ids[0],ids[1]);
+    assert.equal(await db.order.count(),before+2);
+    for(const id of ids) {
+      const row=await db.order.findUniqueOrThrow({where:{id},include:{items:true,events:true,payments:true}});
+      assert.equal(row.status,'AWAITING_DEPOSIT'); assert.equal(row.total,1100);
+      assert.equal(row.items.length,2); assert.equal(row.events.length,1); assert.equal(row.payments.length,0);
+    }
+  });
   const outsiderCookie=await login(users[2].phone);
   const providerCookie=await login(owner.phone);
   const otherProviderCookie=await login(users[3].phone);
@@ -197,5 +246,5 @@ try {
     paymentProvider:'mock',results,serverStarted:log.includes('Ready'),
     diagnosticErrors:log.split('\n').filter(line=>/Error:|error:|PrismaClient|Invalid|digest:/.test(line)).map(line=>line.replace(/\b\d{6}\b/g,'[redacted]')).slice(-12),
     limitations:['No browser UI execution claimed','No real money or SMS','No teammate execution claimed']};
-  writeFileSync(path.join(root,'docs/coursework/evidence/http-2026-11-05.json'),JSON.stringify(report,null,2));
+  writeFileSync(path.join(root,process.env.COURSEWORK_HTTP_REPORT ?? `docs/coursework/evidence/http-${stamp}.json`),JSON.stringify(report,null,2));
 }

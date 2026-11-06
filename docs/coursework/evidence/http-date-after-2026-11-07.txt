@@ -1,0 +1,14 @@
+PASS HTTP-01 unauthenticated page and order creation are denied
+PASS HTTP-02 invalid login establishes no session
+PASS HTTP-03 valid login resolves the seeded buyer and protects its session
+PASS HTTP-04 real action persists server totals and deduplicates packages
+PASS HTTP-05 invalid order actions leave the order count unchanged
+PASS HTTP-10 impossible future dates reject without persisted side effects
+PASS HTTP-11 leap day and Bangkok tomorrow pass while Bangkok today rejects
+PASS HTTP-12 stale product provider and package eligibility reject without writes
+PASS HTTP-13 repeated valid submissions are distinct unpaid purchase intents
+PASS HTTP-06 unrelated session cannot read private order fields or confirm
+PASS HTTP-07 mock deposit advances once and enables the owning shop
+PASS HTTP-08 blocked confirmation rolls back then open date confirms once
+PASS HTTP-09 logout deletes session and replayed cookie is denied
+RESULT 13 passed, 0 failed, 0 skipped

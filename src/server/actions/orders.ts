@@ -37,7 +37,7 @@ const installSchema = z.object({
   area: z.enum(AREA_CODES, "เลือกพื้นที่"),
   address: z.string().trim().min(5, "กรอกที่อยู่สำหรับตั้งศาล").max(500),
   preferredDates: z
-    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ไม่ถูกต้อง"))
+    .array(z.iso.date("วันที่ไม่ถูกต้อง"))
     .min(1, "เลือกวันที่สะดวกอย่างน้อย 1 วัน")
     .max(3, "เลือกได้ไม่เกิน 3 วัน"),
   note: z.string().trim().max(1000).optional(),
