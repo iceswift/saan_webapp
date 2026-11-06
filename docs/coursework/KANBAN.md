@@ -1,37 +1,40 @@
 # Saan Sprint 1 Kanban
 
-Updated: 6 November 2026. Scope: CPE 334 Deliverable 1 remaining work.
+Updated: 7 November 2026. Scope: CPE 334 Deliverable 1 remaining work.
 
 [GitHub Project](https://github.com/users/iceswift/projects/3) · [Repository](https://github.com/iceswift/saan_webapp)
 
 ## Synchronization status
 
-The private GitHub project and all eight open issues exist. The project has Backlog, Ready, In progress, In review and Done columns. Browser control stopped responding before issues could be added to the project. The assignments and acceptance criteria are saved on the issues; the column allocation below is the initial working Kanban until the GitHub cards are populated. Project access for ikmie and repository linking have not yet been verified. Repository collaborator access does not establish project access.
+The private GitHub project now contains all eight issues. The repository Projects page lists it, the default repository is saan_webapp, and the active board view is Sprint 1 Kanban. Manage access shows iceswift as Admin and ikmie as Write (two members). Repository merge permissions are unchanged by project access.
+
+The template initially moved the three already-closed teammate issues to Done. The Item closed workflow was disabled and their project statuses manually restored to In review pending the referenced artifacts. Their issue states remain closed, preserving the teammate's actions. Do not equate a closed issue with inspected evidence. Priority values below are planning priorities; the GitHub Priority fields have not been populated.
 
 ## Board
 
 | Backlog | Ready | In progress | In review | Done |
 |---|---|---|---|---|
-| #3 Confirm course scope/reuse | #2 Publish reproducible baseline | — | — | — |
-| #7 Stale/duplicate submission | #4 Requirements review | | | |
-| #9 Final release evidence | #5 Browser journey verification | | | |
-| | #6 Impossible appointment dates | | | |
-| | #8 Independent build/test review | | | |
+| #3 Confirm course scope/reuse | — | #9 Final report acceptance | #2 Published baseline | — |
+| | | | #4 Requirements artifacts | |
+| | | | #5 Browser artifacts | |
+| | | | #6 Integrated date correction | |
+| | | | #7 Verified submission semantics | |
+| | | | #8 Build/test review artifacts | |
 
-Ready means sufficiently defined to pick up; dependencies in each issue still apply. In particular, teammate execution needs the reproducible source baseline first. No task is currently claimed as started, reviewed or done.
+Publication and code correction are integrated through PRs 10–12. In review retains the distinction between owner integration and course-required peer review/artifact inspection. Done is empty; final release acceptance is not claimed. Six review items exceed the template's advisory review limit of five; these are queued acceptance/evidence checks rather than six simultaneous active implementation tasks.
 
 ## Work items
 
-| Issue | Owner | Initial status | Priority |
+| Issue | Owner | Current project status | Priority |
 |---|---|---|---|
-| [#2 Publish reproducible coursework baseline for teammate review](https://github.com/iceswift/saan_webapp/issues/2) | @iceswift | Ready | P0 |
+| [#2 Publish reproducible coursework baseline for teammate review](https://github.com/iceswift/saan_webapp/issues/2) | @iceswift | In review | P0 |
 | [#3 Confirm assigned theme and existing-project reuse conditions](https://github.com/iceswift/saan_webapp/issues/3) | @iceswift | Backlog | P0 |
-| [#4 Independently review requirements and traceability](https://github.com/iceswift/saan_webapp/issues/4) | @ikmie | Ready | P1 |
-| [#5 Execute normal and negative browser journeys with evidence](https://github.com/iceswift/saan_webapp/issues/5) | @ikmie | Ready | P0 |
-| [#6 Verify and reject impossible preferred appointment dates](https://github.com/iceswift/saan_webapp/issues/6) | @iceswift | Ready | P1 |
-| [#7 Verify stale eligibility and duplicate order-submission boundaries](https://github.com/iceswift/saan_webapp/issues/7) | @iceswift | Backlog | P1 |
-| [#8 Independently review build correction and verification assertions](https://github.com/iceswift/saan_webapp/issues/8) | @ikmie | Ready | P1 |
-| [#9 Assemble reviewed release evidence and final submission report](https://github.com/iceswift/saan_webapp/issues/9) | @iceswift | Backlog | P0 |
+| [#4 Independently review requirements and traceability](https://github.com/iceswift/saan_webapp/issues/4) | @ikmie | In review | P1 |
+| [#5 Execute normal and negative browser journeys with evidence](https://github.com/iceswift/saan_webapp/issues/5) | @ikmie | In review | P0 |
+| [#6 Verify and reject impossible preferred appointment dates](https://github.com/iceswift/saan_webapp/issues/6) | @iceswift | In review | P1 |
+| [#7 Verify stale eligibility and duplicate order-submission boundaries](https://github.com/iceswift/saan_webapp/issues/7) | @iceswift | In review | P1 |
+| [#8 Independently review build correction and verification assertions](https://github.com/iceswift/saan_webapp/issues/8) | @ikmie | In review | P1 |
+| [#9 Assemble reviewed release evidence and final submission report](https://github.com/iceswift/saan_webapp/issues/9) | @iceswift | In progress | P0 |
 
 P0: blocks verification/submission. P1: required quality work.
 
@@ -39,7 +42,7 @@ P0: blocks verification/submission. P1: required quality work.
 
 - Suwiwat / @iceswift: implementation, reproducibility, integration and report assembly.
 - Supanut / @ikmie: independent requirements review, test execution, reproducible defect reports and substantive review. AI assistance must be disclosed; personal execution must be distinguished from generated analysis.
-- Start with #2. Then ikmie can perform #4, #5 and #8 locally without Tailscale. Suwiwat can investigate #6 and #7 against that baseline.
+- Source publication and boundary verification are integrated. Receive the existing teammate artifacts and review only newly available changes; no repeated old work is requested merely because publication was delayed.
 - Keep at most one active task per person (two team tasks In progress). Move to In review only when the evidence and reviewable result are linked. If blocked, record the reason and dependency on the issue; do not move it to Done.
 - Update this file and the GitHub status together after project population. GitHub issues hold detailed acceptance criteria and discussion.
 
@@ -49,9 +52,7 @@ Every acceptance criterion in the issue is satisfied or an explicit scope decisi
 
 Existing product code and earlier agent-run evidence are historical baseline, not retrospective Sprint 1 reviews or newly completed cards. Do not backdate activity or fabricate PRs, approvals, manual runs or course permission.
 
-## Finish GitHub setup
+## Verified GitHub setup
 
-1. Add issues #2–#9 to project #3 using their links above.
-2. Apply the initial statuses in the table; retain empty In progress, In review and Done.
-3. Link the repository and verify ikmie's project access without making the project public.
-4. Optionally rename the Backlog view to Sprint 1 Kanban, apply priorities and capture the actual populated board for course evidence.
+All eight cards, owner assignments, repository link, private visibility and project write access for ikmie were observed in the browser. Current status is Backlog 1, In progress 1, In review 6, Done 0. A screenshot is retained at output/coursework/kanban-sprint-1.png; it is current working evidence, not a final accepted release snapshot. See RELEASE-STATUS.md for application verification and report readiness.
+
