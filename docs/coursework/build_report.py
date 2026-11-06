@@ -132,14 +132,14 @@ def evidence_picture(name, description, width=17.1):
     DOC.inline_shapes[-1]._inline.docPr.set('descr',description)
 
 sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-evidence=ROOT/'docs/coursework/evidence/integration-expanded-2026-11-05.txt'
+evidence=ROOT/'docs/coursework/evidence/integration-date-after-2026-11-07.txt'
 raw=evidence.read_text(encoding='utf-8-sig',errors='replace') if evidence.exists() else ''
 counts={k:re.findall(r'# '+k+r' (\d+)',raw) for k in ['tests','pass','fail','skipped']}
 finished=all(counts[k] for k in counts)
 
 page('CPE 334  /  Project Deliverable 1','Saan Engineering Baseline and Sprint 1')
 para('Shrine products and service marketplace', 'Subtitle')
-para('Semester 1 of 2026\nPrepared 5 November 2026\nAssignment deadline 8 November 2026 at 23:59')
+para('Semester 1 of 2026\nUpdated 7 November 2026\nAssignment deadline 8 November 2026 at 23:59')
 sub('Purpose and proposed assessment scope',
     'Saan connects customers with shrine shops and service providers. This report organizes the existing product into the engineering baseline required for Parts A to F and proposes an assessed journey from catalog selection to a persisted, deposit-backed appointment confirmed by the owning shop.')
 para('The application remains Thai-language. This report is written in English. Payments in the assessed environment are simulated or provider test transactions; no real payment or public identity verification is claimed.')
@@ -148,11 +148,11 @@ table(['Submission detail','Value'],[
     ('Student 2','Supanut Sopha, 67070503441'),
     ('Repository','https://github.com/iceswift/saan_webapp'),
     ('Inspected baseline',sha),
-    ('Assessed release','Not yet selected or accepted by both students'),
+    ('Proposed application release','9377577047bf210c5e72da0cf7fbab5733451fa0; integrated main, awaiting final student acceptance'),
     ('Assigned theme','Pending comparison with group_work_specs.docx'),
 ], [4,13.2])
 sub('Submission readiness',
-    'The existing implementation predates these course contracts. Reuse approval, course-theme alignment, genuine teammate review and the final execution evidence remain open. Both student identities were supplied by the project owner. This report must not be submitted as proof that outstanding activities have already occurred.')
+    'The existing implementation predates these course contracts. The owner integrated the published baseline and verified calendar correction through PRs 10 and 11. Supanut posted review and execution summaries in Issues 4, 5 and 8; their referenced files are still awaiting receipt. Course-theme/reuse compliance, required substantive PR review and final student acceptance remain open. The closing Part F update distinguishes current results from the historical visual evidence.')
 
 page('Navigation','Report contents')
 para('Parts A to D describe the product baseline and proposed allocation. Part E records the Sprint 1 contracts as of this report. Part F distinguishes inspected implementation, executed checks and evidence that still needs to be collected.')
@@ -339,7 +339,7 @@ table(['AC','Acceptance outcome'],[
     ('AC-06','Unsupported area, inactive or mixed-shop items, and all-blocked preferred dates are rejected without a new order.'),
     ('AC-07','An unrelated user cannot retrieve the created order’s private details.'),
 ], [1.8,15.4])
-para('HTTP-04 and HTTP-05 now verify actual action persistence, server totals and selected negative cases. Remaining boundaries include impossible calendar dates, stale product eligibility at submission and duplicate order submission. They are distinct from confirmation and payment idempotency and remain open rather than being counted as passes.')
+para('HTTP-04/05 verify actual action persistence, server totals and negative cases. The 7 November correction adds HTTP-10/11 for real calendar dates and Bangkok today/tomorrow. HTTP-12 verifies stale product/provider/package eligibility. HTTP-13 confirms sequential repeats create distinct unpaid orders; no create idempotency or universal concurrent locking is promised. See the closing Part F update for the retained failing and passing results.')
 
 section_e_boundaries(page, para, sub, table, code)
 page('Part E','Test deposit and confirmation contract')
@@ -400,7 +400,7 @@ sub('Source priority and limitations',
 
 page('Part F','Automated results and test excerpts')
 if finished:
-    para('Fresh local integration verification on 5 November 2026 used npm run test:integration against its isolated SQLite money-test.db. Four coursework query regressions supplement the existing business services. A separate stylesheet build correction is recorded below. Retained output: docs/coursework/evidence/integration-expanded-2026-11-05.txt.')
+    para('Fresh local integration verification on 7 November 2026 used npm run test:integration against its isolated SQLite money-test.db. Four coursework query regressions supplement the existing business services. The stylesheet correction and prospective calendar correction are recorded in this part. Retained output: docs/coursework/evidence/integration-date-after-2026-11-07.txt.')
     table(['Tests','Passed','Failed','Skipped'],[[counts[k][-1] for k in ['tests','pass','fail','skipped']]],[4.3]*4)
     code('Command: npm run test:integration\n1..69\n# tests 69    # pass 69\n# fail 0      # skipped 0')
     para('Route type generation and TypeScript passed. Earlier Windows Turbopack attempts failed during font access or worker startup. Direct Webpack compilation exposed an additional stylesheet defect, leading to the prospective correction described in this part. Retained logs distinguish each attempt. The dated Linux build remains historical; a fresh local build is identified by its exact command and CSS acceptance result.')
@@ -453,18 +453,42 @@ table(['AC and test','Actual source or check','Evidence status'],[
     ('02 / TEST-02','OTP integration and HTTP-02','Service cases and no-session-on-invalid-action passed'),
     ('03 / TEST-03','HTTP-01 and HTTP-09; browser logout','Session removal, cookie replay denial and login navigation passed'),
     ('04 / TEST-04','CQ-01 and CQ-02 in coursework-queries.integration.test.ts','Catalog query checks passed; UI coverage pending'),
-    ('05 to 07 / TEST-05 to 07','CQ-03/04 and HTTP-04/05/06','Actual creation, selected invalid cases and session ownership passed; impossible date remains open'),
+    ('05 to 07 / TEST-05 to 07','CQ-03/04; HTTP-04/05/06/10/11/12/13','Creation, ownership, calendar rejection, stale eligibility and repeated unpaid creation checked; see current evidence update'),
     ('08 / TEST-08','payments.integration.test.ts duplicate deposits','Passed in the fresh integration run'),
     ('09 to 12 / TEST-09 to 12','Provider service cases and HTTP-06/08','Service rules and authenticated confirmation passed; universal concurrency coverage not claimed'),
 ], [3.1,6.5,7.6])
 sub('Reproduction summary',
     'Use the repository lockfile and supported Node runtime. Install with npm ci, copy .env.example to .env, run npm run db:push and npm run db:seed, then npm run dev. Synthetic local accounts are documented in README; test OTP is shown only in restricted development/test login. Run npx next typegen before npm run typecheck on a clean checkout. Run npm run test:integration and npm run build. Retain actual exit codes and all failures; do not expose environment secrets or use production records.')
 sub('Genuine team process still required',
-    'Create or select two real course Issues, link each to its feature and contract, branch from sprint staging, and have the other student record a substantive PR review. Integrate and verify the staging release before a reviewed main release. Record actual author, reviewer, finding, PR, integration commit and board status. Both students must understand the released behavior. No Issue, review or contribution is credited in this report yet.')
+    'Issues 2 to 9 now exist; Supanut posted summaries on 4, 5 and 8. PR 10 publishes the coursework baseline and PR 11 integrates the prospective date correction. These were owner-authorized main integrations, not teammate-approved staging releases. The required two substantive cross-reviewed feature PRs and staging release history must not be inferred from owner merges. Both students must understand the behavior and accept the final release.')
 sub('AI use and remaining gates',
     'AI assisted development of the existing Saan application and helped inspect source, structure this report and generate document formatting. The students must independently validate its design, assertions and evidence and disclose actual responsibilities. Before submission, confirm course reuse and theme, complete contribution records, capture the selected program evidence, add genuine process and TDD evidence where applicable, rerun build/tests on the final release and replace this preparation status with actual acceptance results.')
 section_f_team(page, para, sub, table, code)
 section_f_review(page, para, sub, table, code)
+
+page('Part F','Current verification and integration update')
+para('Updated 7 November 2026. Proposed application release: 9377577047bf210c5e72da0cf7fbab5733451fa0. PR 10 merged the coursework baseline (3f536bf); PR 11 merged the calendar correction (9377577). Owner-authorized bypass was used; neither merge is represented as independent teammate approval. Historical screenshots earlier in Part F remain explicitly tied to their 5 November source.')
+table(['Evidence','Actual result','Source'],[
+    ('Calendar red result','Unchanged createInstallOrder accepted 2030-02-30; regression failed as intended.','Contract/regression a31e791; http-date-before-2026-11-07.json and .txt'),
+    ('Calendar green result','Calendar-aware Zod ISO validation rejects impossible dates without order/item/event writes. Valid leap dates and Bangkok tomorrow pass; today rejects.','Correction 1541d24; HTTP-10 and HTTP-11'),
+    ('Submission boundaries','Stale product/provider/package reject without writes. Sequential repeats create two distinct unpaid orders with independent snapshots.','HTTP-12 and HTTP-13; no universal concurrent-create claim'),
+    ('Automated verification','69 integration tests and 13 session-backed HTTP scenarios passed; zero failures/skips. TypeScript, lint, Webpack build and compiled CSS passed.','integration-date-after-2026-11-07.txt; http-date-after-2026-11-07.json; baseline type/lint logs'),
+    ('Build limitation','Fresh default Turbopack failed starting its PostCSS worker. Direct Webpack command passed. No fresh Turbopack pass is claimed.','build-date-after-2026-11-07.txt; RELEASE-STATUS.md'),
+], [3.2,8,6])
+para('The HTTP report records the contract commit plus hashes of the tested implementation working tree. The correction commit subsequently contains that implementation. The report author verified matching source-file hashes rather than pretending the earlier commit already contained the correction. Tests use new isolated SQLite data, synthetic sessions and mock payment; no home-server deployment or live payment occurred.')
+code('node node_modules/next/dist/bin/next build --webpack\nnode docs/coursework/check-css.mjs\nnpm run typecheck\nnpm run lint\nnpm run test:integration\nnode docs/coursework/check-http.mjs\nRESULT 13 passed, 0 failed, 0 skipped')
+
+page('Part F','Received teammate review and remaining acceptance')
+para('Supanut submitted the following real GitHub comments. They count as teammate-authored reported findings. The detailed files and screenshots referenced by those comments were not yet accessible at the last check; their content and execution attribution cannot be independently inspected until received. The teammate is not required to repeat previously performed work because our baseline publication was delayed.')
+table(['Record','Reported contribution','Inspection status'],[
+    ('Issue 4\nikmie','Requirements and traceability review of FR/BR/NFR/AC and signed-in buyer policy; references REQUIREMENTS-FINDINGS.md.','Comment received; referenced report still awaited.'),
+    ('Issue 5\nikmie','Complete UI-created order journey and negative/usability checks; references TEST-RESULTS.md and nine screenshots.','Comment received; files/captions/source identity still awaited. Earlier VIS images are agent-run retrieval evidence.'),
+    ('Issue 8\nikmie','Type generation, typecheck/build, 65 integration and 34 unit tests, equivalent price/ownership checks. Explicitly excludes unpublished coursework correction.','Comment received; counts are reported, not independently rerun as his work. Source now published; only newly available changes need follow-up review.'),
+], [2.7,8.2,6.3])
+sub('Remaining acceptance')
+para('Receive and inspect the existing teammate artifacts, reconcile them with the actual source, and attach the required full UI journey/rejection evidence with readable captions. Record genuine substantive course PR reviews and staging/release history; owner bypass does not substitute for them. Confirm any externally assigned theme/reuse conditions from the real course source, then obtain both students acceptance of the immutable release and this report. The team already confirmed Saan as its product and the practical role allocation; that is not an invented instructor approval.')
+sub('Assignment boundary')
+para('Docker, CI/CD and public GCP deployment belong to the separate Lab 5 assignment, not this Deliverable 1 acceptance. This update neither deploys infrastructure nor makes the repository public. Keep later cloud requirements, costs and approvals separate from the Sprint 1 report.')
 
 for row in navigation_table.rows[1:]:
     letter = row.cells[0].text

@@ -55,4 +55,3 @@ Existing product code and earlier agent-run evidence are historical baseline, no
 2. Apply the initial statuses in the table; retain empty In progress, In review and Done.
 3. Link the repository and verify ikmie's project access without making the project public.
 4. Optionally rename the Backlog view to Sprint 1 Kanban, apply priorities and capture the actual populated board for course evidence.
-

@@ -27,8 +27,8 @@ assert doc.paragraphs[1].style.name == 'Title'
 integration_text=(root/'docs/coursework/evidence/integration-expanded-2026-11-05.txt').read_text(encoding='utf-8-sig')
 integration={name:int(re.findall(r'# '+name+r' (\d+)',integration_text)[-1]) for name in ['tests','pass','fail','skipped']}
 assert integration['fail'] == 0 and integration['pass'] == 69
-http=json.loads((root/'docs/coursework/evidence/http-2026-11-05.json').read_text(encoding='utf8'))
-assert len(http['results']) == 9 and all(row['result'] == 'PASS' for row in http['results'])
+http=json.loads((root/'docs/coursework/evidence/http-date-after-2026-11-07.json').read_text(encoding='utf8'))
+assert len(http['results']) == 13 and all(row['result'] == 'PASS' for row in http['results'])
 for name, expected in http.get('sourceFiles', {}).items():
     assert hashlib.sha256((root/name).read_bytes()).hexdigest() == expected, f'Source changed after HTTP verification: {name}'
 css_text=(root/'docs/coursework/evidence/css-after-2026-11-05.txt').read_text(encoding='utf-8-sig')
@@ -40,16 +40,16 @@ manifest = {
     'documentPages': len(reader.pages),
     'rendering': 'Hidden Microsoft Word PDF export and bundled Poppler PNG rasterization',
     'checks': {'integration': {'exitCode': 0, **integration},
-               'http': {'passed':9,'failed':0,'skipped':0,'sourceIdentity':http['sourceIdentity']},
+               'http': {'passed':13,'failed':0,'skipped':0,'sourceIdentity':http['sourceIdentity']},
                'typecheck': {'exitCode': 0},
-               'webpackBuild': {'exitCode': 0, 'details': 'build-postcss-webpack-2026-11-05.txt'},
-               'defaultBuild': {'exitCode': 0, 'details': 'build-postcss-default-2026-11-05.txt'},
+               'webpackBuild': {'exitCode': 0, 'details': 'build-date-after-2026-11-07.txt'},
+               'defaultBuild': {'exitCode': 1, 'details': 'Fresh 7 November Turbopack PostCSS worker startup failure; Webpack passed'},
                'compiledStyles': {'exitCode':0,'details':'css-after-2026-11-05.txt'}},
     'artifacts': {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
                   for p in [docx, pdf]},
     'remaining': ['Master course specification and reuse decision',
-                  'Genuine teammate review and contribution evidence',
-                  'Complete browser-created order journey and impossible calendar date case',
+                  'Referenced teammate artifacts and substantive course PR reviews',
+                  'Inspect teammate-reported browser journey files and captions',
                   'Human acceptance of the final release'],
 }
 (root / 'docs/coursework/evidence/manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf8')
