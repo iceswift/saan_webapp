@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local data, diagnostic scripts and generated report artifacts are not source.
+    "storage/**",
+    "output/**",
   ]),
 ]);
 

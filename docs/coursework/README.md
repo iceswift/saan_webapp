@@ -4,9 +4,14 @@ This folder adapts the existing Saan product for Project Deliverable 1. It does 
 
 ## Deliverables and reproducibility
 
+- `RELEASE-STATUS.md`: current publication, fresh verification, teammate-evidence receipt and remaining gates; supersedes historical status statements below.
+- `GITHUB-REVIEW-POLICY.md`: verified owner-controlled integration and individual PR-only review exception.
+- `KANBAN.md`: Sprint 1 working board, GitHub issue links, ownership, completion rules and GitHub synchronization status.
+- `SPRINT-1-AUDIT.md`: independent requirements-to-evidence audit against the supplied CPE 334 brief, current local/repository state and retained execution evidence.
 - `build_report.py`: reproducible English DOCX authoring source, including the report content.
 - `PLAN.md`: editorial plan, source hierarchy, evidence policy and remaining decisions.
 - `TEAM-VERIFICATION-WORKBOOK.md`: independent requirements, test and PR review tasks for Supanut, with unfilled actual-result records.
+- `ANTIGRAVITY-REVIEW-PROMPT.md`: standalone English prompt for the teammate's AI-assisted local review without Tailscale access.
 - `VERIFICATION-ADDENDUM.md`: chosen signed-in buyer policy and prospective query-test design.
 - `BUILD-CONTRACT.md` and `check-css.mjs`: stylesheet regression contract and executable red/green check.
 - `check-http.mjs`: real built action/session verification using a new isolated SQLite database, explicit synthetic login and mock payment on loopback port 3201. Requires a successful matching local build. No environment secrets are retained in its output.
