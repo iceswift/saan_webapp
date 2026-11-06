@@ -136,6 +136,14 @@ try {
     assert.equal(await db.order.count(),count);
     await db.providerBlockedDate.deleteMany({where:{providerId:shop.id}});
   });
+  await check('HTTP-10 impossible future dates reject without persisted side effects',async()=>{
+    const before = [await db.order.count(), await db.orderItem.count(), await db.orderEvent.count()];
+    for (const invalid of ['2030-02-30','2031-02-29','2030-04-31','2030-13-01','2030-01-00']) {
+      const r = await action('createInstallOrder',{...input,preferredDates:[invalid]},buyerCookie,'/new/checkout');
+      assert.equal(r.result.ok,false,`Reject impossible calendar date ${invalid}`);
+      assert.deepEqual([await db.order.count(),await db.orderItem.count(),await db.orderEvent.count()],before);
+    }
+  });
   const outsiderCookie=await login(users[2].phone);
   const providerCookie=await login(owner.phone);
   const otherProviderCookie=await login(users[3].phone);
@@ -197,5 +205,5 @@ try {
     paymentProvider:'mock',results,serverStarted:log.includes('Ready'),
     diagnosticErrors:log.split('\n').filter(line=>/Error:|error:|PrismaClient|Invalid|digest:/.test(line)).map(line=>line.replace(/\b\d{6}\b/g,'[redacted]')).slice(-12),
     limitations:['No browser UI execution claimed','No real money or SMS','No teammate execution claimed']};
-  writeFileSync(path.join(root,'docs/coursework/evidence/http-2026-11-05.json'),JSON.stringify(report,null,2));
+  writeFileSync(path.join(root,process.env.COURSEWORK_HTTP_REPORT ?? `docs/coursework/evidence/http-${stamp}.json`),JSON.stringify(report,null,2));
 }
