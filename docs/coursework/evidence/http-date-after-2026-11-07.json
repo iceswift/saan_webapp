@@ -1,0 +1,83 @@
+{
+  "checkedAt": "2026-11-06T18:56:13.034Z",
+  "baseURL": "http://127.0.0.1:3201",
+  "isolatedDatabase": "D:\\saan\\storage\\tests\\coursework-http\\2026-11-06T18-56-08-218Z\\money-test.db",
+  "buildManifestHash": "8367520a26c122d51014bf9bffe27a4ca90641d6722569b8b677c083c54403cc",
+  "sourceIdentity": "a31e79132c796f94a4ec6880de76d76598c0b792",
+  "sourceFiles": {
+    "next.config.ts": "aa5a0a7894cdec68b5d3f537230c124a030c7551b54963ce19362f7ec625491d",
+    "postcss.config.mjs": "8c8659ce95cfff6b8908a5cc121eae54a08f08ba2ccac96a6a8482f09132a879",
+    "package.json": "827334e65926ff5caa969c5b7009e989ab513973f70c7e78f231adb534d9bd1c",
+    "package-lock.json": "56db5979403408b1e6ae8b4890062810a38413ad529f764f27697facda9d627b",
+    "src/server/actions/auth.ts": "7e4a12471079b5eab7e7a5fd6b4151a4934fc2939a46e953e39d778983289fed",
+    "src/server/actions/orders.ts": "1ba2721422331a44eafbbc1bbb6e1c89ab7fa5377b7a463e385066375c6c6b39",
+    "src/server/actions/provider.ts": "a0567175317ca9c4263db35a912f15327e3cd325fac4857641950f96a1b2ef48",
+    "src/server/auth.ts": "fc210523a1babbf533322956cfd8f6d25c206123bf7aff66b7412c81ea83753d",
+    "src/server/queries.ts": "6af61ad8e3475c3d37e95451fa4205111cda39f0b7e1bc0893d98e9f6d1ca511",
+    "src/server/provider-order-service.ts": "3172ecda9850a1a33f616513929675a92310992e3c99fcc42f564988b0802813",
+    "prisma/schema.prisma": "1a5c4b6949370771aecc4437f5cae5b35dc1aaa1ce95fcc74d432515e59addec"
+  },
+  "transport": "Real built Next.js actions and pages; action IDs resolved from this build only",
+  "paymentProvider": "mock",
+  "results": [
+    {
+      "id": "HTTP-01 unauthenticated page and order creation are denied",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-02 invalid login establishes no session",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-03 valid login resolves the seeded buyer and protects its session",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-04 real action persists server totals and deduplicates packages",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-05 invalid order actions leave the order count unchanged",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-10 impossible future dates reject without persisted side effects",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-11 leap day and Bangkok tomorrow pass while Bangkok today rejects",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-12 stale product provider and package eligibility reject without writes",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-13 repeated valid submissions are distinct unpaid purchase intents",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-06 unrelated session cannot read private order fields or confirm",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-07 mock deposit advances once and enables the owning shop",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-08 blocked confirmation rolls back then open date confirms once",
+      "result": "PASS"
+    },
+    {
+      "id": "HTTP-09 logout deletes session and replayed cookie is denied",
+      "result": "PASS"
+    }
+  ],
+  "serverStarted": true,
+  "diagnosticErrors": [],
+  "limitations": [
+    "No browser UI execution claimed",
+    "No real money or SMS",
+    "No teammate execution claimed"
+  ]
+}
