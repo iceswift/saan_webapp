@@ -48,8 +48,8 @@ manifest = {
     'artifacts': {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
                   for p in [docx, pdf]},
     'remaining': ['Master course specification and reuse decision',
-                  'Referenced teammate artifacts and substantive course PR reviews',
-                  'Inspect teammate-reported browser journey files and captions',
+                  'Substantive teammate PR reviews and sprint staging integration',
+                  'Browser acceptance on the selected release and recorded personal verification',
                   'Human acceptance of the final release'],
 }
 (root / 'docs/coursework/evidence/manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf8')

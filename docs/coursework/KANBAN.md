@@ -42,7 +42,7 @@ P0: blocks verification/submission. P1: required quality work.
 
 - Suwiwat / @iceswift: implementation, reproducibility, integration and report assembly.
 - Supanut / @ikmie: independent requirements review, test execution, reproducible defect reports and substantive review. AI assistance must be disclosed; personal execution must be distinguished from generated analysis.
-- Source publication and boundary verification are integrated. Receive the existing teammate artifacts and review only newly available changes; no repeated old work is requested merely because publication was delayed.
+- Source publication and boundary verification are integrated. PR #14 supplied the teammate artifacts and the 34-page report incorporates them. Remaining acceptance checks are listed in RELEASE-STATUS.md.
 - Keep at most one active task per person (two team tasks In progress). Move to In review only when the evidence and reviewable result are linked. If blocked, record the reason and dependency on the issue; do not move it to Done.
 - Update this file and the GitHub status together after project population. GitHub issues hold detailed acceptance criteria and discussion.
 
@@ -55,4 +55,3 @@ Existing product code and earlier agent-run evidence are historical baseline, no
 ## Verified GitHub setup
 
 All eight cards, owner assignments, repository link, private visibility and project write access for ikmie were observed in the browser. Current status is Backlog 1, In progress 1, In review 6, Done 0. A screenshot is retained at output/coursework/kanban-sprint-1.png; it is current working evidence, not a final accepted release snapshot. See RELEASE-STATUS.md for application verification and report readiness.
-

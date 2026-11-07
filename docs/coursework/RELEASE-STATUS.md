@@ -12,7 +12,7 @@ The first restricted build could not download Google Fonts. The subsequent defau
 
 ## Teammate evidence received
 
-ikmie posted statements on Issues #4, #5 and #8 and closed those issues. These are real teammate-authored statements, not agent execution. They report requirements review, a UI-created journey with nine screenshots, and 65 integration plus 34 unit tests on the older available source. At the last inspection, the referenced REQUIREMENTS-FINDINGS.md, TEST-RESULTS.md, screenshots and raw logs were not available in the repository or linked from the comments. Treat the counts/journeys as teammate-reported until the artifacts can be inspected. Do not ask him to repeat old work just because our source was unpublished.
+PR #14 merged 23 artifacts at 99171fd. The package includes requirements findings, test results, defect reports, raw logs and nine screenshots. Its AI-assisted execution used application commit 8492949. Supanut published the findings and the personal verification checklist remains blank. See reviews/supanut/EVIDENCE-INDEX.md.
 
 ## Boundary correction verified
 
@@ -22,19 +22,13 @@ HTTP-10 rejects overflow dates, non-leap 29 February, invalid month/day and trai
 
 ## Remaining work
 
-- Integrate the verified date correction and retain the real failing/passing action evidence. Stale eligibility and sequential repeated-submit behavior are now checked; broader concurrent-create guarantees are not introduced.
-- Obtain the teammate's existing artifacts, reconcile differences and incorporate the actual evidence into the report.
-- Update the English report and PDF after code integration and final evidence; verify every page and its navigation.
-- Record genuine course-required peer review and final student acceptance separately from the owner's merge exception.
-- `group_work_specs.docx` remains unavailable. Team scope and role allocation are confirmed; external course-theme/reuse requirements are not invented or waived by that team decision.
-
-The owner authorized integration after checks, using the individual PR-only bypass documented in GITHUB-REVIEW-POLICY.md. That authorization is not approval to fabricate a course peer review or claim the report submission-ready. Keep production/cloud work separate from this Sprint 1 pass.
+- Obtain the course master specification or an instructor clarification for the assigned theme and Saan reuse (Issue #3).
+- Record the required substantive teammate reviews and sprint-staging integration. The GitHub review lists for PRs #10, #11 and #14 are empty.
+- Verify the browser journey on the selected application release and record personal verification and both students acceptance before submitting through LEB2.
 
 ## Integration and report update
 
-PR #10 is merged at 3f536bf and PR #11 at 9377577. The application source proposed for assessment is 9377577047bf210c5e72da0cf7fbab5733451fa0, pending student acceptance. The English report has been rebuilt to 29 pages with current boundary evidence, actual owner integration and received teammate comments. All 29 rendered pages were visually inspected; after three final wording corrections, the three changed pages were inspected again and the other 26 PNGs were byte-identical. The structural checker passed page count, navigation, both identities, current tested source hashes and DOCX/PDF fingerprints. Output remains under ignored output/coursework; report authoring source and verification metadata are versioned here.
-
-The packaged DOCX renderer was attempted but has no LibreOffice on this host. Hidden Word PDF export and bundled Poppler rasterization were used, matching the prior verified fallback. Final course submission readiness is still not claimed: the teammate artifact receipt, substantive course process and both students' acceptance remain outstanding.
+PR #10 is merged at 3f536bf and PR #11 at 9377577. The application source proposed for assessment is 9377577047bf210c5e72da0cf7fbab5733451fa0, pending student acceptance. The updated 34-page report includes the PR #14 evidence package, captions and nine screenshots. Its application checks cite the tested source and keep the earlier browser evidence tied to 8492949. Word and PDF outputs are under output/coursework. Course acceptance remains pending the items above.
 
 ## Project board synchronized
 

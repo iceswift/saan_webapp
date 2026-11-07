@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-11-07T02:02:36.616543+07:00",
-  "applicationBaseline": "9377577047bf210c5e72da0cf7fbab5733451fa0",
+  "checkedAt": "2026-11-07T14:49:21.270773+07:00",
+  "applicationBaseline": "99171fd8f624cc32a0de2609f81db0c8a9bdd77a",
   "courseReleaseAccepted": false,
-  "documentPages": 29,
+  "documentPages": 34,
   "rendering": "Hidden Microsoft Word PDF export and bundled Poppler PNG rasterization",
   "checks": {
     "integration": {
@@ -36,18 +36,18 @@
   },
   "artifacts": {
     "Saan_CPE334_Deliverable_1.docx": {
-      "bytes": 226178,
-      "sha256": "cee317bb50ec8f5281c571ad083be7e0541c2cd39e4f349e0caca9dc8e13c335"
+      "bytes": 1044300,
+      "sha256": "56ba0ebafa56a634a0b639becdd818e472757ac0dca37f3a0f617580c7ac3331"
     },
     "Saan_CPE334_Deliverable_1.pdf": {
-      "bytes": 735424,
-      "sha256": "af0bcdbffa8ae7c531e28a59bc1eeec33f707b65a6a7233d098f4ba5897b5955"
+      "bytes": 1387979,
+      "sha256": "5181ec64e5d2dc834f23a5c17529571316967babbcb39cde86c64c31a6e77364"
     }
   },
   "remaining": [
     "Master course specification and reuse decision",
-    "Referenced teammate artifacts and substantive course PR reviews",
-    "Inspect teammate-reported browser journey files and captions",
+    "Substantive teammate PR reviews and sprint staging integration",
+    "Browser acceptance on the selected release and recorded personal verification",
     "Human acceptance of the final release"
   ]
 }
