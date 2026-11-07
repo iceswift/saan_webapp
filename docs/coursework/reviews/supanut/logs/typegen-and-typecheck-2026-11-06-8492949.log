@@ -1,0 +1,7 @@
+env_equals_example=True
+Generating route types...
+✓ Types generated successfully
+
+> saan@0.1.0 typecheck
+> tsc --noEmit
+
