@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-11-07T20:03:14.350992+07:00",
-  "applicationBaseline": "4c55d7c5f665ced5909306f8cd8935b4ba111c76",
+  "checkedAt": "2026-11-07T20:10:36.007337+07:00",
+  "applicationBaseline": "1c9c67df9dea6bb5ac8d32cdd3ae3f0116a88e13",
   "courseReleaseAccepted": false,
   "documentPages": 34,
   "rendering": "Hidden Microsoft Word PDF export and bundled Poppler PNG rasterization",
@@ -36,18 +36,18 @@
   },
   "artifacts": {
     "Saan_CPE334_Deliverable_1.docx": {
-      "bytes": 1044326,
-      "sha256": "3b47be0d4aec7183cd9da9f3be015a1a5d685d3e198dca1f6e2030c117a7a74c"
+      "bytes": 1044376,
+      "sha256": "0f83c9b02df8631609fb56dcfd8f93dcb62997dc1b9dbcd5efbb09fe74c3c828"
     },
     "Saan_CPE334_Deliverable_1.pdf": {
-      "bytes": 1388060,
-      "sha256": "a6163e25537b89beb57f16b66c65487dee6edd122dd7300fd8712c0a7fc73b9a"
+      "bytes": 1388920,
+      "sha256": "5c87cd0404ada234699e98275a40b4477ebc6cdcacc3acae832334f11dbbed8c"
     }
   },
   "remaining": [
-    "Master course specification and reuse decision",
+    "Eligibility to reuse the pre-existing Saan code",
     "Substantive teammate PR reviews and sprint staging integration",
-    "Browser acceptance on the selected release and recorded personal verification",
+    "Recorded personal verification by both students",
     "Human acceptance of the final release"
   ]
 }

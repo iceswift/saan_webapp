@@ -22,7 +22,7 @@ HTTP-10 rejects overflow dates, non-leap 29 February, invalid month/day and trai
 
 ## Remaining work
 
-- Obtain the course master specification or an instructor clarification for the assigned theme and Saan reuse (Issue #3).
+- Clarify whether the pre-existing Saan code is eligible for reuse (Issue #3). Theme selection is resolved below.
 - Record the required substantive teammate reviews and sprint-staging integration. The GitHub review lists for PRs #10, #11 and #14 are empty.
 - Record personal verification and acceptance by both students before submitting through LEB2.
 
@@ -43,4 +43,4 @@ Source tested: `4c55d7c5f665ced5909306f8cd8935b4ba111c76` (main after PR #15). T
 - `node docs/coursework/check-css.mjs` passed BLD-AC-01. `node docs/coursework/check-http.mjs` passed 13 of 13 scenarios. See [HTTP results](evidence/http-closeout-2026-11-07.json).
 - Playwright drove Chrome at 1280 × 900 on loopback with synthetic accounts and disposable SQLite data. It created an order through checkout, paid the simulated deposit, confirmed the appointment as the owning shop and reloaded it as the buyer. See [order created](evidence/sprint1-final-01-awaiting-deposit.png), [mock deposit paid](evidence/sprint1-final-02-deposit-paid.png), [shop confirmation](evidence/sprint1-final-03-shop-confirmed.png), and [buyer reload](evidence/sprint1-final-04-buyer-reload.png). This was an AI-assisted technical run. Independent student acceptance remains pending.
 
-The PDF is the submission artifact. The DOCX is editable. Both are in `output/coursework/`. A later teammate review can document actual findings, while any acceptance of the existing merge order as a course exception belongs to the instructor. The supplied brief references `group_work_specs.docx` without a direct link. Obtain that file or written course clarification before claiming theme/reuse compliance.
+The PDF is the submission artifact. The DOCX is editable. Both are in `output/coursework/`. A later teammate review can document actual findings, while any acceptance of the existing merge order as a course exception belongs to the instructor. The supplied `group_work_specs_v1.pdf` is marked draft for instructor review, issued 6 October 2026. Pages 4 and 6 permit Theme 4 by Suwiwat’s ID ending in 4 and describe the e-commerce/ordering workflow that Saan specializes for shrine products and installation. The document does not explicitly settle eligibility to reuse the pre-existing code. Pages 1–2 require both students to participate across the project and allow unequal commit counts.
