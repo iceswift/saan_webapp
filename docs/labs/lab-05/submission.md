@@ -22,6 +22,7 @@ Evidence: repository and Dockerfile link TBD.
 - [x] Added an automated production Docker image build to the local CI workflow; it does not publish the image.
 - [ ] Merge the CI change through the team pull request flow after teammate review.
 - [x] Capture a successful Docker build result from GitHub Actions; runs #75 and #76 passed on commit `00f95dc257c7b243f44ae42fe1e91e1e3e0535b5`. Image tag: `saan:ci-00f95dc257c7b243f44ae42fe1e91e1e3e0535b5`; image was not published.
+- [ ] Rebuild and capture the Docker image after adding `UPLOAD_DIR=/data/uploads`; the current source change is awaiting CI.
 - [ ] Capture safe environment-variable configuration without revealing values.
 
 Evidence: Dockerfile, CI run link TBD.
@@ -72,7 +73,7 @@ Evidence: release/rollback links and contribution summary TBD.
 |---|---|---|
 | R-01 / R-02 - Docker and environment contract | TBD | Partly prepared; verify against final run |
 | R-03 / R-04 - GCP deployment and persistence | TBD | Not deployed; durable upload storage unresolved |
-| R-05 - CI build and container build | [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23); [push run #75](https://github.com/iceswift/saan_webapp/actions/runs/42396057761); [PR run #76](https://github.com/iceswift/saan_webapp/actions/runs/42396080830) | Both runs passed, including production app and Docker builds; not merged, image not published |
+| R-05 - CI build and container build | [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23); [push run #80](https://github.com/iceswift/saan_webapp/actions/runs/42396666615); [PR run #81](https://github.com/iceswift/saan_webapp/actions/runs/42396672871) | Both passed, including production app and Docker builds. The subsequent `/data/uploads` Dockerfile change awaits CI; PR unmerged, image not published |
 | R-06 - failing PR merge gate | TBD | Not demonstrated |
 | R-07 to R-10 - release, deploy and rollback | TBD | Not configured or demonstrated |
 | R-11 - team PDF and participation evidence | TBD | Draft only |

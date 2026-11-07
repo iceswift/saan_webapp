@@ -16,6 +16,12 @@ The GitHub ruleset `Lab 5 protected PRs: main and staging` now requires pull req
 
 `.github/workflows/ci.yml` runs for pushes and pull requests. It checks route types, lint, integration tests, PostgreSQL schema/migrations and constraints, builds the production Next.js app, and builds a Docker production image without publishing it.
 
+## Starter-kit adaptation notes
+
+The Starter Kit is a reference implementation for a React/Vite frontend plus Express/Prisma API on Node 24. Saan is a single Next.js App Router service on Node 22 with Prisma 6, so its existing root Dockerfile is the adapted single-container build; the starter's separate client/server Compose Dockerfiles, Nginx frontend, Vite commands, Express entrypoint, and Node 24 image are not applicable. Saan's multi-stage build generates the PostgreSQL Prisma client, runs `next build`, retains production dependencies, and runs as the non-root `node` user. It uses a build-only placeholder `DATABASE_URL`; production credentials are supplied at runtime.
+
+The starter's durable-volume contract maps to Saan's `UPLOAD_DIR`. The Docker image now defaults this path to `/data/uploads`, matching the directory prepared for a runtime mount and Saan's existing Compose deployment. This only selects the mount path; it does not make Cloud Run local storage durable. Cloud Run still needs a verified durable mount or object-storage implementation and a replacement/persistence drill before R-04 can be marked complete. The current CI workflow builds but does not publish or deploy the image; GCP deploy/migration/smoke-test automation remains pending.
+
 The workflow and Lab 5 docs are on GitHub feature branch `codex/lab5-ci-docs`, created from `staging`, in [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23). GitHub Actions runs #75 (push) and #76 (pull request) succeeded. They passed route types, lint, integration tests, PostgreSQL migrations and constraints, the Next.js production build, and a Docker production image build. The image was built as `saan:ci-00f95dc257c7b243f44ae42fe1e91e1e3e0535b5` and was not published. `Docker production image` is now a required status check. The PR remains unmerged and awaits teammate review. The local checkout remains on `main` because the Git directory denied local branch creation; unrelated coursework edits were excluded from the remote branch.
 
 ## GCP design and setup gate
