@@ -152,7 +152,7 @@ table(['Submission detail','Value'],[
     ('Assigned theme','Pending comparison with group_work_specs.docx'),
 ], [4,13.2])
 sub('Submission readiness',
-    'The existing implementation predates these course contracts. The owner integrated the published baseline and verified calendar correction through PRs 10 and 11. Supanut posted review and execution summaries in Issues 4, 5 and 8; their referenced files are still awaiting receipt. Course-theme/reuse compliance, required substantive PR review and final student acceptance remain open. The closing Part F update distinguishes current results from the historical visual evidence.')
+    'The existing implementation predates these course contracts. The owner integrated the published baseline and verified calendar correction through PRs 10 and 11. Supanut posted review and execution summaries in Issues 4, 5 and 8; their 23 supporting files are included through PR 14 at 99171fd. Course-theme/reuse compliance, required substantive PR review and final student acceptance remain open. The closing Part F update distinguishes current results from the historical visual evidence.')
 
 page('Navigation','Report contents')
 para('Parts A to D describe the product baseline and proposed allocation. Part E records the Sprint 1 contracts as of this report. Part F distinguishes inspected implementation, executed checks and evidence that still needs to be collected.')
@@ -479,16 +479,42 @@ para('The HTTP report records the contract commit plus hashes of the tested impl
 code('node node_modules/next/dist/bin/next build --webpack\nnode docs/coursework/check-css.mjs\nnpm run typecheck\nnpm run lint\nnpm run test:integration\nnode docs/coursework/check-http.mjs\nRESULT 13 passed, 0 failed, 0 skipped')
 
 page('Part F','Received teammate review and remaining acceptance')
-para('Supanut submitted the following real GitHub comments. They count as teammate-authored reported findings. The detailed files and screenshots referenced by those comments were not yet accessible at the last check; their content and execution attribution cannot be independently inspected until received. The teammate is not required to repeat previously performed work because our baseline publication was delayed.')
+para('Supanut submitted the following real GitHub comments. They count as teammate-authored reported findings. PR 14 published the detailed files and nine screenshots. They record AI-assisted execution on 8492949. Supanut published the review package and the personal verification fields remain unrecorded.')
 table(['Record','Reported contribution','Inspection status'],[
-    ('Issue 4\nikmie','Requirements and traceability review of FR/BR/NFR/AC and signed-in buyer policy; references REQUIREMENTS-FINDINGS.md.','Comment received; referenced report still awaited.'),
-    ('Issue 5\nikmie','Complete UI-created order journey and negative/usability checks; references TEST-RESULTS.md and nine screenshots.','Comment received; files/captions/source identity still awaited. Earlier VIS images are agent-run retrieval evidence.'),
-    ('Issue 8\nikmie','Type generation, typecheck/build, 65 integration and 34 unit tests, equivalent price/ownership checks. Explicitly excludes unpublished coursework correction.','Comment received; counts are reported, not independently rerun as his work. Source now published; only newly available changes need follow-up review.'),
+    ('Issue 4\nikmie','Requirements and traceability review of FR/BR/NFR/AC and signed-in buyer policy; references REQUIREMENTS-FINDINGS.md.','Requirements and defect reports received in PR 14.'),
+    ('Issue 5\nikmie','Complete UI-created order journey and negative/usability checks; references TEST-RESULTS.md and nine screenshots.','Test results, nine screenshots and browser telemetry received. The next pages present the selected browser journey and boundary evidence.'),
+    ('Issue 8\nikmie','Type generation, typecheck/build, 65 integration and 34 unit tests, equivalent price/ownership checks. Explicitly excludes unpublished coursework correction.','Logs received for 8492949. The later application run records 69 integration and 13 HTTP passes.'),
 ], [2.7,8.2,6.3])
 sub('Remaining acceptance')
-para('Receive and inspect the existing teammate artifacts, reconcile them with the actual source, and attach the required full UI journey/rejection evidence with readable captions. Record genuine substantive course PR reviews and staging/release history; owner bypass does not substitute for them. Confirm any externally assigned theme/reuse conditions from the real course source, then obtain both students acceptance of the immutable release and this report. The team already confirmed Saan as its product and the practical role allocation; that is not an invented instructor approval.')
+para('The browser evidence below is tied to the earlier revision. Final revision browser acceptance remains unrecorded. Record genuine substantive course PR reviews and staging/release history; owner bypass does not substitute for them. Confirm any externally assigned theme/reuse conditions from the real course source, then obtain both students acceptance of the immutable release and this report. The team already confirmed Saan as its product and the practical role allocation; that is not an invented instructor approval.')
 sub('Assignment boundary')
 para('Docker, CI/CD and public GCP deployment belong to the separate Lab 5 assignment, not this Deliverable 1 acceptance. This update neither deploys infrastructure nor makes the repository public. Keep later cloud requirements, costs and approvals separate from the Sprint 1 report.')
+
+review_screens = ROOT/'docs/coursework/reviews/supanut/screenshots'
+for title, captures in [
+    ('Browser evidence for checkout and deposit', [
+        ('01-customer-order-awaiting-deposit.png', 'E2E-01A. Customer submits the order. The saved total is THB 14,400 and the deposit due is THB 4,320.'),
+        ('02-customer-deposit-paid-awaiting-provider.png', 'E2E-01B. The mock deposit is paid and the order awaits the owning provider.')]),
+    ('Browser evidence for confirmation and reload', [
+        ('03-provider-order-confirmed.png', 'E2E-01C. The owning shop confirms the appointment for 10 November at 09:00 Bangkok time.'),
+        ('04-customer-reloaded-confirmed-order.png', 'E2E-01D. The customer reloads the order and sees the persisted confirmation.')]),
+    ('Blocked dates and order ownership', [
+        ('05-provider-blocked-date-rejection.png', 'E2E-02A/B. The calendar marks blocked days. A separate Server Action probe rejected confirmation with no partial writes.'),
+        ('06-ownership-restriction-404.png', 'E2E-03A/B. An unrelated account sees the unavailable order view. The associated action checks report forbidden mutations.')]),
+    ('Browser evidence for logout and validation', [
+        ('07-logout-protected-redirect.png', 'E2E-04. A fresh protected request after logout redirects to login. The test record reports session deletion.'),
+        ('08-usability-validation-focus.png', 'E2E-05A. Incomplete checkout triggers validation and focuses the date field.')]),
+    ('Browser evidence for the narrow layout', [
+        ('09-usability-narrow-large-text.png', 'E2E-05B. The 360px large-text run reports no horizontal overflow and a 57px date control.')]),
+]:
+    page('Part F', title)
+    para('Source 8492949. AI-assisted browser run on 6 November 2026 with isolated SQLite data and mock payments. Supanut published the evidence in PR 14.')
+    for filename, caption in captures:
+        screenshot = review_screens/filename
+        size = {'height': Cm(14)} if filename.startswith('09-') else {'width': Cm(14.8)}
+        DOC.add_picture(str(screenshot), **size)
+        DOC.inline_shapes[-1]._inline.docPr.set('descr', caption)
+        para(caption)
 
 for row in navigation_table.rows[1:]:
     letter = row.cells[0].text

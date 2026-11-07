@@ -126,7 +126,7 @@ def section_f_team(page, para, sub, table, code):
     para('Supanut can take an independent verification task from setup to outcome: read the expected rule, prepare synthetic conditions, run the journey, compare actual state with the contract, report a mismatch, and verify a correction. A finding should identify the action, starting state, expected result, actual result and evidence. Merely clicking Approve or adding a name to the cover is not this work.')
     sub('Contribution records and outstanding evidence')
     table(['Date and member', 'Artifact and work performed', 'Evidence and result'], [
-        ('7 Nov / Supanut', 'Requirements review reported in Issue 4; UI and automated checks reported in Issues 5 and 8.', 'Comments received; referenced detailed findings, logs and screenshots still awaited. Do not infer their contents.'),
+        ('7 Nov / Supanut', 'Requirements review reported in Issue 4; UI and automated checks reported in Issues 5 and 8.', 'PR 14 supplies findings, logs and nine screenshots from the AI-assisted run on 8492949.'),
         ('7 Nov / Suwiwat with AI', 'Published baseline through PR 10; reproduced and corrected impossible calendar dates through PR 11.', 'Real red/green HTTP evidence, 69 integration checks and owner-authorized integration; no peer PR approval claimed.'),
         ('Awaiting execution', 'Peer review: inspect source, assertions and behavior in another author’s PR.', 'Record a specific finding or reason for approval and response or retest.'),
     ], [3.3,7,6.9])
@@ -135,7 +135,7 @@ def section_f_team(page, para, sub, table, code):
 
 def section_f_review(page, para, sub, table, code):
     page('Part F', 'Independent verification and release checklist')
-    para('This handoff defines the verification details to retain. Supanut has now posted summaries on Issues 4, 5 and 8; the closing evidence update records what was received and what artifacts are still awaited. Use synthetic local data and record exact source identity. Do not test against real customers or submit a live payment.')
+    para('This handoff defines the verification details to retain. Supanut has now posted summaries on Issues 4, 5 and 8; the closing evidence update records the evidence received in PR 14 and the remaining acceptance checks. Use synthetic local data and record exact source identity. Do not test against real customers or submit a live payment.')
     table(['Check', 'Steps and expected observation', 'Record'], [
         ('RV-01 Requirements', 'Read FR-03, BR-01 and AC-05. Explain who computes the price and why the client cannot supply it. Compare wording with the source.', 'Any mismatch, clarified requirement and traceability update.'),
         ('RV-02 Normal journey', 'Log in as seeded buyer, create an order, perform mock deposit, switch to its shop, confirm an open future date and reload as buyer.', 'Role and release, order reference, totals, saved status, screenshots and actual outcome.'),
