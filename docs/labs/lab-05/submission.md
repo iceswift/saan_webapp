@@ -1,6 +1,6 @@
 # Lab 5 team submission - working draft
 
-> Working draft only. Replace every `TBD`, attach verified evidence and render the final single team PDF as `lab5_sec<section>_<group>.pdf` before submission. Do not submit this draft as proof of a deployment.
+> Working draft only. Replace every `TBD`, attach verified evidence and render the final single team PDF as `lab5_sec<section>_<group>.pdf` before submission. Do not submit this draft as proof of a deployment. Current progress: Draft PR #23 is open to `staging`; CI passed, but review and merge are pending.
 
 ## Team
 
@@ -20,20 +20,22 @@ Evidence: repository and Dockerfile link TBD.
 
 - [x] Adapted the existing Dockerfile and deployment setup to Saan before this Lab 5 work.
 - [x] Added an automated production Docker image build to the local CI workflow; it does not publish the image.
-- [ ] Commit and merge the CI change through the team pull request flow.
-- [ ] Capture a successful Docker build result from GitHub Actions.
+- [ ] Merge the CI change through the team pull request flow after teammate review.
+- [x] Capture a successful Docker build result from GitHub Actions; runs #75 and #76 passed on commit `00f95dc257c7b243f44ae42fe1e91e1e3e0535b5`. Image tag: `saan:ci-00f95dc257c7b243f44ae42fe1e91e1e3e0535b5`; image was not published.
 - [ ] Capture safe environment-variable configuration without revealing values.
 
 Evidence: Dockerfile, CI run link TBD.
 
 ## Answer Part 2 - CI and pull request gate
 
-The repository now has active rules for `main` and `staging`: pull requests are required; one approval and approval of the latest reviewable push are required; conversations must be resolved; the branch must be current; force pushes and branch deletion are blocked. The required checks currently include `Types, lint and integration tests` and `PostgreSQL migrations and constraints`.
+The repository now has active rules for `main` and `staging`: pull requests are required; one approval and approval of the latest reviewable push are required; conversations must be resolved; the branch must be current; force pushes and branch deletion are blocked. Required checks are `Types, lint and integration tests`, `PostgreSQL migrations and constraints`, and `Docker production image`.
 
 - [x] Configure the protected PR rules for `main` and `staging`.
 - [x] Require one teammate approval and resolved conversations.
-- [x] Add production Next.js and Docker image build steps to the proposed feature branch.
-- [ ] Open the feature branch PR and add `Docker production image` as a required status check after GitHub reports the check context.
+- [x] Add production Next.js and Docker image build steps to the feature branch.
+- [x] Open Draft PR #23 to `staging`; add `Docker production image` as a required status check after GitHub reported the check context.
+- [x] Verify push run #75 and PR run #76 passed all workflow jobs.
+- [ ] Get teammate review, resolve feedback and merge the PR.
 - [ ] Open a normal PR with an intentionally failing CI check, prove it is blocked, then close it without merging.
 - [ ] Capture a passing PR with teammate review and green checks.
 
@@ -70,11 +72,11 @@ Evidence: release/rollback links and contribution summary TBD.
 |---|---|---|
 | R-01 / R-02 - Docker and environment contract | TBD | Partly prepared; verify against final run |
 | R-03 / R-04 - GCP deployment and persistence | TBD | Not deployed; durable upload storage unresolved |
-| R-05 - CI build and container build | TBD | Workflow prepared on `codex/lab5-ci-docs`; not yet merged or verified |
+| R-05 - CI build and container build | [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23); [push run #75](https://github.com/iceswift/saan_webapp/actions/runs/42396057761); [PR run #76](https://github.com/iceswift/saan_webapp/actions/runs/42396080830) | Both runs passed, including production app and Docker builds; not merged, image not published |
 | R-06 - failing PR merge gate | TBD | Not demonstrated |
 | R-07 to R-10 - release, deploy and rollback | TBD | Not configured or demonstrated |
 | R-11 - team PDF and participation evidence | TBD | Draft only |
-| R-12 - public repository | TBD | Awaiting owner confirmation before changing visibility |
+| R-12 - public repository | [Public repository](https://github.com/iceswift/saan_webapp) | Public visibility verified |
 
 ## Submission checklist
 
