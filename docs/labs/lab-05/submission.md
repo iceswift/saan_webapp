@@ -21,8 +21,7 @@ Evidence: repository and Dockerfile link TBD.
 - [x] Adapted the existing Dockerfile and deployment setup to Saan before this Lab 5 work.
 - [x] Added an automated production Docker image build to the local CI workflow; it does not publish the image.
 - [ ] Merge the CI change through the team pull request flow after teammate review.
-- [x] Capture a successful Docker build result from GitHub Actions; runs #75 and #76 passed on commit `00f95dc257c7b243f44ae42fe1e91e1e3e0535b5`. Image tag: `saan:ci-00f95dc257c7b243f44ae42fe1e91e1e3e0535b5`; image was not published.
-- [ ] Rebuild and capture the Docker image after adding `UPLOAD_DIR=/data/uploads`; the current source change is awaiting CI.
+- [x] Capture successful Docker builds after setting `UPLOAD_DIR=/data/uploads`; runs #82 and #83 passed on commit `448d6e0cf328f6e92a99dd74d63798f274cb120b`. Image tag: `saan:ci-448d6e0cf328f6e92a99dd74d63798f274cb120b`; image was not published.
 - [ ] Capture safe environment-variable configuration without revealing values.
 
 Evidence: Dockerfile, CI run link TBD.
@@ -35,7 +34,7 @@ The repository now has active rules for `main` and `staging`: pull requests are 
 - [x] Require one teammate approval and resolved conversations.
 - [x] Add production Next.js and Docker image build steps to the feature branch.
 - [x] Open Draft PR #23 to `staging`; add `Docker production image` as a required status check after GitHub reported the check context.
-- [x] Verify push run #75 and PR run #76 passed all workflow jobs.
+- [x] Verify push/PR runs #75/#76, #80/#81, and #82/#83 passed all workflow jobs.
 - [ ] Get teammate review, resolve feedback and merge the PR.
 - [ ] Open a normal PR with an intentionally failing CI check, prove it is blocked, then close it without merging.
 - [ ] Capture a passing PR with teammate review and green checks.
@@ -73,7 +72,7 @@ Evidence: release/rollback links and contribution summary TBD.
 |---|---|---|
 | R-01 / R-02 - Docker and environment contract | TBD | Partly prepared; verify against final run |
 | R-03 / R-04 - GCP deployment and persistence | TBD | Not deployed; durable upload storage unresolved |
-| R-05 - CI build and container build | [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23); [push run #80](https://github.com/iceswift/saan_webapp/actions/runs/42396666615); [PR run #81](https://github.com/iceswift/saan_webapp/actions/runs/42396672871) | Both passed, including production app and Docker builds. The subsequent `/data/uploads` Dockerfile change awaits CI; PR unmerged, image not published |
+| R-05 - CI build and container build | [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23); [push run #82](https://github.com/iceswift/saan_webapp/actions/runs/42397846218); [PR run #83](https://github.com/iceswift/saan_webapp/actions/runs/42397852651) | Both passed with the `/data/uploads` Dockerfile setting, production app build, and Docker image build; PR unmerged, image not published |
 | R-06 - failing PR merge gate | TBD | Not demonstrated |
 | R-07 to R-10 - release, deploy and rollback | TBD | Not configured or demonstrated |
 | R-11 - team PDF and participation evidence | TBD | Draft only |
