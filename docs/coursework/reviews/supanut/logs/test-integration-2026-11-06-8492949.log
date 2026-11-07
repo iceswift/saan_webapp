@@ -1,0 +1,83 @@
+
+> saan@0.1.0 test:integration
+> node scripts/test-integration.mjs
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": SQLite database "money-test.db" at "file:D:/saan_webapp/storage/tests/ci/money-test.db"
+
+Your database is now in sync with your Prisma schema. Done in 172ms
+
+✔ durable simulated receipts survive another process and reject changed requests (216.8812ms)
+✔ unread view finds older items beyond the recent fifty and remains owner scoped (44.224ms)
+✔ payout requires explicit sandbox gate and never production (0.9587ms)
+✔ only admin can dispatch; invalid policy, recipient or order prevents reservation (38.4514ms)
+✔ concurrent requests dispatch once; sent alone never finalizes; paid finalizes one event (77.6192ms)
+✔ lost POST response recovers original identity from metadata without another dispatch (35.4359ms)
+✔ missing original, changed account or destination retains unknown reservation (47.9944ms)
+✔ refund and unknown payout reservations prevent spending the same available funds (24.8256ms)
+✔ two different orders cannot reserve the same available account balance (44.893ms)
+✔ provider acceptance followed by local write failure recovers once without resubmission (64.9349ms)
+✔ unconfirmed transfers rotate out of the batch so later paid transfers are checked (181.4082ms)
+✔ concurrent OTP redemption succeeds exactly once and cannot be replayed (31.8397ms)
+✔ expired OTP and locked OTP cannot be redeemed (30.6116ms)
+✔ resending never resurrects an older code after the newest challenge is consumed, expired or locked (39.4091ms)
+✔ a paid then cancelled order cannot report a new successful payment (78.4812ms)
+✔ negative stale retrieval cannot release cancellation while submission is in flight (59.2868ms)
+✔ concurrent duplicate deposits execute once and finalize once (52.1631ms)
+✔ cancellation cannot pass a reserved in-flight deposit (46.3255ms)
+✔ cancellation first prevents all subsequent charges (34.4193ms)
+✔ balance completion creates one payment and one shrine with coordinates (50.5879ms)
+✔ legacy fully paid completion is idempotent without gateway call (35.9411ms)
+✔ timeout stays UNKNOWN and reconciliation retrieves without recharging (58.4811ms)
+✔ fresh PROCESSING cannot be reconciled while execute is in flight (41.3168ms)
+✔ FAILED is terminal and permits cancellation without later reconciliation (45.6655ms)
+✔ PENDING blocks a new charge and cancellation until retrieval confirms success (54.6951ms)
+✔ stale PROCESSING recovers through retrieval without another execution (40.3798ms)
+✔ captured payment with local write failure preserves reference and reconciles once (76.9201ms)
+✔ unauthorized customer cannot pay or cancel another customer's order (27.9829ms)
+✔ legacy overpayment is blocked for manual inspection (28.5967ms)
+✔ asynchronous QR reserves once, resumes the same charge, and only completes on retrieval (72.3578ms)
+✔ durable inbox deduplicates, resumes after lease expiry, retrieves provider truth and finalizes once (77.5016ms)
+✔ unpaid asynchronous balance never completes work; missing callback polling completes once (75.5167ms)
+✔ concurrent balance confirmation creates one completion event, payment and shrine (76.5207ms)
+✔ cancelled paid Omise deposit creates one refund obligation without claiming money was returned (53.0683ms)
+✔ blocked Bangkok date rejects confirmation and rolls back every mutation (48.9335ms)
+✔ an open date confirms once and emits one event and notification (33.9777ms)
+✔ closing a date leaves an already confirmed appointment intact (34.7354ms)
+✔ another user and an unverified owner cannot confirm (32.6145ms)
+✔ concurrent confirmation and cancellation produce one terminal transition (47.4671ms)
+✔ past and invalid appointments cannot mutate the order (22.9062ms)
+✔ public profile updates are owner scoped, preserve omitted fields, and publish only explicit shop content (54.6441ms)
+✔ refund case gate always denies production and requires explicit private sandbox opt-in (1.1751ms)
+✔ only admins open one full-amount sandbox case; customer projection excludes internal evidence (82.2293ms)
+✔ stale approvals, real bank details, duplicate reference and invalid transitions cannot complete a case (96.2652ms)
+✔ a transfer reference cannot be reused on another case and failed audit writes roll back state (160.4108ms)
+✔ concurrent review submissions create one review and one notification (67.7671ms)
+✔ another user cannot review an order (24.7516ms)
+✔ reviews require completed customer acceptance (25.2361ms)
+✔ notification insertion failure rolls back the review and permits retry (58.0743ms)
+✔ Omise sandbox requires explicit selection and cannot enable public production (0.5722ms)
+✔ production never enables test login or simulated payments (0.1485ms)
+✔ staging requires explicit switch, valid allowlist and selected mock gateway (0.1773ms)
+✔ unsupported Omise refunds remain actionable obligations; refund/reconcile/payout never contact provider (68.852ms)
+✔ refund obligation insertion rolls back with cancellation and retries do not duplicate it (35.9388ms)
+✔ duplicate concurrent refunds finalize once with one audit event (55.3614ms)
+✔ completed fully paid work pays shop once despite duplicate requests (50.5951ms)
+✔ no payout before acceptance, no underpaid payout, no refund of completed work (35.964ms)
+✔ refund timeout blocks repeat execution and retrieves original result exactly once (40.9651ms)
+✔ never reconcile undispatched requests and never refund via another gateway (21.0493ms)
+✔ shop finance never returns another shop's orders (29.572ms)
+✔ mock validation rejects fractional/negative amounts and stable keys preserve references (0.3644ms)
+✔ stale negative retrieval never hides a later successful refund submission (41.5368ms)
+✔ public directory contains only verified businesses, rounds pins, and never exposes owner or customer locations (60.5877ms)
+✔ legacy vows stay valid without coordinates; only the owner can read or update a pin (37.1032ms)
+✔ invalid, partial and out-of-bounds coordinates never change a stored pin (16.8994ms)
+ℹ tests 65
+ℹ suites 0
+ℹ pass 65
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9714.9134

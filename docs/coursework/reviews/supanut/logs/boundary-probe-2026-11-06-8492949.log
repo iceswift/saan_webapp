@@ -1,0 +1,7 @@
+Created At: 2026-11-06T23:36:41+07:00
+Completed At: 2026-11-06T23:36:47+07:00
+Command exited with code 0.
+
+Command output:
+{"check":"impossible_calendar_date","impossibleDate":"2027-02-31","serverRegexPasses":true,"serverStringCompareGreaterThanToday":true,"clientParseYMD":null}
+{"check":"stale_product_at_deposit_payment","productActive":false,"depositPaymentOk":true,"orderStatusAfterDeposit":"AWAITING_PROVIDER"}

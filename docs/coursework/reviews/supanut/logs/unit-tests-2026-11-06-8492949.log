@@ -1,0 +1,47 @@
+Created At: 2026-11-06T23:35:23+07:00
+Completed At: 2026-11-06T23:35:26+07:00
+Command exited with code 0.
+
+Command output:
+✔ calendar preserves Bangkok appointment as UTC without inventing an end time (2.9693ms)
+✔ Thai folding obeys byte limits and escapes text instead of injecting calendar components (2.0413ms)
+✔ same appointment keeps its identity across downloads and rejects invalid dates (1.1839ms)
+✔ whole-baht entry accepts Thai digits and correct thousands groups without changing the intended amount (1.7197ms)
+✔ preserves browse filters while removing unrelated parameters and hashes (1.5001ms)
+✔ rejects external, protocol-relative and deceptive local destinations (0.2349ms)
+✔ partial refund is never described as fully refunded (1.1495ms)
+✔ customer decisions precede appointments and closed orders are excluded (1.6067ms)
+✔ nearest appointments precede later and unscheduled confirmed jobs (0.2564ms)
+✔ missing services remain explicit and never authorize a public launch (2.5403ms)
+✔ public support contacts canonicalize phone input and allow only official contact URLs (1.2702ms)
+✔ invalid contacts never turn into injectable links or leak raw values into readiness (0.957ms)
+✔ domain syntax is never mistaken for proof of external-service readiness (7.5869ms)
+✔ Thai digits and common local/international phone formatting resolve to one identity (1.6979ms)
+✔ login returns to the intended internal task without accepting external or normalized protocol-relative URLs (6.5981ms)
+✔ test client refuses missing configuration, live keys and production (3.4156ms)
+✔ QR creation is pending; request uses fixed HTTPS origin, form body and stable reference (40.2628ms)
+✔ network timeout or ambiguous provider response is UNKNOWN without automatic retry (2.0373ms)
+✔ rejects live/mismatched/contradictory provider objects (3.7245ms)
+✔ retrieval only GETs the expected charge and validates its identity (1.0789ms)
+✔ invalid amounts and expiry make no provider requests (0.537ms)
+✔ Omise adapter returns pending QR and retrieves the saved ID before success (1.6264ms)
+✔ unsupported refunds, payouts, cards and missing reference never call provider (1.5311ms)
+✔ untrusted QR destinations are never exposed to the customer (0.4267ms)
+✔ transfer boundary rejects live configuration and unsafe destinations (1.588ms)
+✔ POST timeout is unknown and never retried, errors do not leak credentials (0.9397ms)
+✔ transfer must match mode amount destination metadata and fee arithmetic (29.3623ms)
+✔ recovery only GETs the transfer list and rejects ambiguous matching records (4.779ms)
+✔ Omise HMAC verifies original raw bytes using decoded Base64 secret (2.0307ms)
+✔ rejects missing, malformed, incorrect and oversized signature inputs without throwing (1.5655ms)
+✔ checks a five-minute window in both directions including its boundary (0.408ms)
+✔ accepts rotated signatures and secrets without accepting malformed candidates (0.5161ms)
+✔ worker health distinguishes missing, failed, stale and invalid timestamps (1.9205ms)
+✔ sandbox endpoints fail closed before authentication and reject malformed signed payloads (511.8747ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1208.7472
