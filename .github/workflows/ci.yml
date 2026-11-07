@@ -32,6 +32,17 @@ jobs:
       - run: npm run lint
       - run: npm run test:integration
       - run: npm run db:postgres:check
+      - name: Build Next.js production app
+        run: npm run build
+
+  docker:
+    name: Docker production image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image without publishing
+        run: docker build --tag "saan:ci-${GITHUB_SHA}" .
 
   postgres:
     name: PostgreSQL migrations and constraints
@@ -70,3 +81,4 @@ jobs:
       - run: npm run test:postgres
       - name: Verify durable mock receipts across processes
         run: node --conditions=react-server --import tsx --test tests/durable-mock.integration.test.ts
+
