@@ -149,10 +149,10 @@ table(['Submission detail','Value'],[
     ('Repository','https://github.com/iceswift/saan_webapp'),
     ('Inspected baseline',sha),
     ('Proposed application release','9377577047bf210c5e72da0cf7fbab5733451fa0; integrated main, awaiting final student acceptance'),
-    ('Assigned theme','Pending comparison with group_work_specs.docx'),
+    ('Assigned theme','Theme 4 — E-Commerce or Ordering System. Context: shrine products and installation ordering.'),
 ], [4,13.2])
 sub('Submission readiness',
-    'The existing implementation predates these course contracts. The owner integrated the published baseline and verified calendar correction through PRs 10 and 11. Supanut posted review and execution summaries in Issues 4, 5 and 8; their 23 supporting files are included through PR 14 at 99171fd. Course-theme/reuse compliance, required substantive PR review and final student acceptance remain open. The closing Part F update distinguishes current results from the historical visual evidence.')
+    'The existing implementation predates these course contracts. The owner integrated the published baseline and verified calendar correction through PRs 10 and 11. Supanut posted review and execution summaries in Issues 4, 5 and 8; their 23 supporting files are included through PR 14 at 99171fd. Theme 4 fits the order workflow. Eligibility to reuse the existing code, substantive PR review and student acceptance remain open. The closing Part F update distinguishes current results from the historical visual evidence.')
 
 page('Navigation','Report contents')
 para('Parts A to D describe the product baseline and proposed allocation. Part E records the Sprint 1 contracts as of this report. Part F distinguishes inspected implementation, executed checks and evidence that still needs to be collected.')
@@ -169,7 +169,7 @@ sub('Evidence vocabulary',
 sub('Reading the application contracts',
     'Next.js Server Actions are the main mutation interface. Their function names and typed payloads are documented instead of invented REST paths. Existing HTTP routes remain separate boundaries. Service-level tests support business-rule claims but do not by themselves establish the entire browser-to-session authorization path.')
 sub('Source references',
-    'The principal sources are the supplied eight-page Project Deliverable 1 brief, the inspected Git baseline, Prisma schema, server actions and services, and dated deployment records. Detailed source paths and the release evidence plan appear in Part F. The unprovided course master specification remains authoritative for theme assignment.')
+    'The principal sources are the supplied eight-page Project Deliverable 1 brief, the inspected Git baseline, Prisma schema, server actions and services, and dated deployment records. Detailed source paths and the release evidence plan appear in Part F. The Group Work Specification v1, pp. 4 and 6, maps Suwiwat’s ID ending in 4 to Theme 4. Supanut’s ID ending in 1 also makes Theme 1 available.')
 
 page('Part A','Product context and scope')
 sub('Problem and stakeholders',
@@ -226,7 +226,7 @@ table(['Feature','Requirement coverage','Dependency','Sprint and verification'],
 sub('Cross cutting responsibilities',
     'Authorization is established in F-01 and verified again at every protected feature. Atomic transitions belong to F-04 and F-06, with operational reconciliation in F-09. Reproducibility is established in Sprint 1 and maintained in subsequent releases. Inclusive interaction and durable recovery receive explicit Sprint 3 verification.')
 sub('Coverage and change control',
-    'All declared FR, BR and NFR identifiers have an owner and sprint. Detailed later-sprint acceptance criteria are intentionally not presented as complete. Assigned-theme coverage is unresolved until the master specification is available. Changes require a dated decision, updated traceability and a genuine teammate review; proposed changes are not approved changes.')
+    'All declared FR, BR and NFR identifiers have an owner and sprint. Detailed later-sprint acceptance criteria are intentionally not presented as complete. Theme 4 covers catalog orders, server-calculated totals, price snapshots, and acceptance by the authorized shop. Changes require a dated decision, updated traceability and a genuine teammate review; proposed changes are not approved changes.')
 
 page('Part C','Architecture and application boundaries')
 para('Saan is a modular Next.js application rather than separately deployed frontend and API services. React pages and client components call server actions; services enforce domain rules and use Prisma for persistence. Server-rendered queries return bounded view data. External integrations sit behind explicit payment, storage and runtime-policy boundaries.')
@@ -289,18 +289,18 @@ sub('Deployment and configuration',
 
 section_c_ui(page, para, sub, table, code)
 page('Part D','Three sprint delivery plan')
-para('This is the proposed assessment plan over the disclosed existing Saan baseline. It requires agreement with the course theme and reuse rules. Existing features are inspected and verified rather than falsely described as newly written during these sprints.')
+para('This is the proposed assessment plan over the disclosed existing Saan baseline. The selected Theme 4 fits this plan. Reuse of the existing baseline remains unconfirmed. Existing features are inspected and verified rather than falsely described as newly written during these sprints.')
 table(['Sprint','Goal and features','Dependencies','Completion outcome'],[
-    ('1\n8 November','Baseline and useful order journey. F-01 to F-04.','Theme and reuse decision; seed data; mock payment; genuine peer review.','Persisted order, test deposit, appointment confirmation, rejection and access checks; A-F PDF and accepted immutable release.'),
+    ('1\n8 November','Baseline and useful order journey. F-01 to F-04.','Theme 4 selected. Seed data, mock payment, reuse clarification and peer review.','Persisted order, test deposit, appointment confirmation, rejection and access checks; A-F PDF and accepted immutable release.'),
     ('2\n29 November','Expand core service work. F-05 and F-06.','Accepted Sprint 1; prospective feature contracts and state rules.','Quote acceptance, work reporting and communication verified with meaningful domain and ownership tests.'),
     ('3\n13 December','Personal tools, discovery and operational hardening. F-07 to F-09.','Stable core workflow; durable storage design; participant availability.','Private records, public shop projection, inclusive interaction, restore and deployment checks with limitations disclosed.'),
 ], [2.3,5.1,4.7,5.1])
 sub('Feasibility and priorities',
     'Do not expand Sprint 1 to cover the whole marketplace. Prioritize correct identity, one transactional domain path, persistence and credible verification. A working home-server deployment does not replace course-required integration evidence. Lab 5 cloud work must follow its own specification when supplied.')
 sub('Proposed ownership',
-    'Suwiwat leads application development, integration and technical fixes. Supanut focuses on requirements review, test design, manual execution, reproducible defect reports and substantive peer review. Both agree scope, understand the released behavior and inspect final acceptance. Responsibility is assigned; actual contributions are credited only after the work is performed and recorded.')
+    'Suwiwat leads application development, integration and technical fixes. Supanut focuses on requirements review, test design, manual execution, reproducible defect reports and substantive peer review. Both participate in design, implementation, testing, AI supervision, review, deployment and maintenance. Responsibility is assigned; actual contributions are credited only after the work is performed and recorded.')
 sub('Decisions to close',
-    'Confirm the assigned theme and original two-person repository requirement; obtain the reuse decision; choose the final release; and select two genuine Issues with substantive teammate reviews. The signed-in buyer policy and practical team allocation are now recorded decisions. Do not amend historical commits to manufacture a compliant process.')
+    'Confirm eligibility to reuse the existing code, obtain student acceptance of the proposed release and document two substantive teammate reviews and the actual integration sequence. The signed-in buyer policy and practical team allocation are now recorded decisions. Do not amend historical commits to manufacture a compliant process.')
 
 page('Part E','Identity and catalog contracts')
 para('Contract version 1, recorded 5 November 2026 after the inspected implementation. F-01 covers FR-01, BR-05 and BR-06. F-02 covers FR-02 and the catalog input to BR-01. These contracts describe current intent and required assessment checks; they are not pre-implementation history.')
@@ -382,7 +382,7 @@ sub('Contract and TDD history',
     'Preserve the original baseline. For new meaningful rule work, commit its contract and intended failing test before correction, retain the failure, then retain the passing run after the fix. No historical red test or teammate approval is fabricated here. These after-the-fact contracts cannot retrospectively satisfy a before-implementation requirement.')
 
 page('Part F','Implementation and evidence inventory')
-para('The inspected baseline is '+sha+'. The report content and its authoring files are later documentation additions. The assessed release remains unselected. The following history is descriptive and is not evidence of course teammate review.')
+para('The inspected baseline is '+sha+'. The report content and its authoring files are later documentation additions. The proposed release is recorded on the cover and awaits student acceptance. The following history is descriptive and is not evidence of course teammate review.')
 table(['Commit','Date','Existing change'],[
     ('ecc721a','4 November 2026','Inclusive map and Thai input changes; compatible runtime dependency updates'),
     ('6e39a34','4 November 2026','Public shop photos and contact availability; recorded restore verification'),
@@ -394,9 +394,9 @@ sub('Primary implementation sources',
 sub('Historical execution evidence',
     'docs/DEPLOYMENT-STATUS.md records 4 November runs: 65 SQLite integration cases, 55 PostgreSQL-compatible cases, four configuration cases, TypeScript, targeted lint and Linux build passed for the service-preparation release. These are dated operational records, not a fresh execution transcript for the final coursework release. Provider-order and review suites were SQLite-only. Known filesystem tracing warnings and Prisma CLI advisories remain disclosed.')
 sub('Required program demonstration set',
-    'D-01 requires the complete selected UI journey. Actual HTTP checks now cover creation, mock deposit, confirmation and persisted retrieval; browser excerpts show login and retrieval of the confirmed outcome. D-02 has actual HTTP and database rollback assertions for blocked-date rejection. D-03 has HTTP/session checks and selected browser logout and unrelated-user denial evidence. The excerpts do not claim the entire creation flow was manually executed through the UI.')
+    'D-01 requires the complete selected UI journey. Actual HTTP checks now cover creation, mock deposit, confirmation and persisted retrieval; the closeout browser run covers checkout through buyer reload. D-02 has actual HTTP and database rollback assertions for blocked-date rejection. D-03 has HTTP/session checks and selected browser logout and unrelated-user denial evidence. The excerpts do not claim the entire creation flow was manually executed through the UI.')
 sub('Source priority and limitations',
-    'Some README implementation descriptions predate the PostgreSQL and sandbox releases. This report uses inspected code and dated deployment records for those details. The master course specification and lecture materials referenced by the teammate’s AI conversation have not been supplied or independently verified.')
+    'Some README implementation descriptions predate the PostgreSQL and sandbox releases. This report uses inspected code and dated deployment records for those details. Theme selection uses Group Work Specification v1. Lecture materials referenced by the teammate’s AI conversation were outside this review.')
 
 page('Part F','Automated results and test excerpts')
 if finished:
@@ -462,7 +462,7 @@ sub('Reproduction summary',
 sub('Genuine team process still required',
     'Issues 2 to 9 now exist; Supanut posted summaries on 4, 5 and 8. PR 10 publishes the coursework baseline and PR 11 integrates the prospective date correction. These were owner-authorized main integrations, not teammate-approved staging releases. The required two substantive cross-reviewed feature PRs and staging release history must not be inferred from owner merges. Both students must understand the behavior and accept the final release.')
 sub('AI use and remaining gates',
-    'AI assisted development of the existing Saan application and helped inspect source, structure this report and generate document formatting. The students must independently validate its design, assertions and evidence and disclose actual responsibilities. Before submission, confirm course reuse and theme, complete contribution records, add genuine process evidence where applicable and replace this preparation status with actual student acceptance results. The release checks are recorded in the closeout notes.')
+    'AI assisted development of the existing Saan application and helped inspect source, structure this report and generate document formatting. The students must independently validate its design, assertions and evidence and disclose actual responsibilities. Before submission, clarify reuse of the existing code, complete contribution records, add genuine process evidence where applicable and replace this preparation status with actual student acceptance results. The release checks are recorded in the closeout notes.')
 section_f_team(page, para, sub, table, code)
 section_f_review(page, para, sub, table, code)
 
@@ -486,7 +486,7 @@ table(['Record','Reported contribution','Inspection status'],[
     ('Issue 8\nikmie','Type generation, typecheck/build, 65 integration and 34 unit tests, equivalent price/ownership checks. Explicitly excludes unpublished coursework correction.','Logs received for 8492949. The later application run records 69 integration and 13 HTTP passes.'),
 ], [2.7,8.2,6.3])
 sub('Remaining acceptance')
-para('The browser evidence below is tied to the earlier revision. An AI-assisted browser rerun on 4c55d7c passed checkout, mock deposit, shop confirmation and buyer reload. Personal acceptance remains unrecorded. Record genuine substantive course PR reviews and staging/release history; owner bypass does not substitute for them. Confirm any externally assigned theme/reuse conditions from the real course source, then obtain both students acceptance of the immutable release and this report. The team already confirmed Saan as its product and the practical role allocation; that is not an invented instructor approval.')
+para('The browser evidence below is tied to the earlier revision. An AI-assisted browser rerun on 4c55d7c passed checkout, mock deposit, shop confirmation and buyer reload. Personal acceptance remains unrecorded. Record genuine substantive course PR reviews and staging/release history; owner bypass does not substitute for them. Clarify eligibility to reuse the existing code and record both students’ acceptance of the immutable release and this report. Record actual contributions. Group Work Specification v1, pp. 1–2, requires participation by both students across the project, with flexibility in task allocation.')
 sub('Assignment boundary')
 para('Docker, CI/CD and public GCP deployment belong to the separate Lab 5 assignment, not this Deliverable 1 acceptance. This update neither deploys infrastructure nor makes the repository public. Keep later cloud requirements, costs and approvals separate from the Sprint 1 report.')
 

@@ -16,7 +16,7 @@ reader = PdfReader(pdf)
 structure = json.loads((out / 'report-structure.json').read_text(encoding='utf8'))
 assert len(reader.pages) == len(structure['pages']), 'Logical pages must match rendered pages'
 text = '\n'.join(p.extract_text() for p in reader.pages)
-for expected in ['67070503444', '67070503441', 'Suwiwat Sinsomboon', 'Supanut Sopha']:
+for expected in ['67070503444', '67070503441', 'Suwiwat Sinsomboon', 'Supanut Sopha', 'Theme 4', 'E-Commerce or Ordering System']:
     assert expected in text, expected
 assert '67070503431' not in text, 'Superseded teammate draft ID'
 for number, (_, title) in enumerate(structure['pages']):
@@ -47,9 +47,9 @@ manifest = {
                'compiledStyles': {'exitCode':0,'details':'css-after-2026-11-05.txt'}},
     'artifacts': {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
                   for p in [docx, pdf]},
-    'remaining': ['Master course specification and reuse decision',
+    'remaining': ['Eligibility to reuse the pre-existing Saan code',
                   'Substantive teammate PR reviews and sprint staging integration',
-                  'Browser acceptance on the selected release and recorded personal verification',
+                  'Recorded personal verification by both students',
                   'Human acceptance of the final release'],
 }
 (root / 'docs/coursework/evidence/manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf8')

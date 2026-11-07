@@ -13,7 +13,7 @@ def section_a(page, para, sub, table, code):
     para('DEC-01: Saan is the product of record. The teammate shrine-store draft supplies context only. DEC-02: any signed-in account may buy for itself; a provider does not need a separate customer account. Provider-management actions remain limited to the owning verified shop. This matches existing code and avoids inventing a customer-only guard.')
     para('DEC-03: use mock payment for a self-contained demonstration. Test provider collection may be studied separately, but no real money or external account is needed. DEC-04: preserve the original Git history and distinguish existing code from new course work. DEC-05: Supanut focuses on requirements and verification; Suwiwat leads implementation and integration.')
     sub('Open decisions and acceptance impact')
-    para('OD-01: obtain group_work_specs.docx and compare the assigned theme and original repository requirements. OD-02: confirm that the existing application can be used as the baseline under the course rules. OD-03: select and accept an immutable course release after real teammate review. These are external or team decisions; source inspection cannot settle them. Missing approval is disclosed rather than marked complete.')
+    para('OD-01: Theme 4 selected under Group Work Specification v1, pp. 4 and 6. OD-02: eligibility to reuse the existing code remains open. OD-03: student acceptance of the proposed immutable release and substantive teammate review remain open.')
 
 def section_c_data(page, para, sub, table, code):
     page('Part C', 'Extended data dictionary and ownership')
@@ -146,6 +146,6 @@ def section_f_review(page, para, sub, table, code):
         ('RV-07 Integration', 'Review the real Issue and PR diff, leave a specific finding, verify response and inspect staging acceptance.', 'Author, reviewer, substantive comment, resolution and actual integration reference.'),
     ], [2.9,9.3,5])
     sub('Release acceptance gate')
-    para('Accept only after the assigned theme/reuse decision is settled, the selected AC have execution evidence, known failures are disclosed, the actual review process is recorded and setup reproduces the release. Pin a tag or commit; subsequent development must not silently replace the assessed version. PDF navigation must be checked after final edits.')
+    para('Accept only after the reuse decision is settled, the selected AC have execution evidence, known failures are disclosed, the actual review process is recorded and setup reproduces the release. Pin a tag or commit; subsequent development must not silently replace the assessed version. PDF navigation must be checked after final edits.')
     sub('Prepared assets and remaining human work')
     para('The report, automated query tests and teammate verification workbook are prepared. Independent student execution, genuine GitHub reviews, course approval and final release acceptance cannot be replaced by document generation. Preserve those as visible open items until the students complete them.')
