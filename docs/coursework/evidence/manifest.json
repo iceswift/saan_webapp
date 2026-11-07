@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-11-07T14:49:21.270773+07:00",
-  "applicationBaseline": "99171fd8f624cc32a0de2609f81db0c8a9bdd77a",
+  "checkedAt": "2026-11-07T20:03:14.350992+07:00",
+  "applicationBaseline": "4c55d7c5f665ced5909306f8cd8935b4ba111c76",
   "courseReleaseAccepted": false,
   "documentPages": 34,
   "rendering": "Hidden Microsoft Word PDF export and bundled Poppler PNG rasterization",
@@ -36,12 +36,12 @@
   },
   "artifacts": {
     "Saan_CPE334_Deliverable_1.docx": {
-      "bytes": 1044300,
-      "sha256": "56ba0ebafa56a634a0b639becdd818e472757ac0dca37f3a0f617580c7ac3331"
+      "bytes": 1044326,
+      "sha256": "3b47be0d4aec7183cd9da9f3be015a1a5d685d3e198dca1f6e2030c117a7a74c"
     },
     "Saan_CPE334_Deliverable_1.pdf": {
-      "bytes": 1387979,
-      "sha256": "5181ec64e5d2dc834f23a5c17529571316967babbcb39cde86c64c31a6e77364"
+      "bytes": 1388060,
+      "sha256": "a6163e25537b89beb57f16b66c65487dee6edd122dd7300fd8712c0a7fc73b9a"
     }
   },
   "remaining": [

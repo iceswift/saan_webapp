@@ -19,7 +19,7 @@ This folder adapts the existing Saan product for Project Deliverable 1. It does 
 - Final editable report and PDF: `output/coursework/Saan_CPE334_Deliverable_1.docx` and `.pdf` (ignored generated outputs).
 - Rendered QA pages: `output/coursework/render/` (ignored intermediates).
 
-Both student identities and the practical role allocation are confirmed. The report includes source inspection, query/database regression and session-backed HTTP evidence, while distinguishing them from browser journeys and independent student execution. Course-theme/reuse approval, genuine teammate reviews, the full selected UI journey and final release acceptance remain gates. Do not mark them complete from an AI-generated narrative.
+Both student identities and the practical role allocation are confirmed. The report includes source inspection, query/database regression and session-backed HTTP evidence, while distinguishing them from browser journeys and independent student execution. The selected UI journey passed the closeout rerun. Course-theme/reuse clarification, genuine teammate review and final student acceptance remain open. Do not mark them complete from an AI-generated narrative.
 
 ## Rebuild
 
