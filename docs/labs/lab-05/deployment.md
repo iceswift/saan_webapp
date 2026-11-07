@@ -10,13 +10,13 @@ Status: preparation in progress. This document is adapted to Saan and records th
 4. Deploy only a reviewed `main` release. Keep the commit SHA and resulting image digest in the release evidence.
 5. Roll back by redeploying a previously built image only after checking that the current database schema is compatible. Image rollback does not reverse database migrations.
 
-The GitHub ruleset `Lab 5 protected PRs: main and staging` now requires pull requests, one approval, approval of the latest reviewable push, resolved conversations, up-to-date branches, and the two existing CI status checks. Force pushes and deletion are blocked. The old owner-only update restriction was removed so a teammate with write access can merge a passing reviewed PR.
+The GitHub ruleset `Lab 5 protected PRs: main and staging` now requires pull requests, one approval, approval of the latest reviewable push, resolved conversations, up-to-date branches, and three CI status checks: `Types, lint and integration tests`, `PostgreSQL migrations and constraints`, and `Docker production image`. Force pushes and deletion are blocked. The old owner-only update restriction was removed so a teammate with write access can merge a passing reviewed PR.
 
 ## Current CI
 
 `.github/workflows/ci.yml` runs for pushes and pull requests. It checks route types, lint, integration tests, PostgreSQL schema/migrations and constraints, builds the production Next.js app, and builds a Docker production image without publishing it.
 
-The workflow and Lab 5 docs are being prepared on the GitHub feature branch `codex/lab5-ci-docs`, created from `staging`; they are not merged. The local checkout remains on `main` because the Git directory denied local branch creation. After the branch has a reviewable PR and CI reports the new check, add `Docker production image` as a required status check. The existing required status check names are `Types, lint and integration tests` and `PostgreSQL migrations and constraints`.
+The workflow and Lab 5 docs are on GitHub feature branch `codex/lab5-ci-docs`, created from `staging`, in [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23). GitHub Actions runs #75 (push) and #76 (pull request) succeeded. They passed route types, lint, integration tests, PostgreSQL migrations and constraints, the Next.js production build, and a Docker production image build. The image was built as `saan:ci-00f95dc257c7b243f44ae42fe1e91e1e3e0535b5` and was not published. `Docker production image` is now a required status check. The PR remains unmerged and awaits teammate review. The local checkout remains on `main` because the Git directory denied local branch creation; unrelated coursework edits were excluded from the remote branch.
 
 ## GCP design and setup gate
 
