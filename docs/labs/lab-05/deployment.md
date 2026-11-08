@@ -14,13 +14,33 @@ The GitHub ruleset `Lab 5 protected PRs: main and staging` now requires pull req
 
 ## Current CI
 
-`.github/workflows/ci.yml` runs for pushes and pull requests. It checks route types, lint, integration tests, PostgreSQL schema/migrations and constraints, builds the production Next.js app, and builds a Docker production image without publishing it.
+`.github/workflows/ci.yml` runs for pushes and pull requests. It checks route types, lint, all non-integration TypeScript unit/security suites, the scheduled-backup Python test, SQLite integration tests, PostgreSQL schema/migrations and constraints, a Next.js production build, and a Docker production image build without publishing it.
 
 ## Starter-kit adaptation notes
 
 The Starter Kit is a reference implementation for a React/Vite frontend plus Express/Prisma API on Node 24. Saan is a single Next.js App Router service on Node 22 with Prisma 6, so its existing root Dockerfile is the adapted single-container build; the starter's separate client/server Compose Dockerfiles, Nginx frontend, Vite commands, Express entrypoint, and Node 24 image are not applicable. Saan's multi-stage build generates the PostgreSQL Prisma client, runs `next build`, retains production dependencies, and runs as the non-root `node` user. It uses a build-only placeholder `DATABASE_URL`; production credentials are supplied at runtime.
 
-The starter's durable-volume contract maps to Saan's `UPLOAD_DIR`. The Docker image now defaults this path to `/data/uploads`, matching the directory prepared for a runtime mount and Saan's existing Compose deployment. This only selects the mount path; it does not make Cloud Run local storage durable. Cloud Run still needs a verified durable mount or object-storage implementation and a replacement/persistence drill before R-04 can be marked complete. The current CI workflow builds but does not publish or deploy the image; GCP deploy/migration/smoke-test automation remains pending.
+The Starter Kit README calls for sessions and uploaded files to live in the database. Saan deliberately differs: it stores uploaded images on the filesystem behind stable `/api/files/<key>` URLs, controlled by `UPLOAD_DIR`. The Docker image sets `UPLOAD_DIR=/data/uploads` to match Saan's existing Compose mount; this path comes from Saan's deployment, not from a durable-volume contract in the Starter Kit. A path by itself does not make Cloud Run local storage durable. Cloud Run still needs a verified persistent mount or object-storage implementation and a replacement/persistence drill before R-04 can be marked complete.
+
+Saan's runtime image runs `npm prune --omit=dev`; `tsx` is a development dependency, so `npm run db:seed` is unavailable in that image. Prisma CLI remains available for the controlled migration job. Do not add an automatic seed to a public deployment without a reviewed, production-safe seed plan. The current CI workflow builds but does not publish or deploy the image; GCP deploy/migration/smoke-test automation remains pending.
+
+### Runtime environment contract
+
+| Variable | Purpose and handling |
+|---|---|
+| `DATABASE_URL` | Required PostgreSQL connection at runtime; inject from Secret Manager. The Docker build uses only a build-time placeholder. |
+| `NEXT_PUBLIC_SITE_URL` | Public canonical site URL; configure for the target environment, never a credential. |
+| `SITE_URL` | Optional server-side canonical URL override; keep it aligned with `NEXT_PUBLIC_SITE_URL`. |
+| `UPLOAD_DIR` | Docker default `/data/uploads`; mount durable storage there before relying on uploaded images across instance replacement. |
+| `OPERATIONS_DIR` | Optional filesystem location for operations status data; configure only if the deployed operations feature needs persistent state. |
+| `APP_ENV`, `STAGING_TEST_MODE`, `STAGING_TEST_PHONES` | Environment classification and private test-login gate. Production must not inherit staging test mode or phone allowlists. |
+| `PAYMENT_PROVIDER`, `PAYMENT_MUTATIONS_DISABLED` | Payment selection and mutation pause. Keep production in the reviewed safe configuration; mock/test payment is not real payment. |
+| `OMISE_TEST_SECRET_KEY`, `OMISE_WEBHOOK_SECRET`, `OMISE_WEBHOOK_PREVIOUS_SECRET`, `PAYMENT_WORKER_SECRET` | Optional secrets for private sandbox features; set only through Secret Manager after deliberate setup, never in example files or GitHub source. |
+| `OMISE_API_VERSION`, `OMISE_WEBHOOK_ENABLED`, `PAYMENT_RECONCILIATION_ENABLED` | Sandbox integration configuration. Webhook/reconciliation remain disabled unless the full private setup and endpoint protection are verified. |
+| `ADMIN_PHONES`, `SUPPORT_EMAIL`, `SUPPORT_PHONE`, `SUPPORT_LINE_URL` | Optional administrator/contact configuration; use only verified values and avoid placing personal data in public examples. |
+| `SMS_PROVIDER`, `SMS_SEND_ENABLED` | SMS capability flags; defaults remain unconfigured/disabled because no real SMS adapter is enabled. |
+
+`.env.example` and `.env.staging.example` contain placeholders or disabled defaults, not live credentials. Keep actual production values outside the image and repository.
 
 The workflow, Dockerfile adjustment, and Lab 5 docs are on GitHub feature branch `codex/lab5-ci-docs`, created from `staging`, in [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23). GitHub Actions runs #82 (push) and #83 (pull request) passed on commit `448d6e0cf328f6e92a99dd74d63798f274cb120b`. They passed route types, lint, integration tests, PostgreSQL migrations and constraints, the Next.js production build, and a Docker production image build with `UPLOAD_DIR=/data/uploads`. The image tag was `saan:ci-448d6e0cf328f6e92a99dd74d63798f274cb120b`; it was built only, not published. `Docker production image` is a required status check. The PR remains unmerged and awaits teammate review. The local checkout remains on `main` because the Git directory denied local branch creation; unrelated coursework edits were excluded from the remote branch.
 

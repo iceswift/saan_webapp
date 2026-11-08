@@ -1,6 +1,6 @@
 # Lab 5 team submission - working draft
 
-> Working draft only. Replace every `TBD`, attach verified evidence and render the final single team PDF as `lab5_sec<section>_<group>.pdf` before submission. Do not submit this draft as proof of a deployment. Current progress: Draft PR #23 is open to `staging`; CI passed, but review and merge are pending.
+> Working draft only. Replace every `TBD`, attach verified evidence and render the final single team PDF as `lab5_sec<section>_<group>.pdf` before submission. Do not submit this draft as proof of a deployment. Current progress: Draft PR #23 is open to `staging`, labeled `lab5`; the teammate reviewed the earlier version, and a fresh approval is pending after fixes.
 
 ## Team
 
@@ -33,8 +33,12 @@ The repository now has active rules for `main` and `staging`: pull requests are 
 - [x] Configure the protected PR rules for `main` and `staging`.
 - [x] Require one teammate approval and resolved conversations.
 - [x] Add production Next.js and Docker image build steps to the feature branch.
+- [x] Add the previously omitted non-integration unit/security suites and scheduled-backup test to CI.
+- [x] Normalize the PR text files to LF and add `.gitattributes` rules to preserve line endings.
+- [x] Correct the Starter Kit upload-storage distinction and note that `tsx` is unavailable after runtime dev-dependency pruning.
+- [x] Add the `lab5` label to PR #23.
 - [x] Open Draft PR #23 to `staging`; add `Docker production image` as a required status check after GitHub reported the check context.
-- [x] Verify push/PR runs #75/#76, #80/#81, and #82/#83 passed all workflow jobs.
+- [x] Verify push/PR runs #75/#76, #80/#81, #82/#83, and #84/#85 passed all workflow jobs before the review fixes.
 - [ ] Get teammate review, resolve feedback and merge the PR.
 - [ ] Open a normal PR with an intentionally failing CI check, prove it is blocked, then close it without merging.
 - [ ] Capture a passing PR with teammate review and green checks.

@@ -15,7 +15,7 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 - `staging` branch exists on GitHub.
 - GitHub has the `lab5` label, a Lab 5 project board, and Issues #18-#22 tracking work.
 - Two branch rulesets are Active after the repository became Public. The PR ruleset targets `main` and `staging`, requires PRs, one approval, latest-push approval, resolved conversations, up-to-date branches, and three required CI checks: `Types, lint and integration tests`, `PostgreSQL migrations and constraints`, and `Docker production image`; force pushes and deletion are blocked.
-- Draft PR [#23](https://github.com/iceswift/saan_webapp/pull/23) targets `staging` from `codex/lab5-ci-docs`. Runs #75/#76, #80/#81, and latest runs #82/#83 succeeded, including the Next.js production build and Docker image build. Latest code commit: `448d6e0cf328f6e92a99dd74d63798f274cb120b`. The PR is still unmerged and needs teammate review.
+- PR [#23](https://github.com/iceswift/saan_webapp/pull/23) targets `staging` from `codex/lab5-ci-docs`; it was reopened after the teammate's review and has the `lab5` label. Runs #75/#76, #80/#81, #82/#83, and #84/#85 passed on earlier revisions. The teammate reviewed the original five-file version and closed it with findings; fixes are now being prepared on the same PR. Request a fresh formal approval after the latest push.
 - Docker now directs uploads to `/data/uploads`, matching the prepared directory and the existing Compose mount path. This does not prove Cloud Run persistence; that remains unverified.
 - The local checkout remains on `main` because writing a Git ref under `.git` was denied; unrelated coursework edits are not part of the Lab5 branch.
 - Draft docs exist at `deployment.md` and `submission.md`.
@@ -32,10 +32,11 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 - [x] Create and apply the `lab5` issue label.
 - [x] Create the Lab 5 project board and add Issues #18-#22.
 - [x] Verify `@ikmie` has write permission.
+- [x] Apply the `lab5` label to PR #23 and verify it is visible.
 - [x] Make the repository Public as required for grading; verify it is visible as Public.
 - [x] Configure Active PR rules for `main` and `staging`; verify they remain Active after the visibility change.
 - [x] Review the actual GitHub ruleset after the CI change; add `Docker production image` as a required check.
-- [x] Confirm GitHub Actions is enabled and inspect successful push and pull request workflow runs (#75/#76, #80/#81, #82/#83).
+- [x] Confirm GitHub Actions is enabled and inspect successful push and pull request workflow runs (#75/#76, #80/#81, #82/#83, #84/#85).
 - [ ] Use feature branch → PR to `staging` → release PR to `main`; do not use direct pushes for Lab5 work.
 
 ### B. R-01 / R-02 - Docker and configuration
@@ -43,7 +44,7 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 - [x] Inspect the existing Saan Dockerfile, `.dockerignore`, and environment contract.
 - [x] Document the Saan deployment assumptions in `deployment.md`.
 - [x] Review the starter-kit Docker requirements against Saan and record deliberate differences in `deployment.md` (single Next.js service vs. split Vite/Express, Node 22 vs. 24, Prisma 6, runtime image and environment contract).
-- [ ] Confirm required runtime variables are documented and example files contain no real secrets.
+- [x] Document required runtime variables; clear the example admin phone and verify examples contain placeholders/disabled defaults only.
 - [x] Build the production image after setting Docker's `UPLOAD_DIR=/data/uploads`; runs #82 and #83 passed on commit `448d6e0cf328f6e92a99dd74d63798f274cb120b`, tag `saan:ci-${GITHUB_SHA}` (built only, not published).
 - [ ] Confirm the image starts with the intended production configuration and a non-root runtime user.
 
@@ -52,9 +53,10 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 - [x] Existing CI checks types, lint, integration and PostgreSQL migration/constraint work.
 - [x] Add a Next.js production build to the local CI workflow.
 - [x] Add a Docker image build that does not publish the image.
+- [x] Add serialized CI coverage for non-integration TypeScript unit/security suites and the Linux scheduled-backup test.
 - [x] Configure the Docker runtime upload path as `/data/uploads`, matching the prepared mount directory; a durable GCP mount/object store is still pending.
-- [x] Commit only the Lab5 workflow/docs files to `codex/lab5-ci-docs`; preserve unrelated user changes in the local checkout. The remote branch contains four Lab5 files; local checkout remains on `main`.
-- [x] Open Draft PR #23 targeting `staging`; teammate review and merge are still pending.
+- [x] Commit only the Lab5 workflow, Docker, test-runner and documentation files to `codex/lab5-ci-docs`; preserve unrelated user changes in the local checkout. The local checkout remains on `main`.
+- [x] Reopen PR #23 targeting `staging`; it remains Draft pending a fresh formal teammate approval after fixes.
 - [x] Push the CI workflow change and verify the new check name `Docker production image` appears on the real PR.
 - [x] Add `Docker production image` to required status checks after GitHub reported the check context.
 - [ ] Use a normal PR with a deliberately failing check to prove merge is blocked; close it without merging.
