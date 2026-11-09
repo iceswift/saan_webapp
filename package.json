@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:unit": "node scripts/test-unit.mjs",
     "test:integration": "node scripts/test-integration.mjs",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
@@ -54,3 +55,4 @@
     "typescript": "^5"
   }
 }
+
