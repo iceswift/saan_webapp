@@ -1,92 +1,77 @@
 # Lab 5 team submission - working draft
 
-> Working draft only. Replace every `TBD`, attach verified evidence and render the final single team PDF as `lab5_sec<section>_<group>.pdf` before submission. Do not submit this draft as proof of a deployment. Current progress: Draft PR #23 is open to `staging`, labeled `lab5`; the teammate reviewed the earlier version, and a fresh approval is pending after fixes.
+> Working draft only. Replace remaining placeholders, add verified evidence, and render the final team PDF as `lab5_sec<section>_<group>.pdf`. Do not present this draft as proof of a GCP deployment. PR #23 was approved and merged to `staging`; failing-gate PR #24 was closed without merging; release PR #25 needs refreshed review after the documentation update.
 
 ## Team
 
 - Repository: [iceswift/saan_webapp](https://github.com/iceswift/saan_webapp)
 - Section: TBD
 - Group: TBD
-- Members: @iceswift and @ikmie (verify the names required by the course form)
+- Members: verify course-required names for both teammates
 - Due date shown in LEB2: 15 November 2026, 23:59
 
-## Answer Part 0 - Application and environment
+## Part 0 - Application
 
-Saan is a Thai-language marketplace for spirit-house services. It uses Next.js 16, TypeScript, Docker and PostgreSQL for the deployment profile. Local development may use SQLite. The Docker image already contains a production build and runs as a non-root user. Production secrets and deployment configuration must be supplied outside the image.
+Saan is a Thai-language marketplace for spirit-house services. Its deployment profile uses Next.js, TypeScript, Docker and PostgreSQL. The production image is built as a non-root container.
 
-Evidence: repository and Dockerfile link TBD.
+Evidence: [public repository](https://github.com/iceswift/saan_webapp).
 
-## Answer Part 1 - Docker and environment configuration
+## Part 1 - Docker
 
-- [x] Adapted the existing Dockerfile and deployment setup to Saan before this Lab 5 work.
-- [x] Added an automated production Docker image build to the local CI workflow; it does not publish the image.
-- [ ] Merge the CI change through the team pull request flow after teammate review.
-- [x] Capture successful Docker builds after setting `UPLOAD_DIR=/data/uploads`; runs #87 and #88 passed on commit `c24b29dad8c86f946e94d86ccb99fbab846f1aad`. Image tag: `saan:ci-c24b29dad8c86f946e94d86ccb99fbab846f1aad`; image was not published.
-- [ ] Capture safe environment-variable configuration without revealing values.
+- [x] Adapt the existing Docker build to Saan.
+- [x] Add a CI image build that does not publish the image.
+- [x] Build the production image in CI; the reviewed PR checks passed.
+- [x] Smoke-test the local production container against disposable PostgreSQL 16: all 8 migrations applied, the app ran as `uid=1000(node)`, uploads used `/data/uploads`, and `/api/health` returned `{"status":"ok"}`.
+- [ ] Add the final image build link for the release commit.
 
-Evidence: Dockerfile, CI run link TBD.
+The local smoke-test image was not published. Its temporary database, app container, network and image were removed after verification.
 
-## Answer Part 2 - CI and pull request gate
+## Part 2 - CI and pull-request workflow
 
-The repository now has active rules for `main` and `staging`: pull requests are required; one approval and approval of the latest reviewable push are required; conversations must be resolved; the branch must be current; force pushes and branch deletion are blocked. Required checks are `Types, lint and integration tests`, `PostgreSQL migrations and constraints`, and `Docker production image`.
+The repository uses protected release branches and required CI checks for types/lint/integration, PostgreSQL migration constraints, and the Docker production image.
 
-- [x] Configure the protected PR rules for `main` and `staging`.
-- [x] Require one teammate approval and resolved conversations.
-- [x] Add production Next.js and Docker image build steps to the feature branch.
-- [x] Add the previously omitted non-integration unit/security suites and scheduled-backup test to CI.
-- [x] Normalize the PR text files to LF and add `.gitattributes` rules to preserve line endings.
-- [x] Correct the Starter Kit upload-storage distinction and note that `tsx` is unavailable after runtime dev-dependency pruning.
-- [x] Add the `lab5` label to PR #23.
-- [x] Open Draft PR #23 to `staging`; add `Docker production image` as a required status check after GitHub reported the check context.
-- [x] Verify push run #87 and PR run #88 passed all workflow jobs after the review fixes.
-- [ ] Get teammate review, resolve feedback and merge the PR.
-- [ ] Open a normal PR with an intentionally failing CI check, prove it is blocked, then close it without merging.
-- [ ] Capture a passing PR with teammate review and green checks.
+- [x] Merge reviewed PR #23 into `staging`.
+- [x] Pass the three required checks on the feature PR and the initial release PR.
+- [x] Demonstrate the failing-check gate with temporary PR #24. GitHub showed “Merging is blocked”; the PR was closed without merging.
+- [ ] Refresh the review of release PR #25 after the public-safe documentation update.
+- [ ] Merge the reviewed release PR into `main`.
 
-Evidence: ruleset and PR links/screenshots TBD.
+Evidence: [PR #23](https://github.com/iceswift/saan_webapp/pull/23), [PR #24](https://github.com/iceswift/saan_webapp/pull/24), [PR #25](https://github.com/iceswift/saan_webapp/pull/25).
 
-## Answer Part 3 - GCP deployment and persistence
+## Part 3 - GCP deployment and data persistence
 
-Planned GCP components based on the starter guide: Cloud Run, Cloud SQL for PostgreSQL, Artifact Registry, Secret Manager and keyless GitHub Actions authentication with Workload Identity Federation. The image should be tagged by commit SHA; migrations must complete before service rollout. Deployment credentials and application runtime credentials must remain separate.
+The planned course deployment uses Cloud Run, Cloud SQL for PostgreSQL, an image registry and managed cloud configuration. Saan uploads files to its container filesystem today; a durable storage solution and replacement test are required before claiming persistence.
 
-Saan currently writes uploads to local filesystem storage. Cloud Run local disk is not a durable upload store. A verified durable object-storage or supported mount solution is still required before claiming upload persistence. Public exposure also requires production-safe authentication/payment behavior; staging test mode must remain private.
+- [ ] Confirm the team GCP project, region, quota and budget.
+- [ ] Provision and configure the approved cloud resources.
+- [ ] Deploy the reviewed release and run migrations before rollout.
+- [ ] Verify health/readiness and database connectivity.
+- [ ] Verify uploaded-file bytes survive an instance replacement.
 
-- [ ] Record the approved GCP project and region.
-- [ ] Provision only the required resources after the team confirms its billing/quota and deployment plan.
-- [ ] Add GitHub Environment variables and Secret Manager references without recording values here.
-- [ ] Deploy the reviewed `main` SHA and capture workflow, service revision, health and readiness evidence.
-- [ ] Verify database and upload persistence after service replacement.
+No GCP resource or service has been provisioned or deployed.
 
-Evidence: deployment run, service revision, smoke-check link and persistence evidence TBD.
+## Part 4 - Release, rollback and contribution
 
-## Answer Part 4 - Release, rollback and team participation
-
-Release flow: feature branch to `staging` by reviewed PR; release PR from `staging` to `main`; deploy from the reviewed `main` commit. Rollback must reuse a previously built image SHA and must not assume that reverting an image reverses database migrations.
-
-- [ ] Capture the `staging` to `main` release PR and successful deployment.
-- [ ] Perform and document a safe rollback to a previously built SHA, then restore the intended revision.
-- [ ] Record the contribution of both teammates across design, implementation, review, deployment and evidence preparation.
-- [ ] Verify all links and screenshots, redact credentials/personal data, export one PDF, and submit it to LEB2.
-
-Evidence: release/rollback links and contribution summary TBD.
+- [x] Open release PR #25 from `staging` to `main`; its required checks passed and the initial review approved the release contents.
+- [ ] Refresh formal approval after the documentation-only update and merge the final release.
+- [ ] Demonstrate rollback to a previously built image, check database compatibility, and restore the intended release.
+- [ ] Record each teammate's actual work across implementation, review, deployment and evidence collection.
+- [ ] Verify evidence, render one PDF, inspect it, and submit it on LEB2.
 
 ## Evidence register
 
-| Requirement | Evidence URL or screenshot | Status |
+| Requirement | Evidence | Status |
 |---|---|---|
-| R-01 / R-02 - Docker and environment contract | TBD | Partly prepared; verify against final run |
-| R-03 / R-04 - GCP deployment and persistence | TBD | Not deployed; durable upload storage unresolved |
-| R-05 - CI build and container build | [Draft PR #23](https://github.com/iceswift/saan_webapp/pull/23); [push run #87](https://github.com/iceswift/saan_webapp/actions/runs/42478483058); [PR run #88](https://github.com/iceswift/saan_webapp/actions/runs/42478486664) | Both passed with unit/security, integration, PostgreSQL, Next.js and Docker builds; PR awaits fresh teammate approval, image not published |
-| R-06 - failing PR merge gate | TBD | Not demonstrated |
-| R-07 to R-10 - release, deploy and rollback | TBD | Not configured or demonstrated |
-| R-11 - team PDF and participation evidence | TBD | Draft only |
-| R-12 - public repository | [Public repository](https://github.com/iceswift/saan_webapp) | Public visibility verified |
+| Docker build and runtime | [PR #23](https://github.com/iceswift/saan_webapp/pull/23); local smoke-test result recorded in the Lab 5 checklist | CI build and local runtime smoke passed; image not published |
+| CI and review gate | [PR #23](https://github.com/iceswift/saan_webapp/pull/23); [failing PR #24](https://github.com/iceswift/saan_webapp/pull/24) | Passing reviewed PR and blocked failing PR verified |
+| Release flow | [PR #25](https://github.com/iceswift/saan_webapp/pull/25) | Checks passed; refreshed review pending |
+| GCP deployment/persistence/rollback | TBD | Not deployed or verified |
+| Final team PDF | TBD | Working draft |
 
-## Submission checklist
+## Final submission checklist
 
-- [ ] Confirm section and group for the required filename `lab5_sec<section>_<group>.pdf`.
-- [ ] Replace every TBD with a real source link or labeled screenshot.
-- [ ] Check that evidence is from the team's own repository and GCP project.
-- [ ] Remove secrets, tokens, private URLs, personal data and unverified claims.
-- [ ] Export one PDF per team, inspect every rendered page, then submit it on LEB2.
-
+- [ ] Confirm section, group and course-required names.
+- [ ] Replace every remaining TBD with verified evidence.
+- [ ] Ensure evidence contains no credentials or personal data.
+- [ ] Export one PDF per team, inspect every page, and use the required filename.
+- [ ] Submit on LEB2 and verify the uploaded file.
