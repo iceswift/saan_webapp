@@ -15,7 +15,7 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 - `staging` branch exists on GitHub.
 - GitHub has the `lab5` label, a Lab 5 project board, and Issues #18-#22 tracking work.
 - Two branch rulesets are Active after the repository became Public. The PR ruleset targets `main` and `staging`, requires PRs, one approval, latest-push approval, resolved conversations, up-to-date branches, and three required CI checks: `Types, lint and integration tests`, `PostgreSQL migrations and constraints`, and `Docker production image`; force pushes and deletion are blocked.
-- PR [#23](https://github.com/iceswift/saan_webapp/pull/23) targets `staging` from `codex/lab5-ci-docs`; it was reopened after the teammate's review and has the `lab5` label. The original five-file version was reviewed and closed with findings. Fixes are now on commit `c24b29dad8c86f946e94d86ccb99fbab846f1aad`; push run #87 and PR run #88 passed. Request a fresh formal approval on this latest change.
+- PR [#23](https://github.com/iceswift/saan_webapp/pull/23) targets `staging` from `codex/lab5-ci-docs`, is Open and Ready for review, and has the `lab5` label. The original five-file version was reviewed and its findings were addressed. Current head is `669b49881ec7bad3e2f867dc07c9c1ef6a82743e`; PR run #90 passed all three jobs. No formal approval is recorded on the current head yet; a fresh teammate approval is pending.
 - Docker now directs uploads to `/data/uploads`, matching the prepared directory and the existing Compose mount path. This does not prove Cloud Run persistence; that remains unverified.
 - The local checkout remains on `main` because writing a Git ref under `.git` was denied; unrelated coursework edits are not part of the Lab5 branch.
 - Draft docs exist at `deployment.md` and `submission.md`.
@@ -56,7 +56,7 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 - [x] Add serialized CI coverage for non-integration TypeScript unit/security suites and the Linux scheduled-backup test.
 - [x] Configure the Docker runtime upload path as `/data/uploads`, matching the prepared mount directory; a durable GCP mount/object store is still pending.
 - [x] Commit only the Lab5 workflow, Docker, test-runner and documentation files to `codex/lab5-ci-docs`; preserve unrelated user changes in the local checkout. The local checkout remains on `main`.
-- [x] Reopen PR #23 targeting `staging`; it remains Draft pending a fresh formal teammate approval after fixes.
+- [x] Reopen PR #23 targeting `staging` and mark it Ready for review; a fresh formal teammate approval on the current head is still pending.
 - [x] Push the CI workflow change and verify the new check name `Docker production image` appears on the real PR.
 - [x] Add `Docker production image` to required status checks after GitHub reported the check context.
 - [ ] Use a normal PR with a deliberately failing check to prove merge is blocked; close it without merging.
@@ -98,7 +98,7 @@ This is the durable progress tracker for Lab 5. Update it when work is completed
 
 1. Start with this checklist and update status as work is verified.
 2. Preserve the existing unrelated edits in `docs/coursework/`.
-3. Continue from Draft PR #23. Get the teammate's review, resolve any feedback, then merge only after required checks pass. Do not merge while it remains Draft.
+3. Continue from open PR #23, currently Ready for review at head `669b49881ec7bad3e2f867dc07c9c1ef6a82743e`. Get the teammate's formal review, resolve any feedback, then merge only after required checks pass.
 4. Do not provision GCP or incur cloud charges until the team confirms the project and cost scope.
 5. Keep `deployment.md` and `submission.md` aligned with actual results; the final PDF comes after evidence is complete.
 
