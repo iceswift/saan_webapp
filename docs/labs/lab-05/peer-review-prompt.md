@@ -7,7 +7,7 @@ You are helping our team review a narrowly scoped Lab 5 CI/CD change in the publ
 
 Check these points:
 1. Does the reusable CI + Cloud Run release workflow actually gate deployment on CI for a push to main?
-2. Is the sequence safe: full source SHA image, digest deployment, migration before app traffic, no-traffic candidate smoke, traffic promotion, and recovery of the prior revision if the final smoke fails?
+2. Is the sequence safe: enforced immutable SHA tags, reusing an existing SHA image on workflow reruns, digest deployment, migration before app traffic, no-traffic candidate smoke, traffic promotion, and recovery of the prior revision if the final smoke fails?
 3. Can manual rollback accidentally use an unverified image or skip schema-compatibility confirmation?
 4. Do the bash/Python scripts handle missing configuration, HTTP failures, split traffic, and a service whose current traffic points to latestRevision?
 5. Do the docs distinguish planned configuration from verified deployment, avoid secrets/account-specific billing data, list all required runtime variable names, and match the official Lab 5 Part 0–4 submission headings?

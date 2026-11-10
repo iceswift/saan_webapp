@@ -87,15 +87,31 @@ jobs:
       - name: Install Google Cloud CLI
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
-      - name: Build and publish immutable commit image
+      - name: Require immutable Artifact Registry tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMMUTABLE_TAGS="$(gcloud artifacts repositories describe "$AR_REPOSITORY" \
+            --project="$PROJECT_ID" --location="$REGION" \
+            --format='value(dockerConfig.immutableTags)')"
+          [[ "${IMMUTABLE_TAGS,,}" == 'true' ]] || {
+            echo 'Artifact Registry must enforce immutable Docker tags before release.' >&2
+            exit 1
+          }
+
+      - name: Build or reuse immutable commit image
         if: ${{ env.ROLLBACK_SHA == '' }}
         shell: bash
         run: |
           set -euo pipefail
           gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
           IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPOSITORY}/saan:${GITHUB_SHA}"
-          docker build --build-arg "NEXT_PUBLIC_SITE_URL=${PUBLIC_SITE_URL}" --tag "$IMAGE" .
-          docker push "$IMAGE"
+          if gcloud artifacts docker images describe "$IMAGE" --project="$PROJECT_ID" --quiet >/dev/null 2>&1; then
+            echo "Reusing existing immutable image for ${GITHUB_SHA}."
+          else
+            docker build --build-arg "NEXT_PUBLIC_SITE_URL=${PUBLIC_SITE_URL}" --tag "$IMAGE" .
+            docker push "$IMAGE"
+          fi
 
       - name: Run migration and promote a verified revision
         id: release

@@ -31,7 +31,7 @@ These are proposed names/settings, not observations of existing resources. Confi
 8. Move 100% traffic to the candidate; smoke-check the service URL. On a post-promotion smoke failure, restore the previous 100%-traffic revision.
 9. The manual rollback action accepts only a full lowercase commit SHA already in Artifact Registry and requires explicit schema-compatibility confirmation. It reuses the old image and does not roll back database schema/data.
 
-The release workflow expects the service, migration job, image repository, SQL connectivity, secrets, runtime identity, upload mount, IAM and unauthenticated service invocation to have been provisioned and tested first. It does not create those resources or infer configuration. Bootstrap the service separately with a known-good 100%-traffic revision; the automated release refuses to run without one so a failed promotion always has a recovery target. A protected GitHub Environment named `lab5-gcp` must have a required reviewer before its project variables are configured.
+The release workflow expects the service, migration job, image repository, SQL connectivity, secrets, runtime identity, upload mount, IAM and unauthenticated service invocation to have been provisioned and tested first. Configure Artifact Registry's immutable Docker tags; the workflow verifies this before publishing and reuses an existing SHA tag on reruns. It does not create cloud resources or infer configuration. Bootstrap the service separately with a known-good 100%-traffic revision; the automated release refuses to run without one so a failed promotion always has a recovery target. A protected GitHub Environment named `lab5-gcp` must have a required reviewer before its project variables are configured.
 
 The pre-created Cloud Run migration job must use the same image, Cloud SQL connection, runtime service account and Secret Manager `DATABASE_URL` binding as the service, with this command override and `/app` working directory:
 
@@ -101,6 +101,8 @@ Evidence drill:
 5. Capture redacted screenshots/log links and cleanup only synthetic test records through the application's supported path.
 
 Official references: [Cloud Run Cloud Storage volume mounts](https://docs.cloud.google.com/run/docs/configuring/services/cloud-storage-volume-mounts), [Cloud Run and Cloud SQL for PostgreSQL](https://docs.cloud.google.com/sql/docs/postgres/connect-run), [Workload Identity Federation for deployment pipelines](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).
+
+Artifact Registry Docker repositories support immutable tags; enable the repository setting before connecting the release workflow. See [Artifact Registry image tag immutability](https://docs.cloud.google.com/artifact-registry/docs/docker/names).
 
 ## CI, Docker and local commands
 
