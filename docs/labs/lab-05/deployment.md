@@ -27,7 +27,7 @@ These are proposed names/settings, not observations of existing resources. Confi
 4. Merge only the approved release. `.github/workflows/deploy-gcp.yml` is triggered by a push to `main`; its reusable CI must pass before deployment continues.
 5. Build and push `saan:<full-40-character-commit-SHA>` to Artifact Registry. Resolve that tag to its image digest and deploy by digest.
 6. Run the Prisma migration job before creating the candidate app revision. A failed migration stops the release before service traffic changes.
-7. Create the new Cloud Run revision with no traffic. Check the revision URL's database-backed health route and HTML home page.
+7. Create the new Cloud Run revision with no traffic and a `candidate` traffic tag. Read its dedicated URL from the matching tagged entry in the Cloud Run service's traffic status. Check the candidate URL's database-backed health route and HTML home page.
 8. Move 100% traffic to the candidate; smoke-check the service URL. On a post-promotion smoke failure, restore the previous 100%-traffic revision.
 9. The manual rollback action accepts only a full lowercase commit SHA already in Artifact Registry and requires explicit schema-compatibility confirmation. It reuses the old image and does not roll back database schema/data.
 
@@ -100,7 +100,7 @@ Evidence drill:
 4. Confirm DB identity and file SHA-256 match. Repeat after an application rollback.
 5. Capture redacted screenshots/log links and cleanup only synthetic test records through the application's supported path.
 
-Official references: [Cloud Run Cloud Storage volume mounts](https://docs.cloud.google.com/run/docs/configuring/services/cloud-storage-volume-mounts), [Cloud Run and Cloud SQL for PostgreSQL](https://docs.cloud.google.com/sql/docs/postgres/connect-run), [Workload Identity Federation for deployment pipelines](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).
+Official references: [Cloud Run rollouts and tagged revision URLs](https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration), [Cloud Run service update flags](https://docs.cloud.google.com/sdk/gcloud/reference/run/services/update), [Cloud Run and Cloud Storage volume mounts](https://docs.cloud.google.com/run/docs/configuring/services/cloud-storage-volume-mounts), [Cloud Run and Cloud SQL for PostgreSQL](https://docs.cloud.google.com/sql/docs/postgres/connect-run), [Workload Identity Federation for deployment pipelines](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).
 
 Artifact Registry Docker repositories support immutable tags; enable the repository setting before connecting the release workflow. See [Artifact Registry image tag immutability](https://docs.cloud.google.com/artifact-registry/docs/docker/names).
 

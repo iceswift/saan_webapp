@@ -19,7 +19,7 @@ Saan is a Thai-language marketplace for spirit-house services. The team uses a p
 |---|---|---|
 | Public repository and Lab 5 issues/board | TBD | R-01, R-09, R-10 |
 | Team members and individual contributions | TBD | R-11 |
-| Bounded teammate AI-review prompt and actual review record | TBD | Team contribution/process evidence if requested by instructor |
+| Bounded teammate AI-review prompt and actual review record | `peer-review-prompt.md`; teammate-provided `prompt_02_response.txt` | AI findings received; formal GitHub review still pending |
 | CI and Docker PR checks | TBD | R-02, R-05 |
 | Failing required check blocked from merge | TBD | CI quality gate |
 | Reviewed release PR and merge to `main` | TBD | R-07, R-09 |
@@ -42,7 +42,7 @@ The repository's CI checks route types, lint, unit/security and integration suit
 - [ ] Release PR shows final approval, successful checks, and merge SHA.
 - [ ] GitHub branch protection and issue/board workflow are shown.
 
-Prior evidence: PR #23 was approved and merged to `staging`; PR #24 showed merge blocked on a failing check and was closed; prior release PR #25 was merged to `main`. Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging`; final-head CI run 115 on `1a57099` passed all three required jobs. Teammate review/approval and the release PR to `main` remain pending.
+Prior evidence: PR #23 was approved and merged to `staging`; PR #24 showed merge blocked on a failing check and was closed; prior release PR #25 was merged to `main`. Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging`. Earlier CI passed all three required jobs; the teammate's AI report identified the candidate URL lookup issue, and the current PR correction awaits CI. Formal GitHub review/approval and the release PR to `main` remain pending.
 
 ## Part 2 - Docker and Reproducible Configuration
 

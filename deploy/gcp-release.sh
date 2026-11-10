@@ -60,16 +60,23 @@ fi
 
 # Create the candidate revision without moving production traffic.
 gcloud run services update "$SERVICE_NAME" \
-  --image="$IMAGE_DIGEST" --no-traffic \
+  --image="$IMAGE_DIGEST" --no-traffic --tag=candidate \
   --project="$PROJECT_ID" --region="$REGION" --quiet
 
-REVISION="$(gcloud run services describe "$SERVICE_NAME" \
-  --project="$PROJECT_ID" --region="$REGION" \
-  --format='value(status.latestCreatedRevisionName)')"
-[[ -n "$REVISION" ]] || { echo 'Cloud Run did not report a created revision.' >&2; exit 1; }
-REVISION_URL="$(gcloud run revisions describe "$REVISION" \
-  --project="$PROJECT_ID" --region="$REGION" \
-  --format='value(status.url)')"
+SERVICE_JSON="$(gcloud run services describe "$SERVICE_NAME" \
+  --project="$PROJECT_ID" --region="$REGION" --format=json)"
+read -r REVISION REVISION_URL < <(python3 -c '
+import json, sys
+service = json.load(sys.stdin)
+status = service.get("status", {})
+revision = status.get("latestCreatedRevisionName", "")
+target = next((entry for entry in status.get("traffic", [])
+               if entry.get("tag") == "candidate" and entry.get("revisionName") == revision), None)
+url = target.get("url", "") if target else ""
+if not revision or not url:
+    raise SystemExit("Cloud Run did not report the tagged candidate revision URL.")
+print(revision, url)
+' <<< "$SERVICE_JSON")
 [[ "$REVISION_URL" == https://* ]] || { echo 'Cloud Run did not report an HTTPS revision URL.' >&2; exit 1; }
 
 # Check the new revision, including its database-backed health endpoint, before promotion.

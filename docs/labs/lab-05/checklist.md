@@ -10,7 +10,7 @@ Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker;
 - [PR #23](https://github.com/iceswift/saan_webapp/pull/23) was approved and merged to `staging`; the three required CI checks passed on head `8c197af`.
 - [PR #24](https://github.com/iceswift/saan_webapp/pull/24) demonstrated a failing required check; GitHub blocked merge and the PR was closed without merging.
 - [PR #25](https://github.com/iceswift/saan_webapp/pull/25) was merged to `main` before this Lab 5 pipeline branch was prepared. The new implementation must still pass through its own feature PR and final release PR.
-- Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging` with the `lab5` label; final-head CI run 115 passed all three required jobs on `1a57099` and teammate review is pending.
+- Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging` with the `lab5` label. Earlier CI passed all three required jobs; the latest candidate URL correction must pass PR checks. Formal teammate review is pending.
 - A local production-container smoke test applied all 8 migrations to disposable PostgreSQL 16, verified a non-root runtime and `/data/uploads`, and received `{"status":"ok"}` from `/api/health`. That image was not published; temporary resources were removed.
 - GCP resources, public deployment, durable GCP upload verification and rollback drill are **not yet verified**.
 
@@ -19,7 +19,7 @@ Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker;
 - [x] Use the same project/application and public repository as Sprint 1.
 - [ ] Record the course section and exact team/group name.
 - [ ] Record both members' course-required names and IDs, and their actual contributions.
-- [ ] Share `peer-review-prompt.md` with the teammate for bounded Gemini review and record only the actual model/result; teammate must still personally review the PR.
+- [x] Shared the bounded Gemini prompt; received `prompt_02_response.txt` with a read-only review (Gemini 3.8 Flash per teammate). Findings: candidate URL lookup blocker and stale checklist status; fixes are in this PR. The teammate's formal GitHub review is still required.
 - [ ] Collect evidence captions and links for Parts 0–4.
 - [ ] Replace every placeholder in `submission.md` with verified facts/evidence.
 - [ ] Render and inspect the final PDF named `lab5_sec<section>_<group name>.pdf`.
@@ -31,7 +31,7 @@ Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker;
 - [x] Required CI checks and branch protection were demonstrated on prior PRs.
 - [x] Failing-check merge block was demonstrated by PR #24.
 - [x] Original Lab documentation aligned to the official Part 0–4 headings.
-- [x] New reusable CI/release changes pass the three required CI jobs on feature PR #27 (final-head run 115).
+- [ ] Latest tagged candidate URL correction passes all required CI jobs on feature PR #27.
 - [ ] Teammate reviews and approves the exact final PR #27 head; capture review and final checks.
 - [ ] Teammate reviews the final release PR and approves the exact final head.
 - [ ] Capture feature issue/board card → feature PR → `staging` → release PR → `main` evidence.
@@ -43,7 +43,7 @@ Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker;
 - [x] CI builds a production image without publishing it on PRs.
 - [x] Local production-container smoke against disposable PostgreSQL verified migrations, UID 1000, uploads directory and DB-backed health.
 - [x] Documented required/runtime environment variable names without values or secrets.
-- [ ] Reusable CI and static deploy-script checks pass on the final pipeline commit.
+- [ ] Reusable CI and static deploy-script checks pass on the latest PR #27 head.
 - [ ] Reviewed `main` image is pushed using its full 40-character commit SHA and recorded by digest.
 
 ## D. GCP deployment, operation and persistence
