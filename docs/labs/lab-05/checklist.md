@@ -10,6 +10,7 @@ Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker;
 - [PR #23](https://github.com/iceswift/saan_webapp/pull/23) was approved and merged to `staging`; the three required CI checks passed on head `8c197af`.
 - [PR #24](https://github.com/iceswift/saan_webapp/pull/24) demonstrated a failing required check; GitHub blocked merge and the PR was closed without merging.
 - [PR #25](https://github.com/iceswift/saan_webapp/pull/25) was merged to `main` before this Lab 5 pipeline branch was prepared. The new implementation must still pass through its own feature PR and final release PR.
+- Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging` with the `lab5` label; CI run 109 passed all three required jobs and teammate review is pending.
 - A local production-container smoke test applied all 8 migrations to disposable PostgreSQL 16, verified a non-root runtime and `/data/uploads`, and received `{"status":"ok"}` from `/api/health`. That image was not published; temporary resources were removed.
 - GCP resources, public deployment, durable GCP upload verification and rollback drill are **not yet verified**.
 
@@ -30,7 +31,8 @@ Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker;
 - [x] Required CI checks and branch protection were demonstrated on prior PRs.
 - [x] Failing-check merge block was demonstrated by PR #24.
 - [x] Original Lab documentation aligned to the official Part 0–4 headings.
-- [ ] New reusable CI/release changes pass on a feature PR; capture final checks and teammate review.
+- [x] New reusable CI/release changes pass the three required CI jobs on feature PR #27 (run 109).
+- [ ] Teammate reviews and approves the exact final PR #27 head; capture review and final checks.
 - [ ] Teammate reviews the final release PR and approves the exact final head.
 - [ ] Capture feature issue/board card → feature PR → `staging` → release PR → `main` evidence.
 - [ ] Keep the `lab5` label and issue history; do not rewrite or delete historical evidence.

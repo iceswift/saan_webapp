@@ -42,7 +42,7 @@ The repository's CI checks route types, lint, unit/security and integration suit
 - [ ] Release PR shows final approval, successful checks, and merge SHA.
 - [ ] GitHub branch protection and issue/board workflow are shown.
 
-Prior evidence: PR #23 was approved and merged to `staging`; PR #24 showed merge blocked on a failing check and was closed; prior release PR #25 was merged to `main`. The new Lab 5 pipeline implementation still needs its own PR/review/release evidence.
+Prior evidence: PR #23 was approved and merged to `staging`; PR #24 showed merge blocked on a failing check and was closed; prior release PR #25 was merged to `main`. Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging`; CI run 109 passed all three required jobs. Teammate review/approval and the release PR to `main` remain pending.
 
 ## Part 2 - Docker and Reproducible Configuration
 
