@@ -1,5 +1,15 @@
 # Saan operations and AI handoff
 
+## Lab 5 deployment boundary (10 November 2026)
+
+The Lab 5 work is being prepared in a separate Git worktree/branch from the owner's local checkout. The deploy workflow is release automation only: Cloud Run, Cloud SQL, Artifact Registry, bucket mount, identities/IAM, secrets, and migration-job configuration are prerequisites; no GCP resource or public service has been provisioned by this work. Keep the home-server services below unchanged.
+
+Before any cloud apply/deployment, verify the selected project's billing account, trial credit and actual spend controls in the console. An alert budget is not an enforceable spend cap. Follow the course handout's no-prepayment/upgrade instruction and ask the TA if the console still requires a prepayment or upgrade. Do not record account-specific billing details in this public repository.
+
+Production authentication remains unready: OTP delivery uses only the test/console adapter; there is no production SMS provider, public domain, or verified support recovery contact. Never expose private staging/test login or simulated payments publicly. This also means the Lab's public authenticated business-operation acceptance criterion is not yet satisfied.
+
+Implementation plan, runtime configuration inventory and evidence gates: [Lab 5 deployment plan](labs/lab-05/deployment.md), [checklist](labs/lab-05/checklist.md), and [submission draft](labs/lab-05/submission.md).
+
 ## Runtime and QA images (4 November 2026)
 
 The Docker `runtime` target prunes development dependencies. Do not assume `tsx`, ESLint or the shadcn generator is available in an app container. Keep Prisma CLI for `db:postgres:deploy`. Build an isolated QA image from the same source with `docker build --target build -t saan:qa-RELEASE .`; run `node scripts/test-postgres-integration.mjs` there with an explicitly supplied `/saan_test` DATABASE_URL only. The runner forces mock payments, omits gateway/worker secrets, isolates uploads/operations in a temporary directory and redacts child database URLs. Two SQLite-only suites stay in `npm run test:integration`. Never change the running app's database URL to run tests. Backups/restores still use production-image Node/tar and PostgreSQL utilities, not development tools.

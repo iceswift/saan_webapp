@@ -9,6 +9,10 @@ RUN node scripts/postgres-schema.mjs --check && npm run db:postgres:generate
 # No database connection or credentials are required while building the image.
 ENV DATABASE_URL=postgresql://build:unused@127.0.0.1:5432/build
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* values are inlined by Next.js at build time. CI supplies the
+# confirmed public service URL; the local fallback is for local image builds.
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 RUN npm run build
 
 # Keep the build target available for isolated QA; ship only production dependencies.

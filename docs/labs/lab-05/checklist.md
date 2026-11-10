@@ -1,75 +1,82 @@
-# Lab 5 checklist - Saan
+# Lab 5 checklist — Saan
 
-This is the durable progress tracker for Lab 5. Sprint 1 is complete and tracked separately.
+Sprint 1 is closed and tracked separately. This is the persistent Lab 5 tracker; mark an item complete only when its linked evidence is verified.
 
-**Submission:** one PDF per team on LEB2 named `lab5_sec<section>_<group>.pdf`; due 15 November 2026 at 23:59.
+**Submission:** one PDF per team on LEB2 named `lab5_sec<section>_<group name>.pdf`; due 15 November 2026 at 23:59.
 
-## Current state
+## Verified repository state
 
 - Repository: [iceswift/saan_webapp](https://github.com/iceswift/saan_webapp), Public.
-- PR [#23](https://github.com/iceswift/saan_webapp/pull/23) was approved by a teammate and merged into `staging`; its three required CI checks passed on head `8c197af`.
-- Temporary PR [#24](https://github.com/iceswift/saan_webapp/pull/24) demonstrated the CI merge gate. The required check failed, GitHub displayed “Merging is blocked”, and the PR was closed without merging.
-- A local production-container smoke test applied all 8 migrations to disposable PostgreSQL 16, confirmed a non-root runtime, confirmed uploads use `/data/uploads`, and received `{"status":"ok"}` from `/api/health`. The image was not published; temporary resources were removed.
-- Release PR [#25](https://github.com/iceswift/saan_webapp/pull/25) from `staging` to `main` passed all three required checks and received teammate approval. It needs a refreshed review after the documentation update.
-- No GCP resource or service has been provisioned or deployed. Cloud Run file durability and deployment/rollback evidence remain pending.
-- The local checkout is on `main`; unrelated coursework changes are preserved.
+- [PR #23](https://github.com/iceswift/saan_webapp/pull/23) was approved and merged to `staging`; the three required CI checks passed on head `8c197af`.
+- [PR #24](https://github.com/iceswift/saan_webapp/pull/24) demonstrated a failing required check; GitHub blocked merge and the PR was closed without merging.
+- [PR #25](https://github.com/iceswift/saan_webapp/pull/25) was merged to `main` before this Lab 5 pipeline branch was prepared. The new implementation must still pass through its own feature PR and final release PR.
+- Lab 5 implementation PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging` with the `lab5` label; CI run 119 passed all three required jobs with the candidate URL correction. Formal teammate review is pending.
+- A local production-container smoke test applied all 8 migrations to disposable PostgreSQL 16, verified a non-root runtime and `/data/uploads`, and received `{"status":"ok"}` from `/api/health`. That image was not published; temporary resources were removed.
+- GCP resources, public deployment, durable GCP upload verification and rollback drill are **not yet verified**.
 
-## Checklist
+## A. Lab brief, team and submission
 
-### A. Repository and team workflow
+- [x] Use the same project/application and public repository as Sprint 1.
+- [ ] Record the course section and exact team/group name.
+- [ ] Record both members' course-required names and IDs, and their actual contributions.
+- [x] Shared the bounded Gemini prompt; received `prompt_02_response.txt` with a read-only review (Gemini 3.8 Flash per teammate). Findings: candidate URL lookup blocker and stale checklist status; fixes are in this PR. The teammate's formal GitHub review is still required.
+- [ ] Collect evidence captions and links for Parts 0–4.
+- [ ] Replace every placeholder in `submission.md` with verified facts/evidence.
+- [ ] Render and inspect the final PDF named `lab5_sec<section>_<group name>.pdf`.
+- [ ] Submit one PDF on LEB2 and verify it opens after upload.
 
-- [x] Use the correct public repository.
-- [x] Create the `staging` branch and Lab 5 tracking items.
-- [x] Configure and verify branch protections and required CI checks for the release branches.
-- [x] Use feature branch → reviewed PR to `staging` → release PR to `main`.
-- [x] Merge the approved feature PR #23 into `staging`.
-- [ ] Obtain fresh approval and merge the updated release PR #25 into `main`.
+## B. CI, quality gate and team Git workflow
 
-### B. Docker and configuration
+- [x] Public repo and `staging`/`main` release flow are in use.
+- [x] Required CI checks and branch protection were demonstrated on prior PRs.
+- [x] Failing-check merge block was demonstrated by PR #24.
+- [x] Original Lab documentation aligned to the official Part 0–4 headings.
+- [x] Latest tagged candidate URL correction passes all required CI jobs on feature PR #27 (run 119).
+- [ ] Teammate reviews and approves the exact final PR #27 head; capture review and final checks.
+- [ ] Teammate reviews the final release PR and approves the exact final head.
+- [ ] Capture feature issue/board card → feature PR → `staging` → release PR → `main` evidence.
+- [ ] Keep the `lab5` label and issue history; do not rewrite or delete historical evidence.
 
-- [x] Adapt the existing Docker setup to Saan.
-- [x] Document the difference between the Starter Kit and Saan.
-- [x] Build the production image in CI without publishing it.
-- [x] Smoke-test a local production container against disposable PostgreSQL: migrations, non-root runtime, uploads path and health response all passed.
-- [ ] Verify the final release image and retain its build evidence.
+## C. Docker and reproducible configuration
 
-### C. CI and merge gate
+- [x] Saan Docker adaptation is documented; the Starter Kit's Vite/Express commands are not applicable.
+- [x] CI builds a production image without publishing it on PRs.
+- [x] Local production-container smoke against disposable PostgreSQL verified migrations, UID 1000, uploads directory and DB-backed health.
+- [x] Documented required/runtime environment variable names without values or secrets.
+- [x] Reusable CI and static deploy-script checks pass on the tagged-URL correction in PR #27 (run 119).
+- [ ] Reviewed `main` image is pushed using its full 40-character commit SHA and recorded by digest.
 
-- [x] CI covers types, lint, unit/security suites, integration checks and PostgreSQL migrations/constraints.
-- [x] CI builds the Next.js production app and Docker image without publishing.
-- [x] Required CI checks passed on approved PR #23 and release PR #25.
-- [x] Demonstrate a failing required check with PR #24; confirm GitHub blocks merge and close the PR without merging.
-- [ ] Capture the final reviewed release PR evidence after the documentation update.
+## D. GCP deployment, operation and persistence
 
-### D. GCP service and durable data
+- [ ] Confirm project, region, quota, free-trial credit/billing status and actual budget controls in the account.
+- [ ] Do not provision while the console still shows an unresolved prepayment/upgrade requirement or no enforceable limit.
+- [ ] Provision Cloud Run, Cloud SQL, Artifact Registry, persistent uploads, IAM/WIF and secrets using the approved course project.
+- [ ] Keep public test login, console OTP, mock checkout, real payments and SMS disabled.
+- [ ] Deploy the reviewed commit; capture full SHA, image digest, revision and public URL.
+- [ ] Verify migration job success and DB-backed health/home smoke from the candidate revision.
+- [ ] Upload a synthetic file and prove the same URL and bytes survive service replacement/redeploy.
+- [ ] Verify database record survives app revision replacement; perform a backup/restore drill if supported.
+- [ ] Keep the app accessible until the instructor ends grading, subject to the confirmed budget/credits.
+- [ ] Capture redacted GCP evidence. Never publish credentials, account identifiers, phone numbers or payment details.
 
-- [ ] Confirm the team's GCP project, region, billing/quota and budget before provisioning.
-- [ ] Adapt the Cloud Run, Cloud SQL and Artifact Registry plan to the confirmed project.
-- [ ] Select and verify a durable upload store; confirm uploaded bytes survive service replacement.
-- [ ] Configure the deployment workflow and managed runtime configuration.
-- [ ] Deploy the reviewed release, run migrations, and verify health/readiness.
-- [ ] Capture service revision, database connectivity and persistence evidence.
+## E. Repeatable release and rollback
 
-### E. Release and rollback
+- [x] Pipeline source prepares SHA-tagged image, migration-before-rollout, no-traffic candidate smoke, traffic promotion and a rollback action requiring schema compatibility.
+- [ ] Verify GitHub WIF authentication is keyless and restricted to reviewed `main`.
+- [ ] Verify a migration failure blocks deployment before traffic changes.
+- [ ] Execute one reviewed release from `main`; confirm release summary has full SHA, digest, revision and service URL.
+- [ ] Roll back to a previous SHA image; confirm health and document schema compatibility (or use a documented forward fix if unsafe).
+- [ ] Capture completed workflow runs and final service state.
 
-- [ ] Publish the reviewed image using the full commit SHA.
-- [ ] Verify a migration failure prevents rollout.
-- [ ] Demonstrate rollback to a previously built image and verify health.
-- [ ] Record database compatibility and restore the intended release.
+## F. Known acceptance blockers
 
-### F. Team evidence and final submission
+- Billing verification is unresolved. Verify active credit and enforceable spend controls in the project before provisioning; alerts alone do not establish a hard spend cap. Do not commit account-specific billing details.
+- Production authentication is not ready: no production SMS provider, public domain or verified recovery contact is configured. Private test login cannot be exposed publicly. This blocks an honest Lab C04 end-to-end authenticated operation until the course team provides an approved test path.
+- GCP service, migrations, Cloud SQL durability, GCS upload persistence and rollback have not been exercised.
+- Final submission PDF has not been rendered or submitted.
 
-- [ ] Collect links/screenshots for Docker, CI, the failing gate, reviewed release, deployment, persistence and rollback.
-- [ ] Record both teammates' actual contributions.
-- [ ] Confirm section, group and course-required names.
-- [ ] Replace every `TBD` in the working submission document.
-- [ ] Render and inspect one final PDF named `lab5_sec<section>_<group>.pdf`.
-- [ ] Submit the PDF on LEB2 and verify the upload.
+## Resume protocol
 
-## Resume notes
-
-1. Keep this checklist aligned with verified GitHub and GCP results.
-2. Preserve unrelated coursework changes in the local checkout.
-3. Update PR #25 after the public-safe documentation changes, rerun checks and obtain approval on the final head before merging.
-4. Do not create GCP resources or incur cloud charges until the team confirms the project and budget.
-5. Complete the final PDF only after deployment evidence and team details are verified.
+1. Check this file, the PR/workflow state, `docs/DEPLOYMENT-STATUS.md`, and the protected GCP Environment before resuming.
+2. Keep implementation on the Lab 5 branch/PR and preserve unrelated local coursework changes.
+3. Continue only from the next unchecked item with observable evidence; do not mark plans as deployed results.

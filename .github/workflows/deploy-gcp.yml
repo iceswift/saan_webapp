@@ -1,0 +1,137 @@
+name: Deploy Saan to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      rollback_sha:
+        description: Full 40-character SHA tag of an image already in Artifact Registry; leave blank for a normal main release.
+        type: string
+        required: false
+        default: ''
+      rollback_schema_compatible:
+        description: Confirm that the existing database schema is compatible with the rollback image.
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saan-gcp-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || inputs.rollback_sha == '') }}
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Publish, migrate, smoke-check and release
+    needs: ci
+    if: >-
+      always() && !cancelled() && github.ref == 'refs/heads/main' &&
+      (needs.ci.result == 'success' ||
+       (github.event_name == 'workflow_dispatch' && inputs.rollback_sha != '' && needs.ci.result == 'skipped'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Configure this Environment with a required reviewer before setting GCP values.
+    environment: lab5-gcp
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      AR_REPOSITORY: ${{ vars.GCP_ARTIFACT_REGISTRY_REPOSITORY }}
+      SERVICE_NAME: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
+      MIGRATION_JOB: ${{ vars.GCP_MIGRATION_JOB }}
+      WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+      PUBLIC_SITE_URL: ${{ vars.SAAN_PUBLIC_SITE_URL }}
+      ROLLBACK_SHA: ${{ inputs.rollback_sha }}
+      ROLLBACK_SCHEMA_COMPATIBLE: ${{ inputs.rollback_schema_compatible }}
+    steps:
+      - name: Check out the reviewed release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate deployment inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PROJECT_ID REGION AR_REPOSITORY SERVICE_NAME MIGRATION_JOB WIF_PROVIDER WIF_SERVICE_ACCOUNT PUBLIC_SITE_URL; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Missing required lab5-gcp Environment variable: $name" >&2
+              exit 1
+            fi
+          done
+          [[ "$REGION" =~ ^[a-z]+-[a-z]+[0-9]+$ ]] || { echo 'GCP_REGION is not a valid region-shaped value.' >&2; exit 1; }
+          [[ "$PUBLIC_SITE_URL" =~ ^https://[^[:space:]]+$ ]] || { echo 'SAAN_PUBLIC_SITE_URL must be the actual HTTPS Cloud Run service URL.' >&2; exit 1; }
+          if [[ -n "$ROLLBACK_SHA" ]]; then
+            [[ "$ROLLBACK_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'rollback_sha must be a full lowercase 40-character SHA.' >&2; exit 1; }
+            [[ "$ROLLBACK_SCHEMA_COMPATIBLE" == 'true' ]] || { echo 'A rollback requires explicit schema-compatibility confirmation.' >&2; exit 1; }
+          else
+            [[ "${GITHUB_SHA:-}" =~ ^[0-9a-f]{40}$ ]] || { echo 'The release commit must be a full SHA.' >&2; exit 1; }
+          fi
+
+      - name: Authenticate to Google Cloud with Workload Identity Federation
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
+
+      - name: Install Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Require immutable Artifact Registry tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMMUTABLE_TAGS="$(gcloud artifacts repositories describe "$AR_REPOSITORY" \
+            --project="$PROJECT_ID" --location="$REGION" \
+            --format='value(dockerConfig.immutableTags)')"
+          [[ "${IMMUTABLE_TAGS,,}" == 'true' ]] || {
+            echo 'Artifact Registry must enforce immutable Docker tags before release.' >&2
+            exit 1
+          }
+
+      - name: Build or reuse immutable commit image
+        if: ${{ env.ROLLBACK_SHA == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${AR_REPOSITORY}/saan:${GITHUB_SHA}"
+          if gcloud artifacts docker images describe "$IMAGE" --project="$PROJECT_ID" --quiet >/dev/null 2>&1; then
+            echo "Reusing existing immutable image for ${GITHUB_SHA}."
+          else
+            docker build --build-arg "NEXT_PUBLIC_SITE_URL=${PUBLIC_SITE_URL}" --tag "$IMAGE" .
+            docker push "$IMAGE"
+          fi
+
+      - name: Run migration and promote a verified revision
+        id: release
+        shell: bash
+        run: bash deploy/gcp-release.sh
+
+      - name: Record release evidence
+        if: ${{ always() && steps.release.outputs.image_digest != '' }}
+        env:
+          IMAGE_DIGEST: ${{ steps.release.outputs.image_digest }}
+          RELEASE_REVISION: ${{ steps.release.outputs.revision }}
+          SERVICE_URL: ${{ steps.release.outputs.service_url }}
+          SOURCE_SHA: ${{ steps.release.outputs.image_sha }}
+          ROLLBACK: ${{ steps.release.outputs.rollback }}
+        run: |
+          {
+            echo '### Saan GCP release'
+            echo "- Image SHA: \`$SOURCE_SHA\`"
+            echo "- Image digest: \`$IMAGE_DIGEST\`"
+            echo "- Cloud Run revision: \`$RELEASE_REVISION\`"
+            echo "- Service URL: $SERVICE_URL"
+            echo "- Rollback: $ROLLBACK"
+          } >> "$GITHUB_STEP_SUMMARY"

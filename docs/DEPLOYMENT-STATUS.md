@@ -1,5 +1,14 @@
 # Deployment status
 
+## Lab 5 GCP release preparation — 10 November 2026
+
+- Prepared a reusable CI entry point and a Cloud Run release workflow for reviewed `main`: enforced immutable full-SHA image tags, digest deployment, migration before candidate rollout, tagged candidate smoke checks, traffic promotion, post-promotion health check, and previous-revision recovery. Manual image rollback requires a full SHA and explicit schema-compatibility confirmation. PR [#27](https://github.com/iceswift/saan_webapp/pull/27) is open against `staging`. A teammate's read-only AI review found that the candidate revision URL lookup needed a Cloud Run traffic tag; the correction uses `--tag=candidate` and reads the matching tagged URL from service status. CI run 119 passed all three required jobs with this correction. Formal GitHub review is still pending; the PR is not merged.
+- Added a database-backed Cloud Run smoke script and adapted Docker build metadata to receive the confirmed public URL at build time. Added a Saan-specific environment/configuration inventory, Lab 5 Part 0–4 submission draft and persistent checklist.
+- Cloud deployment automation expects cloud infrastructure, runtime settings, secrets, service/job identities, Cloud SQL connectivity and a persistent upload mount to exist already. It does not provision them. No GCP resource, image publication, migration, or public service was created/deployed in this work.
+- Billing preflight is unresolved: verify the selected project's active credit and spend controls in the console; an alert budget alone is not an enforceable cap. Do not incur cloud charges or accept any prepayment/upgrade prompt until reconciled with the course handout/TA. Account-specific billing details are intentionally excluded from this public repository.
+- Public OTP/business-flow acceptance is unresolved: the app has no production SMS provider, public domain or verified account-recovery support contact. Do not expose test login or simulated payments; Lab C04 requires a safe instructor-approved test path before it can be claimed.
+- Next: obtain teammate review/approval on PR #27; verify billing/credit and get a safe test-auth plan; only then provision the approved cloud environment and gather deployment/persistence/rollback evidence. See [Lab 5 checklist](labs/lab-05/checklist.md).
+
 ## Current service-preparation and OTP safety release — 4 November 2026
 
 - Owner confirmed no domain/SMS/support account exists and requested preparation only. Runtime `saan:launch-ready-6149581811c7`, config digest `sha256:cc5a9f57912f5fe637c8d6f01ecd53927e99d51a28a7de3f2d7c256305444e44`; QA target `saan:qa-6149581811c7`. Adds validated optional runtime help contacts, role-protected configuration inventory and newest-only OTP verification. Contract: [LAUNCH-CONFIGURATION.md](LAUNCH-CONFIGURATION.md). Full production authentication remains future work under [PRODUCTION-AUTH-READINESS.md](PRODUCTION-AUTH-READINESS.md).
