@@ -44,6 +44,10 @@ elif len(traffic) == 1 and int(traffic[0].get("percent", 0)) == 100:
 else:
     raise SystemExit("Refusing automated deployment while traffic is split across revisions.")
 ' <<< "$TRAFFIC_JSON")"
+[[ -n "$PREVIOUS_REVISION" ]] || {
+  echo 'Refusing automated release without an existing 100%-traffic revision; bootstrap and smoke-check the service first.' >&2
+  exit 1
+}
 
 if [[ "$ROLLBACK" == 'false' ]]; then
   # The job already carries its Cloud SQL connection, runtime identity and DB secret.

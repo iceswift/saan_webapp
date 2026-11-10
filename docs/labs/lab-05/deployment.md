@@ -31,7 +31,15 @@ These are proposed names/settings, not observations of existing resources. Confi
 8. Move 100% traffic to the candidate; smoke-check the service URL. On a post-promotion smoke failure, restore the previous 100%-traffic revision.
 9. The manual rollback action accepts only a full lowercase commit SHA already in Artifact Registry and requires explicit schema-compatibility confirmation. It reuses the old image and does not roll back database schema/data.
 
-The release workflow expects the service, migration job, image repository, SQL connectivity, secrets, runtime identity, upload mount, IAM and unauthenticated service invocation to have been provisioned and tested first. It does not create those resources or infer configuration. A protected GitHub Environment named `lab5-gcp` must have a required reviewer before its project variables are configured.
+The release workflow expects the service, migration job, image repository, SQL connectivity, secrets, runtime identity, upload mount, IAM and unauthenticated service invocation to have been provisioned and tested first. It does not create those resources or infer configuration. Bootstrap the service separately with a known-good 100%-traffic revision; the automated release refuses to run without one so a failed promotion always has a recovery target. A protected GitHub Environment named `lab5-gcp` must have a required reviewer before its project variables are configured.
+
+The pre-created Cloud Run migration job must use the same image, Cloud SQL connection, runtime service account and Secret Manager `DATABASE_URL` binding as the service, with this command override and `/app` working directory:
+
+```sh
+node node_modules/prisma/build/index.js migrate deploy --schema prisma/postgresql/schema.prisma
+```
+
+The workflow only changes the migration job's image and the service's image. Treat the rest of the service/job configuration as managed setup; review any later runtime-configuration change separately rather than silently replacing it during each release. The service must allow the unauthenticated health/home smoke request for the course's public URL. Do not configure public test login to achieve this.
 
 ## Required GitHub Environment variables
 
