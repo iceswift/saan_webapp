@@ -95,7 +95,7 @@ These are implementation targets, not completed infrastructure. The protected `l
 
 ### Access and safety status
 
-Production OTP is not ready: the current OTP sender is test/console-only, and no production SMS provider, public domain or verified support recovery contact exists. Do not enable public test login or simulated checkout. Lab C04 (sign-in and one business operation) remains blocked until the course/instructor provides a safe, approved authentication test path. Billing also must be rechecked: the observed THB 500 budget was alert-only (“Spend cap status: Not applicable”), and the account's USD300 trial credit was not verifiable. No resource should be described as cost-covered or deployed without account evidence.
+Production OTP is not ready: the current OTP sender is test/console-only, and no production SMS provider, public domain or verified support recovery contact exists. Do not enable public test login or simulated checkout. Lab C04 (sign-in and one business operation) remains blocked until the course/instructor provides a safe, approved authentication test path. Billing and credits must be verified in the selected project before provisioning; an alert budget alone is not an enforceable cap. Do not include account-specific billing details in this public repository or claim resources are cost-covered without evidence.
 
 ## Part 4 - Repeatable Release Pipeline
 
