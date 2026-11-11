@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   push:
   pull_request:
 
@@ -35,6 +36,10 @@ jobs:
       - run: npm run test:integration
       - name: Run scheduled-backup test
         run: python3 tests/scheduled-backup.test.py deploy/scheduled-backup.py
+      - name: Validate GCP release scripts
+        run: |
+          bash -n deploy/gcp-release.sh
+          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("deploy/gcp-smoke.py").read_text())'
       - run: npm run db:postgres:check
       - name: Build Next.js production app
         run: npm run build
