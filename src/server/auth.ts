@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "./db";
 import type { Role } from "@/lib/constants";
 import { canUseTestLogin } from "./runtime-policy";
+import { labLoginConfig } from "./lab-login";
 
 const SESSION_COOKIE = "saan_session";
 const SESSION_DAYS = 30;
@@ -16,9 +17,8 @@ export type CurrentUser = {
   role: Role;
 };
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000)) {
   const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   await db.session.create({ data: { token, userId, expiresAt } });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -46,8 +46,11 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     where: { token },
     include: { user: true },
   });
-  if (!session || session.expiresAt < new Date()) return null;
-  if (!canUseTestLogin(session.user.phone)) return null;
+  if (!session || session.expiresAt < new Date() || session.user.deletedAt) return null;
+  const lab = labLoginConfig();
+  const isLabCustomer = lab?.userId === session.userId && session.user.role === "CUSTOMER" &&
+    session.expiresAt.getTime() <= lab.expiresAt.getTime();
+  if (!canUseTestLogin(session.user.phone) && !isLabCustomer) return null;
   const { id, phone, name, role } = session.user;
   return { id, phone, name, role: role as Role };
 }

@@ -88,6 +88,18 @@ The names below are the runtime interface found in the source and deployment con
 
 ## Persistence design and proof
 
+### Temporary Lab sign-in
+
+The `/login/lab` route allows a team member to test with a dedicated synthetic customer. It uses the existing database-backed session and works only in production when all three settings are present.
+
+| Setting | Value source |
+| --- | --- |
+| `LAB_LOGIN_USER_ID` | ID of a dedicated, named synthetic `CUSTOMER` in the Lab database |
+| `LAB_LOGIN_TOKEN_SHA256` | SHA-256 hex digest of a random 32-byte token encoded as lowercase hex |
+| `LAB_LOGIN_EXPIRES_AT` | ISO 8601 UTC timestamp within 24 hours |
+
+Generate the token on a trusted machine and keep the plaintext private. Configure only its digest in Cloud Run. Submit the token in the password field over HTTPS. Use the dedicated customer to create a disposable shrine, record its URL and ID, and read the same record back after instance replacement and after a new revision. Keep the login configuration valid for the duration of the drill. Remove the settings after collecting evidence. The route and its sessions expire with the configured deadline.
+
 PostgreSQL is the source of durable application state. Configure Cloud Run's Cloud SQL connection and use the private Cloud SQL connection string from Secret Manager. Enable Cloud SQL automated backups and point-in-time recovery only if supported by the selected course-compatible tier; record the selected retention and complete one restore drill before claiming database recoverability.
 
 Saan stores uploads using Node filesystem operations below `UPLOAD_DIR`; a Cloud Storage FUSE volume mounted at `/data/uploads` can preserve this interface. Configure the bucket mount on the Cloud Run service, grant the runtime service account object access, and verify UID/GID 1000 write/read permissions. Google documents that FUSE writes are staged locally and flushed on close or `fsync`; therefore, upload verification must wait for the request/file handle to close and then fetch the same `/api/files/<key>` URL after a service revision replacement. Keep files small enough for Cloud Run's memory budget and test concurrent upload behavior before relying on this path. Do not call the upload store durable until byte-for-byte readback after replacement has passed.
