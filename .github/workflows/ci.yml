@@ -22,6 +22,8 @@ jobs:
       PAYMENT_PROVIDER: mock
     steps:
       - uses: actions/checkout@v4
+      - name: Lab 5 merge-gate evidence (intentional failure)
+        run: exit 1
       - uses: actions/setup-node@v4
         with:
           node-version: 22
