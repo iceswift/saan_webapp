@@ -242,6 +242,41 @@ try {
       await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:1}});
     }
   });
+  await check('L7-T02 verified owners set only their own valid lead time',async()=>{
+    const settings = { name:shop.name,kind:'SHOP',phone:owner.phone,areas:['BKK'] };
+    const update = (payload,cookie) => action('updateProviderProfile',payload,cookie,'/provider');
+    const lead = async id => (await db.provider.findUniqueOrThrow({where:{id}})).bookingLeadDays;
+    for (const invalid of [0,-1,8,1.5,null,'3']) {
+      assert.equal((await update({...settings,bookingLeadDays:invalid},providerCookie)).result.ok,false);
+      assert.equal(await lead(shop.id),1);
+    }
+    assert.equal((await update({...settings,bookingLeadDays:3},'')).result.ok,false);
+    assert.equal((await update({...settings,bookingLeadDays:3,providerId:shop.id},outsiderCookie)).result.ok,false);
+    await db.provider.update({where:{id:otherShop.id},data:{status:'PENDING'}});
+    assert.equal((await update({...settings,bookingLeadDays:3,providerId:shop.id},otherProviderCookie)).result.ok,false);
+    await db.provider.update({where:{id:otherShop.id},data:{status:'VERIFIED'}});
+    assert.equal((await update({...settings,phone:users[3].phone,bookingLeadDays:4,providerId:shop.id},otherProviderCookie)).result.ok,true);
+    assert.equal(await lead(otherShop.id),4);
+    assert.equal(await lead(shop.id),1);
+    assert.equal((await update({...settings,bookingLeadDays:3},providerCookie)).result.ok,true);
+    assert.equal(await lead(shop.id),3);
+    assert.equal((await update(settings,providerCookie)).result.ok,true);
+    assert.equal(await lead(shop.id),3);
+  });
+  await check('L7-T05 raising lead time leaves an existing order confirmable',async()=>{
+    const today = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok'}).format(new Date());
+    const tomorrow = new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+    await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:1}});
+    const creation = await action('createInstallOrder',{...input,preferredDates:[tomorrow]},buyerCookie,'/new/checkout');
+    assert.equal(creation.result.ok,true);
+    const id = creation.result.data.orderId;
+    await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:5}});
+    assert.equal((await action('payDeposit',{orderId:id,method:'PROMPTPAY'},buyerCookie,`/orders/${id}`)).result.ok,true);
+    assert.equal((await action('confirmOrder',{orderId:id,scheduledAt:tomorrow+'T10:00:00+07:00'},providerCookie,'/provider')).result.ok,true);
+    const saved = await db.order.findUniqueOrThrow({where:{id}});
+    assert.equal(saved.preferredDates,JSON.stringify([tomorrow]));
+    assert.equal(saved.status,'CONFIRMED');
+  });
   await check('HTTP-09 logout deletes session and replayed cookie is denied',async()=>{
     const token=decodeURIComponent(buyerCookie.split('=')[1]);
     assert.equal((await action('logout',undefined,buyerCookie,'/account')).result.ok,true);
