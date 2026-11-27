@@ -3,15 +3,16 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
-const directory = path.join(root, 'storage/tests/coursework-http', stamp);
-mkdirSync(directory, { recursive: true });
+const scratch = path.join(root, 'storage/tests/coursework-http');
+mkdirSync(scratch, { recursive: true });
+const directory = mkdtempSync(path.join(scratch, stamp + '-'));
 const database = path.join(directory, 'money-test.db');
 assert.ok(!existsSync(database), 'Never reuse app or previous test data');
 writeFileSync(database, ''); // SQLite engine requires an existing file on this host.
@@ -217,6 +218,65 @@ try {
     assert.equal(await db.orderEvent.count({where:{orderId}}),beforeEvents+1);
     assert.equal((await db.order.findUniqueOrThrow({where:{id:orderId}})).status,'CONFIRMED');
     assert.ok((await (await fetch(base+`/orders/${orderId}`,{headers:{Cookie:buyerCookie}})).text()).includes(input.address));
+  });
+  await check('L7-T03 current shop lead time rejects a stale earliest date without writes',async()=>{
+    const today = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok'}).format(new Date());
+    const dateAfter = (days) => new Date(Date.parse(today+'T00:00:00Z') + days * 86400000).toISOString().slice(0,10);
+    const counts = async () => [await db.order.count(), await db.orderItem.count(), await db.orderEvent.count()];
+    assert.equal((await db.provider.findUniqueOrThrow({where:{id:shop.id}})).bookingLeadDays,1);
+    await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:3}});
+    try {
+      for (const dates of [[dateAfter(1)], [dateAfter(2), dateAfter(3)]]) {
+        const before = await counts();
+        const attempt = await action('createInstallOrder',{...input,preferredDates:dates},buyerCookie,'/new/checkout');
+        const after = await counts();
+        console.log(JSON.stringify({test:'L7-T03',today,dates,accepted:attempt.result.ok,
+          writes:after.map((count,index)=>count-before[index])}));
+        assert.equal(attempt.result.ok,false,'Configured shop must reject dates before its 3-day minimum');
+        assert.deepEqual(after,before,'Rejected booking must not write an order, items, or events');
+      }
+      const eligible = await action('createInstallOrder',{...input,preferredDates:[dateAfter(3)]},buyerCookie,'/new/checkout');
+      assert.equal(eligible.result.ok,true);
+      assert.equal((await db.order.findUniqueOrThrow({where:{id:eligible.result.data.orderId}})).preferredDates,JSON.stringify([dateAfter(3)]));
+      assert.equal((await db.order.findUniqueOrThrow({where:{id:orderId}})).status,'CONFIRMED');
+    } finally {
+      await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:1}});
+    }
+  });
+  await check('L7-T02 verified owners set only their own valid lead time',async()=>{
+    const settings = { name:shop.name,kind:'SHOP',phone:owner.phone,areas:['BKK'] };
+    const update = (payload,cookie) => action('updateProviderProfile',payload,cookie,'/provider');
+    const lead = async id => (await db.provider.findUniqueOrThrow({where:{id}})).bookingLeadDays;
+    for (const invalid of [0,-1,8,1.5,null,'3']) {
+      assert.equal((await update({...settings,bookingLeadDays:invalid},providerCookie)).result.ok,false);
+      assert.equal(await lead(shop.id),1);
+    }
+    assert.equal((await update({...settings,bookingLeadDays:3},'')).result.ok,false);
+    assert.equal((await update({...settings,bookingLeadDays:3,providerId:shop.id},outsiderCookie)).result.ok,false);
+    await db.provider.update({where:{id:otherShop.id},data:{status:'PENDING'}});
+    assert.equal((await update({...settings,bookingLeadDays:3,providerId:shop.id},otherProviderCookie)).result.ok,false);
+    await db.provider.update({where:{id:otherShop.id},data:{status:'VERIFIED'}});
+    assert.equal((await update({...settings,phone:users[3].phone,bookingLeadDays:4,providerId:shop.id},otherProviderCookie)).result.ok,true);
+    assert.equal(await lead(otherShop.id),4);
+    assert.equal(await lead(shop.id),1);
+    assert.equal((await update({...settings,bookingLeadDays:3},providerCookie)).result.ok,true);
+    assert.equal(await lead(shop.id),3);
+    assert.equal((await update(settings,providerCookie)).result.ok,true);
+    assert.equal(await lead(shop.id),3);
+  });
+  await check('L7-T05 raising lead time leaves an existing order confirmable',async()=>{
+    const today = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok'}).format(new Date());
+    const tomorrow = new Date(Date.parse(today+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+    await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:1}});
+    const creation = await action('createInstallOrder',{...input,preferredDates:[tomorrow]},buyerCookie,'/new/checkout');
+    assert.equal(creation.result.ok,true);
+    const id = creation.result.data.orderId;
+    await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:5}});
+    assert.equal((await action('payDeposit',{orderId:id,method:'PROMPTPAY'},buyerCookie,`/orders/${id}`)).result.ok,true);
+    assert.equal((await action('confirmOrder',{orderId:id,scheduledAt:tomorrow+'T10:00:00+07:00'},providerCookie,'/provider')).result.ok,true);
+    const saved = await db.order.findUniqueOrThrow({where:{id}});
+    assert.equal(saved.preferredDates,JSON.stringify([tomorrow]));
+    assert.equal(saved.status,'CONFIRMED');
   });
   await check('HTTP-09 logout deletes session and replayed cookie is denied',async()=>{
     const token=decodeURIComponent(buyerCookie.split('=')[1]);

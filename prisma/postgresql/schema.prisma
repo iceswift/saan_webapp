@@ -71,6 +71,7 @@ model Provider {
   status      String   @default("PENDING") // PENDING | VERIFIED | REJECTED
   publicAddress String @default("") // Optional owner-supplied public business address
   contactHours String @default("") // Public contact availability, not appointment inventory
+  bookingLeadDays Int @default(1)
   coverUrl String? // Owner-selected uploaded shop photo
   baseLat         Float? // ตำแหน่งร้าน (ใช้คำนวณระยะทาง)
   baseLng         Float?

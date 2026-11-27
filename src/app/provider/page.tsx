@@ -156,6 +156,7 @@ export default async function ProviderPage({ searchParams }: PageProps<"/provide
               areas: provider.areas,
               publicAddress: provider.publicAddress,
               contactHours: provider.contactHours,
+              bookingLeadDays: provider.status === "VERIFIED" ? provider.bookingLeadDays : undefined,
               coverUrl: provider.coverUrl,
               base: provider.location,
               serviceRadiusKm: provider.serviceRadiusKm,
