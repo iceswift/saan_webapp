@@ -26,7 +26,16 @@ export const profileSchema = z.object({
     .optional(),
 });
 
+const updateProfileSchema = profileSchema.extend({
+  bookingLeadDays: z.number("ระบุจำนวนวันเป็นตัวเลข")
+    .int("ระบุจำนวนวันเป็นจำนวนเต็ม")
+    .min(1, "จองล่วงหน้าอย่างน้อย 1 วัน")
+    .max(7, "กำหนดได้สูงสุด 7 วัน")
+    .optional(),
+});
+
 export type ProfileInput = {
+  bookingLeadDays?: number;
   name: string;
   kind: string;
   description?: string;
@@ -43,20 +52,26 @@ export type ProfileInput = {
 export async function updateOwnedProviderProfile(userId: string, input: unknown): Promise<ActionResult> {
   const provider = await db.provider.findUnique({ where: { userId } });
   if (!provider) return fail("กรุณาสมัครเป็นผู้ให้บริการก่อน");
-  const parsed = parseInput(profileSchema, input);
+  const parsed = parseInput(updateProfileSchema, input);
   if (!parsed.ok) return parsed;
   const data = parsed.data;
   if (data.coverUrl && data.coverUrl !== provider.coverUrl && !await readImage(data.coverUrl.split("/").at(-1)!)) return fail("ไม่พบรูปที่อัปโหลด กรุณาเลือกรูปอีกครั้ง");
   const point = data.base === undefined ? (provider.baseLat !== null && provider.baseLng !== null) : data.base !== null;
   if (data.serviceRadiusKm != null && !point) return fail("ปักหมุดที่ตั้งร้านก่อน จึงจะกำหนดรัศมีได้");
-  await db.provider.update({ where: { id: provider.id }, data: {
-    name: data.name, kind: data.kind, description: data.description ?? "", phone: data.phone,
-    areas: JSON.stringify([...new Set(data.areas)]),
-    ...(data.publicAddress !== undefined ? { publicAddress: data.publicAddress } : {}),
-    ...(data.contactHours !== undefined ? { contactHours: data.contactHours } : {}),
-    ...(data.coverUrl !== undefined ? { coverUrl: data.coverUrl } : {}),
-    ...(data.base !== undefined ? { baseLat: data.base?.lat ?? null, baseLng: data.base?.lng ?? null } : {}),
-    ...(data.base === null ? { serviceRadiusKm: null } : data.serviceRadiusKm !== undefined ? { serviceRadiusKm: data.serviceRadiusKm } : {}),
-  } });
+  const changesLeadTime = data.bookingLeadDays !== undefined;
+  const updated = await db.provider.updateMany({
+    where: { id: provider.id, userId, ...(changesLeadTime ? { status: "VERIFIED" } : {}) },
+    data: {
+      ...(changesLeadTime ? { bookingLeadDays: data.bookingLeadDays } : {}),
+      name: data.name, kind: data.kind, description: data.description ?? "", phone: data.phone,
+      areas: JSON.stringify([...new Set(data.areas)]),
+      ...(data.publicAddress !== undefined ? { publicAddress: data.publicAddress } : {}),
+      ...(data.contactHours !== undefined ? { contactHours: data.contactHours } : {}),
+      ...(data.coverUrl !== undefined ? { coverUrl: data.coverUrl } : {}),
+      ...(data.base !== undefined ? { baseLat: data.base?.lat ?? null, baseLng: data.base?.lng ?? null } : {}),
+      ...(data.base === null ? { serviceRadiusKm: null } : data.serviceRadiusKm !== undefined ? { serviceRadiusKm: data.serviceRadiusKm } : {}),
+    },
+  });
+  if (!updated.count) return fail("ร้านต้องผ่านการตรวจสอบก่อนตั้งเวลาจองล่วงหน้า");
   return ok();
 }

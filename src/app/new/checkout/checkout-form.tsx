@@ -90,7 +90,7 @@ export function CheckoutForm({
   product,
   area: initialArea,
   place: initialPlace,
-  minDate,
+  minDate: initialMinDate,
   backHref,
   backLabel,
   savedAddresses,
@@ -112,6 +112,8 @@ export function CheckoutForm({
   testMode: boolean;
 }) {
   const router = useRouter();
+  const [bookingDateCorrection, setBookingDateCorrection] = useState<string>();
+  const minDate = bookingDateCorrection ?? initialMinDate;
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const providerAreas = product.provider.areas;
@@ -148,7 +150,7 @@ export function CheckoutForm({
   const areaFixed = Boolean(matchedSaved) || providerAreas.length === 1;
   const canSave = trimmedAddress.length > 0 && !matchedSaved && area !== null;
   function dateProblem(value: string): string | undefined {
-    if (value < minDate) return "กรุณาเลือกวันพรุ่งนี้เป็นต้นไป";
+    if (value < minDate) return "วันที่นี้เร็วเกินไป กรุณาเลือกจากวันที่ร้านเปิดรับ";
     if (blockedDates.includes(value)) return "ร้านไม่ว่างวันนี้ กรุณาเลือกวันอื่น";
     return undefined;
   }
@@ -202,7 +204,14 @@ export function CheckoutForm({
         ...(geo ? { geo } : {}),
       });
       if (!res.ok) {
-        if (res.error.includes("รัศมี")) {
+        if ("minBookingDate" in res) {
+          setBookingDateCorrection(res.minBookingDate);
+          setErrors({
+            date: date < res.minBookingDate ? res.error : undefined,
+            backupDate: backupDate && backupDate < res.minBookingDate ? res.error : undefined,
+          });
+          requestAnimationFrame(() => focusFirstInvalid(formRef.current));
+        } else if (res.error.includes("รัศมี")) {
           setGeoError(res.error);
           requestAnimationFrame(() => focusFirstInvalid(formRef.current));
         } else {

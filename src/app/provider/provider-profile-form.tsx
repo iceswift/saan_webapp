@@ -1,5 +1,6 @@
 "use client";
 
+import { BOOKING_LEAD_DAY_OPTIONS } from "@/lib/booking-date";
 import { normalizeThaiPhone } from "@/lib/phone-input";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import { Field, FormSection } from "./form-bits";
 import { buildOptions, OptionCards, ToggleChips } from "./pickers";
 
 const KIND_OPTIONS = buildOptions(PROVIDER_KINDS);
+const LEAD_DAY_OPTIONS = BOOKING_LEAD_DAY_OPTIONS.map((days) => ({ value: String(days), label: `${days} วัน` }));
 const AREA_OPTIONS = AREA_CODES.map((code) => ({ value: code, label: AREAS[code] }));
 
 /** รัศมีให้บริการที่เลือกได้เร็ว ๆ (กม.) null = ไม่จำกัดตามระยะ */
@@ -44,6 +46,7 @@ const AFTER_APPLY = [
 ];
 
 type Initial = {
+  bookingLeadDays?: number;
   name: string;
   kind: ProviderKind | null;
   description: string;
@@ -67,6 +70,8 @@ export function ProviderProfileForm({
   mode: "register" | "profile";
   initial: Initial;
 }) {
+  const [bookingLeadDays, setBookingLeadDays] = useState(initial.bookingLeadDays);
+  const [savedBookingLeadDays, setSavedBookingLeadDays] = useState(initial.bookingLeadDays);
   const [name, setName] = useState(initial.name);
   const [kind, setKind] = useState<ProviderKind | null>(initial.kind);
   const [publicAddress, setPublicAddress] = useState(initial.publicAddress ?? "");
@@ -110,7 +115,14 @@ export function ProviderProfileForm({
     };
     // ส่วนแผนที่มีเฉพาะแบบฟอร์มแก้ไข (ตอนสมัครยังไม่ส่งค่านี้ เซิร์ฟเวอร์จะไม่แตะค่าเดิม)
     const profileInput =
-      mode === "profile" ? { ...input, base, serviceRadiusKm: base ? radius : null } : input;
+      mode === "profile"
+        ? {
+            ...input,
+            base,
+            serviceRadiusKm: base ? radius : null,
+            ...(bookingLeadDays !== savedBookingLeadDays ? { bookingLeadDays } : {}),
+          }
+        : input;
 
     startTransition(async () => {
       const res =
@@ -119,6 +131,7 @@ export function ProviderProfileForm({
         toast.error(res.error);
         return;
       }
+      setSavedBookingLeadDays(bookingLeadDays);
       toast.success(mode === "profile" ? "บันทึกแล้ว" : "ส่งใบสมัครแล้ว");
     });
   }
@@ -214,6 +227,18 @@ export function ProviderProfileForm({
             onChange={event => setContactHours(event.target.value)} />
         </Field>
       </FormSection>
+      {initial.bookingLeadDays !== undefined ? (
+        <FormSection title="เวลาจองติดตั้งล่วงหน้า">
+          <fieldset>
+            <legend className="sr-only">จำนวนวันที่ต้องจองล่วงหน้า</legend>
+            <OptionCards
+              options={LEAD_DAY_OPTIONS}
+              value={String(bookingLeadDays)}
+              onChange={(value) => setBookingLeadDays(Number(value))}
+            />
+          </fieldset>
+        </FormSection>
+      ) : null}
       <FormSection title="พื้นที่ให้บริการ">
         <fieldset>
           <legend className="sr-only">พื้นที่ให้บริการ</legend>

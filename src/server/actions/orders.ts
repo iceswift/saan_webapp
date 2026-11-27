@@ -22,13 +22,11 @@ import {
   PLACE_TYPE_CODES,
   type PaymentMethod,
 } from "@/lib/constants";
+import { earliestBookingDate } from "@/lib/booking-date";
+import { formatDateOnly } from "@/lib/format";
 import { distanceKm } from "@/lib/geo";
 
 const methodSchema = z.enum(["PROMPTPAY", "CARD"], "เลือกวิธีชำระเงิน");
-
-function todayInBangkok(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date());
-}
 
 const installSchema = z.object({
   productId: idSchema,
@@ -57,23 +55,27 @@ export async function createInstallOrder(input: {
   preferredDates: string[];
   note?: string;
   geo?: { lat: number; lng: number };
-}): Promise<ActionResult<{ orderId: string }>> {
+}): Promise<ActionResult<{ orderId: string }> | { ok: false; error: string; minBookingDate: string }> {
   const user = await getCurrentUser();
   if (!user) return NOT_LOGGED_IN;
   const parsed = parseInput(installSchema, input);
   if (!parsed.ok) return parsed;
   const data = parsed.data;
 
-  const today = todayInBangkok();
-  if (data.preferredDates.some((d) => d <= today)) {
-    return fail("วันที่สะดวกต้องเป็นวันพรุ่งนี้เป็นต้นไป");
-  }
-
   const product = await db.product.findFirst({
     where: { id: data.productId, active: true, provider: { status: "VERIFIED" } },
     include: { provider: true },
   });
   if (!product) return fail("ไม่พบศาลที่เลือก หรือร้านปิดขายแล้ว");
+
+  const minBookingDate = earliestBookingDate(product.provider.bookingLeadDays);
+  if (data.preferredDates.some((date) => date < minBookingDate)) {
+    return {
+      ok: false,
+      error: `ร้านนี้รับนัดตั้งแต่ ${formatDateOnly(minBookingDate)} เป็นต้นไป`,
+      minBookingDate,
+    };
+  }
 
   const areas: string[] = JSON.parse(product.provider.areas);
   if (!areas.includes(data.area)) return fail("ร้านนี้ยังไม่ให้บริการในพื้นที่ที่เลือก");

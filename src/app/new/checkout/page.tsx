@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { earliestBookingDate } from "@/lib/booking-date";
 import { notFound } from "next/navigation";
 import {
   AREA_CODES,
@@ -14,12 +15,6 @@ import { CheckoutForm } from "./checkout-form";
 export const metadata: Metadata = { title: "ยืนยันคำสั่งซื้อ" };
 
 const PASSTHROUGH_KEYS = ["productId", "area", "place", "kind", "max"] as const;
-
-/** วันพรุ่งนี้ตามเวลาประเทศไทย รูปแบบ YYYY-MM-DD */
-function tomorrowInBangkok(): string {
-  const date = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(date);
-}
 
 export default async function CheckoutPage({ searchParams }: PageProps<"/new/checkout">) {
   const sp = await searchParams;
@@ -67,7 +62,7 @@ export default async function CheckoutPage({ searchParams }: PageProps<"/new/che
       product={product}
       area={area}
       place={place}
-      minDate={tomorrowInBangkok()}
+      minDate={earliestBookingDate(product.provider.bookingLeadDays ?? 1)}
       backHref={backHref}
       backLabel={backLabel}
       savedAddresses={savedAddresses}

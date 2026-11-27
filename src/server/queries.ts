@@ -79,6 +79,7 @@ function toProvider(
     description: p.description,
     publicAddress: p.publicAddress,
     contactHours: p.contactHours,
+    bookingLeadDays: p.bookingLeadDays,
     coverUrl: p.coverUrl,
     phone: p.phone,
     areas: parseList<AreaCode>(p.areas),

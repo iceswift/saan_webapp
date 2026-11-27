@@ -18,6 +18,7 @@ import type {
 } from "./constants";
 
 export type ProviderSummary = {
+  bookingLeadDays?: number;
   contactHours?: string;
   coverUrl?: string | null;
   publicAddress?: string;
