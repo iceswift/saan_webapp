@@ -3,15 +3,16 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
-const directory = path.join(root, 'storage/tests/coursework-http', stamp);
-mkdirSync(directory, { recursive: true });
+const scratch = path.join(root, 'storage/tests/coursework-http');
+mkdirSync(scratch, { recursive: true });
+const directory = mkdtempSync(path.join(scratch, stamp + '-'));
 const database = path.join(directory, 'money-test.db');
 assert.ok(!existsSync(database), 'Never reuse app or previous test data');
 writeFileSync(database, ''); // SQLite engine requires an existing file on this host.
