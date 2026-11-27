@@ -55,7 +55,7 @@ function describe(order: OrderDetail): {
       return { title: "รอร้านยืนยันและนัดวัน", detail: `จ่ายมัดจำแล้ว · ${shop}`, tone: "wait" };
     case "CONFIRMED":
       return {
-        title: order.scheduledAt ? `ร้านนัดเข้างาน ${formatWhen(order.scheduledAt)}` : "ร้านยืนยันแล้ว",
+        title: "ร้านยืนยันแล้ว",
         detail: order.scheduledAt ? shop : `${shop} จะแจ้งวันและเวลาอีกครั้ง`,
         tone: "info",
       };
