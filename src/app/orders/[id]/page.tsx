@@ -13,7 +13,7 @@ import type { OrderDetail } from "@/lib/types";
 import { requireUser } from "@/server/auth";
 import { IS_MOCK_PAYMENT, IS_OMISE_TEST_PAYMENT } from "@/server/integrations";
 import { getOrder } from "@/server/queries";
-import { cancelledPaymentDetail } from "./cancelled-payment-detail";
+import { describeOrderStatus } from "./describe-order-status";
 import { customerRefundCases } from "@/server/refund-case-service";
 import { REFUND_CASE_LABELS } from "@/lib/refund-case";
 import { customerPending, formatShortDateTime, formatWhen, ORDER_FLOW_STEPS, orderStepIndex } from "../display";
@@ -41,38 +41,6 @@ const QUICK_REPLIES = ["สอบถามรายละเอียดเพ�
 
 const STEP_LABELS = [...ORDER_FLOW_STEPS.map((s) => s.label)];
 
-/** ประโยคสถานะเดียวของคำสั่ง (ที่มาเดียวของข้อความสถานะในหน้านี้) */
-function describe(order: OrderDetail): {
-  title: string;
-  detail?: string;
-  tone: "wait" | "info" | "good" | "bad";
-} {
-  const shop = order.provider.name;
-  switch (order.status) {
-    case "AWAITING_DEPOSIT":
-      return { title: "รอจ่ายมัดจำเพื่อให้ร้านรับงาน", detail: shop, tone: "wait" };
-    case "AWAITING_PROVIDER":
-      return { title: "รอร้านยืนยันและนัดวัน", detail: `จ่ายมัดจำแล้ว · ${shop}`, tone: "wait" };
-    case "CONFIRMED":
-      return {
-        title: "ร้านยืนยันแล้ว",
-        detail: order.scheduledAt ? shop : `${shop} จะแจ้งวันและเวลาอีกครั้ง`,
-        tone: "info",
-      };
-    case "DONE":
-      return { title: "ร้านทำงานเสร็จแล้ว รอคุณตรวจรับ", detail: shop, tone: "wait" };
-    case "COMPLETED":
-      return { title: "งานเสร็จสมบูรณ์", detail: `ขอบคุณที่ใช้บริการ ${shop}`, tone: "good" };
-    case "CANCELLED": {
-      return {
-        title: "คำสั่งนี้ถูกยกเลิก",
-        detail: cancelledPaymentDetail(order.payments),
-        tone: "bad",
-      };
-    }
-  }
-}
-
 const EVENT_ROLE_LABEL = { CUSTOMER: "คุณ", PROVIDER: "ร้าน", ADMIN: "ทีมงาน", SYSTEM: "ระบบ" } as const;
 
 export default async function OrderDetailPage({ params }: PageProps<"/orders/[id]">) {
@@ -83,7 +51,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
   if (order.viewerIs !== "CUSTOMER") redirect(`/provider/orders/${id}`);
 
   const stepIndex = orderStepIndex(order.status);
-  const status = describe(order);
+  const status = describeOrderStatus(order);
   const refundCases = order.status === "CANCELLED" ? await customerRefundCases(order.id, user.id) : [];
   const hasAction =
     order.status === "AWAITING_DEPOSIT" ||
