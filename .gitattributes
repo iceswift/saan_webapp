@@ -8,3 +8,4 @@ package.json text eol=lf
 scripts/test-unit.mjs text eol=lf
 .env.example text eol=lf
 
+docs/labs/lab-07/*.md text eol=lf

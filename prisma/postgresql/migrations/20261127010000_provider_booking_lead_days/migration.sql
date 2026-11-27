@@ -1,0 +1,1 @@
+ALTER TABLE "Provider" ADD COLUMN "bookingLeadDays" INTEGER NOT NULL DEFAULT 1;
