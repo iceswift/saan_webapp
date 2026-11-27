@@ -218,6 +218,30 @@ try {
     assert.equal((await db.order.findUniqueOrThrow({where:{id:orderId}})).status,'CONFIRMED');
     assert.ok((await (await fetch(base+`/orders/${orderId}`,{headers:{Cookie:buyerCookie}})).text()).includes(input.address));
   });
+  await check('L7-T03 current shop lead time rejects a stale earliest date without writes',async()=>{
+    const today = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok'}).format(new Date());
+    const dateAfter = (days) => new Date(Date.parse(today+'T00:00:00Z') + days * 86400000).toISOString().slice(0,10);
+    const counts = async () => [await db.order.count(), await db.orderItem.count(), await db.orderEvent.count()];
+    assert.equal((await db.provider.findUniqueOrThrow({where:{id:shop.id}})).bookingLeadDays,1);
+    await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:3}});
+    try {
+      for (const dates of [[dateAfter(1)], [dateAfter(2), dateAfter(3)]]) {
+        const before = await counts();
+        const attempt = await action('createInstallOrder',{...input,preferredDates:dates},buyerCookie,'/new/checkout');
+        const after = await counts();
+        console.log(JSON.stringify({test:'L7-T03',today,dates,accepted:attempt.result.ok,
+          writes:after.map((count,index)=>count-before[index])}));
+        assert.equal(attempt.result.ok,false,'Configured shop must reject dates before its 3-day minimum');
+        assert.deepEqual(after,before,'Rejected booking must not write an order, items, or events');
+      }
+      const eligible = await action('createInstallOrder',{...input,preferredDates:[dateAfter(3)]},buyerCookie,'/new/checkout');
+      assert.equal(eligible.result.ok,true);
+      assert.equal((await db.order.findUniqueOrThrow({where:{id:eligible.result.data.orderId}})).preferredDates,JSON.stringify([dateAfter(3)]));
+      assert.equal((await db.order.findUniqueOrThrow({where:{id:orderId}})).status,'CONFIRMED');
+    } finally {
+      await db.provider.update({where:{id:shop.id},data:{bookingLeadDays:1}});
+    }
+  });
   await check('HTTP-09 logout deletes session and replayed cookie is denied',async()=>{
     const token=decodeURIComponent(buyerCookie.split('=')[1]);
     assert.equal((await action('logout',undefined,buyerCookie,'/account')).result.ok,true);
