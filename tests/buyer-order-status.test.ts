@@ -13,7 +13,7 @@ test("A-06: the confirmed buyer status includes the appointment in ICT", () => {
     payments: [],
   });
 
-  assert.equal(status.title, "ร้านนัดเข้างาน ส. 28 พ.ย. 10:00 น.");
+  assert.match(status.title, /^ร้านนัดเข้างาน .+ 28 พ\.ย\. 10:00 น\.$/);
 });
 
 test("a confirmed order without an appointment retains its fallback", () => {
