@@ -36,6 +36,14 @@ export function RequestsTab({
   requests: ProviderRequest[];
   filter: RequestFilter;
 }) {
+  if (provider.status !== "VERIFIED") {
+    return (
+      <Notice tone="amber" className="mt-5 max-w-4xl lg:mt-8">
+        ดูคำขอและส่งใบเสนอราคาได้หลังร้านผ่านการตรวจสอบ
+      </Notice>
+    );
+  }
+
   if (requests.length === 0) {
     return (
       <EmptyState
@@ -46,19 +54,12 @@ export function RequestsTab({
     );
   }
 
-  const verified = provider.status === "VERIFIED";
   const todo = requests.filter((r) => r.myQuote === null);
   const sent = requests.filter((r) => r.myQuote !== null);
   const shown = filter === "todo" ? todo : filter === "sent" ? sent : requests;
 
   return (
     <div className="mt-5 max-w-4xl lg:mt-8">
-      {!verified ? (
-        <Notice tone="amber" className="mb-5">
-          ส่งใบเสนอราคาได้หลังร้านผ่านการตรวจสอบ
-        </Notice>
-      ) : null}
-
       <ChipRow label="กรองคำขอ">
         <Chip href="/provider?tab=requests" active={filter === "all"}>
           ทั้งหมด <span className="numeric">{requests.length}</span>
@@ -79,7 +80,7 @@ export function RequestsTab({
         <ListGroup className="mt-4" label="คำขอจากลูกค้า">
           {shown.map((request) => (
             <li key={request.id} className="min-w-0">
-              <RequestRow request={request} verified={verified} provider={provider} />
+              <RequestRow request={request} provider={provider} />
             </li>
           ))}
         </ListGroup>
@@ -90,11 +91,9 @@ export function RequestsTab({
 
 function RequestRow({
   request,
-  verified,
   provider,
 }: {
   request: ProviderRequest;
-  verified: boolean;
   provider: ProviderSummary;
 }) {
   const quote = request.myQuote;
@@ -116,11 +115,11 @@ function RequestRow({
             <Price amount={quote.price} size="sm" />
             <TonePill tone={QUOTE_STATUS[quote.status].tone}>{QUOTE_STATUS[quote.status].label}</TonePill>
           </span>
-        ) : verified ? (
+        ) : (
           <span className="inline-flex h-10 shrink-0 items-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground group-open/req:hidden">
             ส่งใบเสนอราคา
           </span>
-        ) : null}
+        )}
         <ChevronDown
           className="size-5 shrink-0 text-muted-foreground transition-transform group-open/req:rotate-180"
           aria-hidden="true"
@@ -174,12 +173,10 @@ function RequestRow({
           </ul>
         ) : null}
 
-        {verified ? (
-          <div className="mt-5 max-w-md border-t border-border pt-5">
-            <p className="mb-4 text-base font-medium">{quote ? "แก้ไขใบเสนอราคา" : "เสนอราคาให้ลูกค้า"}</p>
-            <QuoteForm requestId={request.id} myQuote={quote} />
-          </div>
-        ) : null}
+        <div className="mt-5 max-w-md border-t border-border pt-5">
+          <p className="mb-4 text-base font-medium">{quote ? "แก้ไขใบเสนอราคา" : "เสนอราคาให้ลูกค้า"}</p>
+          <QuoteForm requestId={request.id} myQuote={quote} />
+        </div>
       </div>
     </details>
   );

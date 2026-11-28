@@ -471,8 +471,10 @@ export async function listProviderOrders(providerId: string): Promise<OrderSumma
   return rows.map(toOrderSummary);
 }
 
-/** คำขอที่ยังเปิดอยู่ในพื้นที่ที่ร้านให้บริการ */
+/** คำขอที่ยังเปิดอยู่ในพื้นที่ของร้านที่ผ่านการตรวจสอบ */
 export async function listOpenRequestsForProvider(provider: ProviderSummary): Promise<ProviderRequest[]> {
+  if (provider.status !== "VERIFIED") return [];
+
   const rows = await db.serviceRequest.findMany({
     where: { status: "OPEN", area: { in: provider.areas } },
     include: { ...requestInclude, quotes: { where: { providerId: provider.id } } },
