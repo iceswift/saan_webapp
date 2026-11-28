@@ -256,7 +256,7 @@ try {
     await db.provider.update({where:{id:otherShop.id},data:{status:'PENDING'}});
     assert.equal((await update({...settings,bookingLeadDays:3,providerId:shop.id},otherProviderCookie)).result.ok,false);
     await db.provider.update({where:{id:otherShop.id},data:{status:'VERIFIED'}});
-    assert.equal((await update({...settings,phone:users[3].phone,bookingLeadDays:4,providerId:shop.id},otherProviderCookie)).result.ok,true);
+    assert.equal((await update({...settings,name:otherShop.name,phone:users[3].phone,bookingLeadDays:4,providerId:shop.id},otherProviderCookie)).result.ok,true);
     assert.equal(await lead(otherShop.id),4);
     assert.equal(await lead(shop.id),1);
     assert.equal((await update({...settings,bookingLeadDays:3},providerCookie)).result.ok,true);
