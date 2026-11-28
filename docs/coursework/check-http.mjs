@@ -256,7 +256,7 @@ try {
     await db.provider.update({where:{id:otherShop.id},data:{status:'PENDING'}});
     assert.equal((await update({...settings,bookingLeadDays:3,providerId:shop.id},otherProviderCookie)).result.ok,false);
     await db.provider.update({where:{id:otherShop.id},data:{status:'VERIFIED'}});
-    assert.equal((await update({...settings,phone:users[3].phone,bookingLeadDays:4,providerId:shop.id},otherProviderCookie)).result.ok,true);
+    assert.equal((await update({...settings,name:otherShop.name,phone:users[3].phone,bookingLeadDays:4,providerId:shop.id},otherProviderCookie)).result.ok,true);
     assert.equal(await lead(otherShop.id),4);
     assert.equal(await lead(shop.id),1);
     assert.equal((await update({...settings,bookingLeadDays:3},providerCookie)).result.ok,true);
@@ -278,6 +278,116 @@ try {
     assert.equal(saved.preferredDates,JSON.stringify([tomorrow]));
     assert.equal(saved.status,'CONFIRMED');
   });
+  const requestInput = {
+    type: 'REPAIR',
+    description: 'F05 synthetic repair description',
+    area: 'BKK',
+    address: 'F05 synthetic private address',
+    photoUrls: [],
+  };
+  const requestPage = '/request/new';
+  const providerPage = '/provider?tab=requests';
+  const readPage = async (route, cookie) => {
+    const response = await fetch(base + route, { headers: { Cookie: cookie } });
+    return response.text();
+  };
+  let requestId;
+  const offer = (cookie, price, note) =>
+    action('sendQuote', { requestId, price, note }, cookie, providerPage);
+
+  await check('F05-AC-01 validates and persists an owned repair request', async () => {
+    const before = await db.serviceRequest.count();
+    assert.equal((await action('createRequest', requestInput, '', requestPage)).result.ok, false);
+    assert.equal((await action('createRequest', { ...requestInput, description: 'short' }, buyerCookie, requestPage)).result.ok, false);
+    assert.equal(await db.serviceRequest.count(), before);
+
+    const created = await action('createRequest', requestInput, buyerCookie, requestPage);
+    assert.equal(created.result.ok, true);
+    requestId = created.result.data.requestId;
+    const saved = await db.serviceRequest.findUniqueOrThrow({ where: { id: requestId } });
+    assert.equal(saved.userId, buyer.id);
+    assert.equal(saved.status, 'OPEN');
+    for (const field of ['type', 'area', 'description', 'address']) {
+      assert.equal(saved[field], requestInput[field]);
+    }
+    const html = await readPage('/requests/' + requestId, buyerCookie);
+    assert.ok(html.includes(requestInput.description) && html.includes(requestInput.address));
+    console.log(JSON.stringify({ test: 'F05-AC-01', requestId, status: saved.status }));
+  });
+
+  await check('F05-AC-02 persists two shops’ quotes and compares saved offers', async () => {
+    const shopNote = 'F05 synthetic quote from first shop';
+    const otherNote = 'F05 synthetic quote from second shop';
+    const updatedNote = 'F05 synthetic updated quote from first shop';
+    assert.equal((await offer(providerCookie, 2750, shopNote)).result.ok, true);
+    assert.equal((await offer(otherProviderCookie, 3490, otherNote)).result.ok, true);
+    const first = await db.quote.findUniqueOrThrow({
+      where: { requestId_providerId: { requestId, providerId: shop.id } },
+    });
+    assert.equal(first.price, 2750);
+    assert.equal((await offer(providerCookie, 2590, updatedNote)).result.ok, true);
+    const rows = await db.quote.findMany({ where: { requestId }, orderBy: { price: 'asc' } });
+    assert.deepEqual(rows.map(({ providerId, price, note, status }) => ({ providerId, price, note, status })), [
+      { providerId: shop.id, price: 2590, note: updatedNote, status: 'SENT' },
+      { providerId: otherShop.id, price: 3490, note: otherNote, status: 'SENT' },
+    ]);
+    assert.equal(rows[0].id, first.id);
+
+    for (const [cookie, ownNote, competingNote] of [
+      [providerCookie, updatedNote, otherNote],
+      [otherProviderCookie, otherNote, updatedNote],
+    ]) {
+      const html = await readPage(providerPage, cookie);
+      assert.ok(html.includes(requestInput.address) && html.includes(ownNote));
+      assert.equal(html.includes(competingNote), false);
+    }
+    const html = await readPage('/requests/' + requestId, buyerCookie);
+    for (const text of [shop.name, otherShop.name, updatedNote, otherNote, '2,590', '3,490', 'ราคาต่ำสุด']) {
+      assert.ok(html.includes(text), 'Owner comparison is missing: ' + text);
+    }
+    console.log(JSON.stringify({ test: 'F05-AC-02', requestId, quotes: rows.map(({ id, price, status }) => ({ id, price, status })) }));
+  });
+
+  const quoteSnapshot = async () => ({
+    quotes: await db.quote.findMany({ where: { requestId }, orderBy: { id: 'asc' } }),
+    notifications: await db.notification.count({ where: { userId: buyer.id, kind: 'QUOTE' } }),
+  });
+
+  await check('F05-AC-03 denies forbidden reads and quote writes', async () => {
+    const assertPrivateFieldsAbsent = async (route, cookie) => {
+      const html = await readPage(route, cookie);
+      for (const field of ['address', 'description']) {
+        assert.equal(html.includes(requestInput[field]), false, 'Forbidden response contains request ' + field);
+      }
+    };
+    const before = await quoteSnapshot();
+    await assertPrivateFieldsAbsent('/requests/' + requestId, outsiderCookie);
+    assert.equal((await offer(outsiderCookie, 2500, 'No shop')).result.ok, false);
+    assert.equal((await offer(providerCookie, 1.5, 'Invalid price')).result.ok, false);
+    try {
+      await db.provider.update({ where: { id: otherShop.id }, data: { areas: '["NBI"]' } });
+      await assertPrivateFieldsAbsent(providerPage, otherProviderCookie);
+      assert.equal((await offer(otherProviderCookie, 2500, 'Outside area')).result.ok, false);
+
+      await db.provider.update({ where: { id: otherShop.id }, data: { areas: '["BKK"]', status: 'PENDING' } });
+      assert.equal((await offer(otherProviderCookie, 2500, 'Unverified shop')).result.ok, false);
+      await assertPrivateFieldsAbsent(providerPage, otherProviderCookie);
+    } finally {
+      await db.provider.update({ where: { id: otherShop.id }, data: { areas: otherShop.areas, status: otherShop.status } });
+    }
+    assert.deepEqual(await quoteSnapshot(), before);
+  });
+
+  await check('F05-AC-04 closed requests leave the queue and reject quote changes', async () => {
+    const before = await quoteSnapshot();
+    const closed = await action('closeRequest', { requestId }, buyerCookie, '/requests/' + requestId);
+    assert.equal(closed.result.ok, true);
+    assert.equal((await db.serviceRequest.findUniqueOrThrow({ where: { id: requestId } })).status, 'CLOSED');
+    assert.equal((await offer(providerCookie, 2400, 'Closed request')).result.ok, false);
+    assert.equal((await readPage(providerPage, providerCookie)).includes(requestInput.description), false);
+    assert.deepEqual(await quoteSnapshot(), before);
+  });
+
   await check('HTTP-09 logout deletes session and replayed cookie is denied',async()=>{
     const token=decodeURIComponent(buyerCookie.split('=')[1]);
     assert.equal((await action('logout',undefined,buyerCookie,'/account')).result.ok,true);
@@ -298,7 +408,7 @@ try {
     buildManifestHash:(await import('node:crypto')).createHash('sha256').update(JSON.stringify(manifest)).digest('hex'),
     sourceIdentity:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
     sourceFiles:Object.fromEntries(['next.config.ts','postcss.config.mjs','package.json','package-lock.json',
-      'src/server/actions/auth.ts','src/server/actions/orders.ts','src/server/actions/provider.ts',
+      'docs/coursework/check-http.mjs','src/server/actions/customer.ts','src/server/actions/auth.ts','src/server/actions/orders.ts','src/server/actions/provider.ts',
       'src/server/auth.ts','src/server/queries.ts','src/server/provider-order-service.ts','prisma/schema.prisma']
       .filter(name=>existsSync(path.join(root,name))).map(name=>[name,
         createHash('sha256').update(readFileSync(path.join(root,name))).digest('hex')])),
